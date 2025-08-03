@@ -135,6 +135,46 @@ class MCPHTTPHandler(BaseHTTPRequestHandler):
                     },
                     "required": ["technique_id"]
                 }
+            },
+            {
+                "name": "build_attack_path",
+                "description": "Build complete attack paths from initial access to objectives, showing technique sequences across tactics",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "start_tactic": {"type": "string", "description": "Starting tactic ID (default: TA0001 - Initial Access)"},
+                        "end_tactic": {"type": "string", "description": "Target tactic ID (default: TA0040 - Impact)"},
+                        "group_id": {"type": "string", "description": "Filter paths to techniques used by specific group (e.g., G0016)"},
+                        "platform": {"type": "string", "description": "Filter to specific platform (Windows, Linux, macOS)"}
+                    },
+                    "required": []
+                }
+            },
+            {
+                "name": "analyze_coverage_gaps",
+                "description": "Analyze defensive coverage gaps against threat groups or technique sets",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "threat_groups": {"type": "array", "items": {"type": "string"}, "description": "List of group IDs to analyze (e.g., ['G0016', 'G0032'])"},
+                        "technique_list": {"type": "array", "items": {"type": "string"}, "description": "Specific techniques to analyze coverage for (e.g., ['T1055', 'T1059'])"},
+                        "exclude_mitigations": {"type": "array", "items": {"type": "string"}, "description": "Mitigations already implemented to exclude from analysis (e.g., ['M1040', 'M1038'])"}
+                    },
+                    "required": []
+                }
+            },
+            {
+                "name": "detect_technique_relationships",
+                "description": "Discover complex relationships between techniques, including detection, attribution, and subtechnique hierarchies",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "technique_id": {"type": "string", "description": "Primary technique to analyze relationships for (e.g., T1055)"},
+                        "relationship_types": {"type": "array", "items": {"type": "string"}, "description": "Types to include: ['detects', 'subtechnique-of', 'attributed-to', 'uses', 'mitigates'] (default: all)"},
+                        "depth": {"type": "integer", "description": "Relationship traversal depth (default: 2, max: 3)"}
+                    },
+                    "required": ["technique_id"]
+                }
             }
         ]
         

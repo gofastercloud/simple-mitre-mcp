@@ -94,6 +94,10 @@ class DataLoader:
         # Cache the parsed data
         self.data_cache[source_name] = parsed_data
         
+        # Also cache raw relationships for advanced analysis
+        raw_relationships = [obj for obj in raw_data.get('objects', []) if obj.get('type') == 'relationship']
+        self.data_cache[f"{source_name}_relationships"] = raw_relationships
+        
         logger.info(f"Successfully loaded data source '{source_name}'")
         for entity_type, entities in parsed_data.items():
             logger.info(f"  {entity_type}: {len(entities)} entities")

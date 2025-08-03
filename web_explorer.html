@@ -147,6 +147,114 @@
       box-shadow: 0 5px 15px rgba(231, 76, 60, 0.3);
     }
 
+    .tool-button.advanced-tool {
+      background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+    }
+
+    .tool-button.advanced-tool:hover {
+      box-shadow: 0 5px 15px rgba(155, 89, 182, 0.3);
+    }
+
+    .advanced-input-group {
+      background: #f8f9fa;
+      border: 2px solid #9b59b6;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+      box-shadow: 0 4px 12px rgba(155, 89, 182, 0.2);
+    }
+
+    .advanced-input-group h4 {
+      color: #8e44ad;
+      margin-bottom: 15px;
+      font-size: 1.2em;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 600;
+      color: #2c3e50;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+
+    .form-group textarea {
+      height: 80px;
+      resize: vertical;
+    }
+
+    .array-input {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .array-input input {
+      flex: 1;
+    }
+
+    .array-input button {
+      background: #3498db;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .array-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 5px;
+    }
+
+    .array-tag {
+      background: #e74c3c;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .array-tag .remove {
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .cancel-button {
+      background: #95a5a6;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      margin-left: 10px;
+      transition: all 0.3s ease;
+    }
+
+    .cancel-button:hover {
+      background: #7f8c8d;
+    }
+
     .input-group {
       margin-top: 20px;
     }
@@ -340,10 +448,37 @@
           </div>
         </div>
 
+        <div class="tool-section">
+          <h3>🧠 Advanced Threat Modeling</h3>
+          <div class="tool-grid">
+            <button class="tool-button advanced-tool"
+              onclick="showAdvancedForm('build_attack_path')">
+              Build Attack Path
+            </button>
+            <button class="tool-button advanced-tool"
+              onclick="showAdvancedForm('analyze_coverage_gaps')">
+              Analyze Coverage Gaps
+            </button>
+            <button class="tool-button advanced-tool"
+              onclick="showAdvancedForm('detect_technique_relationships')">
+              Detect Relationships
+            </button>
+          </div>
+        </div>
+
         <div id="inputForm" class="input-group" style="display: none;">
           <label id="inputLabel">Input:</label>
           <input type="text" id="inputValue" placeholder="Enter value...">
           <button class="execute-button" onclick="executeWithInput()">Execute Tool</button>
+        </div>
+
+        <div id="advancedForm" class="advanced-input-group" style="display: none;">
+          <h4 id="advancedFormTitle">Advanced Tool Configuration</h4>
+          <div id="advancedFormContent">
+            <!-- Dynamic content will be inserted here -->
+          </div>
+          <button class="execute-button" onclick="executeAdvancedTool()">Execute Advanced Tool</button>
+          <button class="cancel-button" onclick="hideAdvancedForm()">Cancel</button>
         </div>
       </div>
 
@@ -537,6 +672,271 @@ Error details: ${escapeHtml(error.toString())}`;
       const div = document.createElement('div');
       div.textContent = text;
       return div.innerHTML;
+    }
+
+    // Advanced tool handling
+    let currentAdvancedTool = null;
+    let advancedToolData = {};
+
+    function showAdvancedForm(toolName) {
+      currentAdvancedTool = toolName;
+      const advancedForm = document.getElementById('advancedForm');
+      const formTitle = document.getElementById('advancedFormTitle');
+      const formContent = document.getElementById('advancedFormContent');
+      
+      // Hide simple input form
+      document.getElementById('inputForm').style.display = 'none';
+      
+      // Set title
+      const toolTitles = {
+        'build_attack_path': 'Build Attack Path Configuration',
+        'analyze_coverage_gaps': 'Coverage Gap Analysis Configuration',
+        'detect_technique_relationships': 'Technique Relationship Analysis Configuration'
+      };
+      formTitle.textContent = toolTitles[toolName] || 'Advanced Tool Configuration';
+      
+      // Generate form content based on tool
+      formContent.innerHTML = generateAdvancedForm(toolName);
+      
+      // Show advanced form
+      advancedForm.style.display = 'block';
+      
+      // Initialize array inputs
+      initializeArrayInputs();
+    }
+
+    function generateAdvancedForm(toolName) {
+      switch (toolName) {
+        case 'build_attack_path':
+          return `
+            <div class="form-group">
+              <label for="start_tactic">Start Tactic (optional):</label>
+              <input type="text" id="start_tactic" placeholder="e.g., TA0001 (default: Initial Access)">
+            </div>
+            <div class="form-group">
+              <label for="end_tactic">End Tactic (optional):</label>
+              <input type="text" id="end_tactic" placeholder="e.g., TA0040 (default: Impact)">
+            </div>
+            <div class="form-group">
+              <label for="group_id">Group ID (optional):</label>
+              <input type="text" id="group_id" placeholder="e.g., G0016 (APT29)">
+            </div>
+            <div class="form-group">
+              <label for="platform">Platform (optional):</label>
+              <select id="platform">
+                <option value="">All Platforms</option>
+                <option value="Windows">Windows</option>
+                <option value="Linux">Linux</option>
+                <option value="macOS">macOS</option>
+              </select>
+            </div>
+          `;
+        
+        case 'analyze_coverage_gaps':
+          return `
+            <div class="form-group">
+              <label for="threat_groups">Threat Groups (optional):</label>
+              <div class="array-input">
+                <input type="text" id="threat_groups_input" placeholder="e.g., G0016, G0032">
+                <button type="button" onclick="addArrayItem('threat_groups')">Add</button>
+              </div>
+              <div id="threat_groups_tags" class="array-tags"></div>
+            </div>
+            <div class="form-group">
+              <label for="technique_list">Technique List (optional):</label>
+              <div class="array-input">
+                <input type="text" id="technique_list_input" placeholder="e.g., T1055, T1059">
+                <button type="button" onclick="addArrayItem('technique_list')">Add</button>
+              </div>
+              <div id="technique_list_tags" class="array-tags"></div>
+            </div>
+            <div class="form-group">
+              <label for="exclude_mitigations">Exclude Mitigations (optional):</label>
+              <div class="array-input">
+                <input type="text" id="exclude_mitigations_input" placeholder="e.g., M1040, M1038">
+                <button type="button" onclick="addArrayItem('exclude_mitigations')">Add</button>
+              </div>
+              <div id="exclude_mitigations_tags" class="array-tags"></div>
+            </div>
+          `;
+        
+        case 'detect_technique_relationships':
+          return `
+            <div class="form-group">
+              <label for="technique_id">Technique ID (required):</label>
+              <input type="text" id="technique_id" placeholder="e.g., T1055" required>
+            </div>
+            <div class="form-group">
+              <label for="relationship_types">Relationship Types (optional):</label>
+              <div class="array-input">
+                <select id="relationship_types_input">
+                  <option value="">Select relationship type</option>
+                  <option value="uses">Uses</option>
+                  <option value="mitigates">Mitigates</option>
+                  <option value="detects">Detects</option>
+                  <option value="subtechnique-of">Subtechnique Of</option>
+                  <option value="attributed-to">Attributed To</option>
+                  <option value="revoked-by">Revoked By</option>
+                </select>
+                <button type="button" onclick="addArrayItem('relationship_types')">Add</button>
+              </div>
+              <div id="relationship_types_tags" class="array-tags"></div>
+            </div>
+            <div class="form-group">
+              <label for="depth">Analysis Depth (optional):</label>
+              <select id="depth">
+                <option value="">Default (2)</option>
+                <option value="1">1 - Direct relationships only</option>
+                <option value="2">2 - Two levels deep</option>
+                <option value="3">3 - Three levels deep</option>
+              </select>
+            </div>
+          `;
+        
+        default:
+          return '<p>Unknown tool configuration</p>';
+      }
+    }
+
+    function initializeArrayInputs() {
+      // Initialize array data storage
+      advancedToolData = {
+        threat_groups: [],
+        technique_list: [],
+        exclude_mitigations: [],
+        relationship_types: []
+      };
+      
+      // Add enter key listeners for array inputs
+      const arrayInputs = document.querySelectorAll('.array-input input, .array-input select');
+      arrayInputs.forEach(input => {
+        input.addEventListener('keypress', function(e) {
+          if (e.key === 'Enter') {
+            const fieldName = this.id.replace('_input', '');
+            addArrayItem(fieldName);
+          }
+        });
+      });
+    }
+
+    function addArrayItem(fieldName) {
+      const input = document.getElementById(fieldName + '_input');
+      const value = input.value.trim();
+      
+      if (value && !advancedToolData[fieldName].includes(value)) {
+        advancedToolData[fieldName].push(value);
+        updateArrayTags(fieldName);
+        input.value = '';
+      }
+    }
+
+    function removeArrayItem(fieldName, value) {
+      const index = advancedToolData[fieldName].indexOf(value);
+      if (index > -1) {
+        advancedToolData[fieldName].splice(index, 1);
+        updateArrayTags(fieldName);
+      }
+    }
+
+    function updateArrayTags(fieldName) {
+      const tagsContainer = document.getElementById(fieldName + '_tags');
+      tagsContainer.innerHTML = '';
+      
+      advancedToolData[fieldName].forEach(value => {
+        const tag = document.createElement('div');
+        tag.className = 'array-tag';
+        tag.innerHTML = `
+          ${value}
+          <span class="remove" onclick="removeArrayItem('${fieldName}', '${value}')">×</span>
+        `;
+        tagsContainer.appendChild(tag);
+      });
+    }
+
+    function hideAdvancedForm() {
+      document.getElementById('advancedForm').style.display = 'none';
+      currentAdvancedTool = null;
+      advancedToolData = {};
+    }
+
+    async function executeAdvancedTool() {
+      if (!currentAdvancedTool) return;
+      
+      const outputElement = document.getElementById('output');
+      
+      // Collect form data
+      const params = {};
+      
+      // Get simple input values
+      const inputs = document.querySelectorAll('#advancedFormContent input, #advancedFormContent select');
+      inputs.forEach(input => {
+        if (input.id && !input.id.endsWith('_input') && input.value.trim()) {
+          const key = input.id;
+          let value = input.value.trim();
+          
+          // Convert numeric values
+          if (key === 'depth' && value) {
+            value = parseInt(value);
+          }
+          
+          params[key] = value;
+        }
+      });
+      
+      // Add array values
+      Object.keys(advancedToolData).forEach(key => {
+        if (advancedToolData[key].length > 0) {
+          params[key] = advancedToolData[key];
+        }
+      });
+      
+      // Show loading state
+      outputElement.innerHTML = `<div class="loading"><div class="spinner"></div>Executing ${currentAdvancedTool}...</div>`;
+      
+      try {
+        const requestBody = {
+          jsonrpc: "2.0",
+          id: Date.now(),
+          method: 'tools/call',
+          params: {
+            name: currentAdvancedTool,
+            arguments: params
+          }
+        };
+
+        const response = await fetch(serverUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody)
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          
+          if (result.result && result.result.content && result.result.content.length > 0) {
+            const content = result.result.content[0];
+            if (content.type === 'text') {
+              outputElement.innerHTML = `<div class="success">✅ Advanced tool executed successfully</div>${escapeHtml(content.text)}`;
+            } else {
+              outputElement.innerHTML = `<div class="success">✅ Advanced tool executed successfully</div>${JSON.stringify(result.result, null, 2)}`;
+            }
+          } else if (result.error) {
+            outputElement.innerHTML = `<div class="error">❌ Tool Error: ${escapeHtml(result.error.message || 'Unknown error')}</div>`;
+          } else {
+            outputElement.innerHTML = `<div class="error">❌ Unexpected response format</div>`;
+          }
+        } else {
+          outputElement.innerHTML = `<div class="error">❌ HTTP Error: ${response.status} ${response.statusText}</div>`;
+        }
+      } catch (error) {
+        console.error('Error executing advanced tool:', error);
+        outputElement.innerHTML = `<div class="error">❌ Connection Error: ${escapeHtml(error.message)}</div>`;
+      }
+      
+      // Hide advanced form after execution
+      hideAdvancedForm();
     }
 
     // Allow Enter key to execute in input field

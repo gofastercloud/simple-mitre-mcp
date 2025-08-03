@@ -78,7 +78,7 @@ class TestWebInterface:
         tools = await app.list_tools()
         
         assert tools is not None
-        assert len(tools) == 5
+        assert len(tools) == 8
         
         # Verify tool structure matches what web interface expects
         for tool in tools:

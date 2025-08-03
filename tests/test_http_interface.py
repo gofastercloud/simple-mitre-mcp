@@ -46,7 +46,7 @@ class TestMCPHTTPInterface:
         # Test list_tools
         tools = await app.list_tools()
         assert tools is not None
-        assert len(tools) == 5
+        assert len(tools) == 8
         
         tool_names = [tool.name for tool in tools]
         expected_tools = [
