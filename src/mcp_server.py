@@ -251,7 +251,7 @@ def create_mcp_server(data_loader=None):
             if not technique:
                 return [TextContent(
                     type="text",
-                    text="Technique '{technique_id}' not found. Please verify the technique ID is correct."
+                    text=f"Technique '{technique_id}' not found. Please verify the technique ID is correct."
                 )]
 
             # Build detailed response
@@ -433,7 +433,7 @@ def create_mcp_server(data_loader=None):
             if not group:
                 return [TextContent(
                     type="text",
-                    text="Group '{group_id}' not found. Please verify the group ID is correct."
+                    text=f"Group '{group_id}' not found. Please verify the group ID is correct."
                 )]
 
             # Get techniques used by this group
@@ -574,7 +574,7 @@ def create_mcp_server(data_loader=None):
             if not technique:
                 return [TextContent(
                     type="text",
-                    text="Technique '{technique_id}' not found. Please verify the technique ID is correct."
+                    text=f"Technique '{technique_id}' not found. Please verify the technique ID is correct."
                 )]
 
             # Get mitigations for this technique
@@ -944,7 +944,7 @@ def create_mcp_server(data_loader=None):
                     if not group:
                         return [TextContent(
                             type="text",
-                            text="Error: Group '{group_id}' not found. Please verify the group ID is correct."
+                            text=f"Error: Group '{group_id}' not found. Please verify the group ID is correct."
                         )]
 
                     group_techniques = group.get('techniques', [])
@@ -958,7 +958,7 @@ def create_mcp_server(data_loader=None):
                     if tech_id not in valid_technique_ids:
                         return [TextContent(
                             type="text",
-                            text="Error: Technique '{tech_id}' not found. Please verify the technique ID is correct."
+                            text=f"Error: Technique '{tech_id}' not found. Please verify the technique ID is correct."
                         )]
 
                 techniques_to_analyze.update(technique_list)
@@ -1197,7 +1197,7 @@ def create_mcp_server(data_loader=None):
             if not technique:
                 return [TextContent(
                     type="text",
-                    text="Technique '{technique_id}' not found. Please verify the technique ID is correct."
+                    text=f"Technique '{technique_id}' not found. Please verify the technique ID is correct."
                 )]
 
             # Download raw data to get STIX ID mappings
