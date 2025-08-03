@@ -52,11 +52,11 @@ def start_http_proxy():
         # Stream output
         for line in iter(process.stdout.readline, ''):
             if line:
-                print(f"[HTTP Proxy] {line.strip()}")
+                print("[HTTP Proxy] {line.strip()}")
 
         return process
-    except Exception as e:
-        logger.error(f"Failed to start HTTP proxy server: {e}")
+    except Exception:
+        logger.error("Failed to start HTTP proxy server: {e}")
         return None
 
 
@@ -65,13 +65,13 @@ def open_web_explorer():
     try:
         # Get the absolute path to the HTML file
         html_file = Path(__file__).parent / 'web_explorer.html'
-        file_url = f"file://{html_file.absolute()}"
+        file_url = "file://{html_file.absolute()}"
 
-        logger.info(f"Opening web explorer: {file_url}")
+        logger.info("Opening web explorer: {file_url}")
         webbrowser.open(file_url)
 
-    except Exception as e:
-        logger.error(f"Failed to open web explorer: {e}")
+    except Exception:
+        logger.error("Failed to open web explorer: {e}")
 
 
 def check_dependencies():
@@ -89,10 +89,10 @@ def check_dependencies():
             logger.warning("uv not found. Make sure dependencies are installed manually.")
 
     except subprocess.CalledProcessError as e:
-        logger.error(f"Failed to sync dependencies: {e}")
+        logger.error("Failed to sync dependencies: {e}")
         return False
-    except Exception as e:
-        logger.error(f"Error checking dependencies: {e}")
+    except Exception:
+        logger.error("Error checking dependencies: {e}")
         return False
 
     return True
@@ -161,8 +161,8 @@ def main():
         except KeyboardInterrupt:
             print("\n🛑 Shutting down...")
 
-    except Exception as e:
-        logger.error(f"Error during startup: {e}")
+    except Exception:
+        logger.error("Error during startup: {e}")
         sys.exit(1)
 
 

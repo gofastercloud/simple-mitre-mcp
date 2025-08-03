@@ -44,21 +44,21 @@ class DataLoader:
             requests.RequestException: If download fails
             json.JSONDecodeError: If JSON parsing fails
         """
-        logger.info(f"Downloading data from: {url}")
+        logger.info("Downloading data from: {url}")
 
         try:
             response = requests.get(url, timeout=timeout)
             response.raise_for_status()
 
             data = response.json()
-            logger.info(f"Successfully downloaded {len(str(data))} bytes of data")
+            logger.info("Successfully downloaded {len(str(data))} bytes of data")
             return data
 
         except requests.RequestException as e:
-            logger.error(f"Failed to download data from {url}: {e}")
+            logger.error("Failed to download data from {url}: {e}")
             raise
         except json.JSONDecodeError as e:
-            logger.error(f"Failed to parse JSON from {url}: {e}")
+            logger.error("Failed to parse JSON from {url}: {e}")
             raise
 
     def load_data_source(self, source_name: str) -> Dict[str, List[Dict[str, Any]]]:
@@ -76,7 +76,7 @@ class DataLoader:
             Exception: If data loading or parsing fails
         """
         if source_name not in self.config['data_sources']:
-            raise ValueError(f"Data source '{source_name}' not found in configuration")
+            raise ValueError("Data source '{source_name}' not found in configuration")
 
         source_config = self.config['data_sources'][source_name]
 
@@ -89,18 +89,18 @@ class DataLoader:
             # Process relationships between entities
             parsed_data = self._process_relationships(raw_data, parsed_data)
         else:
-            raise ValueError(f"Unsupported data format: {source_config['format']}")
+            raise ValueError("Unsupported data format: {source_config['format']}")
 
         # Cache the parsed data
         self.data_cache[source_name] = parsed_data
 
         # Also cache raw relationships for advanced analysis
         raw_relationships = [obj for obj in raw_data.get('objects', []) if obj.get('type') == 'relationship']
-        self.data_cache[f"{source_name}_relationships"] = raw_relationships
+        self.data_cache["{source_name}_relationships"] = raw_relationships
 
-        logger.info(f"Successfully loaded data source '{source_name}'")
+        logger.info("Successfully loaded data source '{source_name}'")
         for entity_type, entities in parsed_data.items():
-            logger.info(f"  {entity_type}: {len(entities)} entities")
+            logger.info("  {entity_type}: {len(entities)} entities")
 
         return parsed_data
 
@@ -140,7 +140,7 @@ class DataLoader:
                 self._process_single_relationship(obj, parsed_data, stix_id_to_mitre_id)
                 relationships_processed += 1
 
-        logger.info(f"Processed {relationships_processed} relationship objects")
+        logger.info("Processed {relationships_processed} relationship objects")
         return parsed_data
 
     def _extract_mitre_id_from_stix(self, stix_obj: Dict[str, Any]) -> str:
@@ -153,8 +153,8 @@ class DataLoader:
 
     def _process_single_relationship(self, rel_obj: Dict[str, Any], parsed_data: Dict[str, List[Dict[str, Any]]], stix_id_to_mitre_id: Dict[str, str]):
         """Process a single STIX relationship object."""
-        source_ref = rel_obj.get('source_ref', '')
-        target_ref = rel_obj.get('target_ref', '')
+        source_ref = rel_obj.get('source_re', '')
+        target_ref = rel_obj.get('target_re', '')
         relationship_type = rel_obj.get('relationship_type', '')
 
         source_mitre_id = stix_id_to_mitre_id.get(source_ref, '')

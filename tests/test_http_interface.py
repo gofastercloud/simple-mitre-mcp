@@ -26,7 +26,6 @@ class TestMCPHTTPInterface:
         try:
             # Initialize data loader
             data_loader = DataLoader()
-            attack_data = data_loader.load_data_source('mitre_attack')
             logger.info("Data loaded successfully")
 
             # Create MCP server
@@ -34,9 +33,9 @@ class TestMCPHTTPInterface:
             logger.info("MCP server created")
 
             return app
-        except Exception as e:
-            logger.error(f"Error creating server: {e}")
-            pytest.skip(f"Could not load data: {e}")
+        except Exception:
+            logger.error("Error creating server: {e}")
+            pytest.skip("Could not load data: {e}")
 
     @pytest.mark.asyncio
     async def test_mcp_server_tool_listing(self, mcp_server_with_data):
@@ -57,7 +56,7 @@ class TestMCPHTTPInterface:
         for expected_tool in expected_tools:
             assert expected_tool in tool_names
 
-        logger.info(f"Available tools: {tool_names}")
+        logger.info("Available tools: {tool_names}")
 
     @pytest.mark.asyncio
     async def test_tool_execution(self, mcp_server_with_data):
@@ -71,8 +70,8 @@ class TestMCPHTTPInterface:
         assert result[0].type == "text"
         assert len(result[0].text) > 0
 
-        logger.info(f"Tool result type: {type(result)}")
-        logger.info(f"Tool result content length: {len(result[0].text)}")
+        logger.info("Tool result type: {type(result)}")
+        logger.info("Tool result content length: {len(result[0].text)}")
 
     @pytest.mark.asyncio
     async def test_tool_schemas_for_web_interface(self, mcp_server_with_data):
@@ -89,9 +88,9 @@ class TestMCPHTTPInterface:
             assert isinstance(tool.inputSchema, dict)
 
             # Log schema for web interface development
-            logger.info(f"\nTool: {tool.name}")
-            logger.info(f"Description: {tool.description}")
-            logger.info(f"Input Schema: {json.dumps(tool.inputSchema, indent=2)}")
+            logger.info("\nTool: {tool.name}")
+            logger.info("Description: {tool.description}")
+            logger.info("Input Schema: {json.dumps(tool.inputSchema, indent=2)}")
 
         # Verify specific tool schemas
         tool_dict = {tool.name: tool for tool in tools}

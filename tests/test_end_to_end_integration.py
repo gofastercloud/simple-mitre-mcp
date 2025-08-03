@@ -106,9 +106,9 @@ class TestEndToEndIntegration:
         ]
 
         for expected_tool in expected_tools:
-            assert expected_tool in tool_names, f"Tool '{expected_tool}' not registered"
+            assert expected_tool in tool_names, "Tool '{expected_tool}' not registered"
 
-        assert len(tool_names) == 8, f"Expected 8 tools, found {len(tool_names)}: {tool_names}"
+        assert len(tool_names) == 8, "Expected 8 tools, found {len(tool_names)}: {tool_names}"
 
     @pytest.mark.asyncio
     async def test_search_attack_tool_execution(self, mcp_server):

@@ -27,9 +27,7 @@ def main():
     try:
         # Initialize data loader and load MITRE ATT&CK data
         logger.info("Loading MITRE ATT&CK data...")
-        data_loader = DataLoader()
-        attack_data = data_loader.load_data_source('mitre_attack')
-        logger.info("MITRE ATT&CK data loaded successfully")
+        data_loader = DataLoader()        logger.info("MITRE ATT&CK data loaded successfully")
 
         # Create MCP server with loaded data
         mcp_server = MCPServer(data_loader)
@@ -37,8 +35,8 @@ def main():
         logger.info("MCP server starting with streamable-http transport")
         mcp_server.run(transport="streamable-http")
 
-    except Exception as e:
-        logger.error(f"Failed to start MCP server: {e}")
+    except Exception:
+        logger.error("Failed to start MCP server: {e}")
         raise
 
 if __name__ == '__main__':

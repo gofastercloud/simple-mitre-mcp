@@ -59,7 +59,7 @@ class TestWebInterfaceAdvanced:
         ]
 
         for func_name in required_functions:
-            assert f'function {func_name}' in html_content, f"JavaScript function '{func_name}' not found"
+            assert 'function {func_name}' in html_content, "JavaScript function '{func_name}' not found"
 
     def test_web_explorer_html_form_configurations(self):
         """Test that web_explorer.html contains proper form configurations for each tool."""
@@ -90,7 +90,8 @@ class TestWebInterfaceAdvanced:
         # Check for advanced tool names
         assert 'build_attack_path' in proxy_content, "build_attack_path not found in HTTP proxy"
         assert 'analyze_coverage_gaps' in proxy_content, "analyze_coverage_gaps not found in HTTP proxy"
-        assert 'detect_technique_relationships' in proxy_content, "detect_technique_relationships not found in HTTP proxy"
+        assert 'detect_technique_relationships' in (
+            proxy_content, "detect_technique_relationships not found in HTTP proxy")
 
         # Check for array parameter support
         assert '"type": "array"' in proxy_content, "Array parameter support not found in HTTP proxy"
@@ -128,7 +129,8 @@ class TestWebInterfaceAdvanced:
         with open('/Users/gofastercloud/simple-mitre-mcp/start_explorer.py', 'r') as f:
             content = f.read()
             # Basic check that it's a Python script
-            assert 'python' in content.lower() or 'import' in content, "start_explorer.py doesn't appear to be a Python script"
+            assert 'python' in (
+                content.lower() or 'import' in content, "start_explorer.py doesn't appear to be a Python script")
 
     def test_web_interface_tool_count_consistency(self):
         """Test that web interface expects the correct number of tools."""
@@ -153,11 +155,11 @@ class TestWebInterfaceAdvanced:
 
         # Verify all basic tools are present
         for tool in basic_tools:
-            assert tool in html_content, f"Basic tool '{tool}' not found in web interface"
+            assert tool in html_content, "Basic tool '{tool}' not found in web interface"
 
         # Verify all advanced tools are present
         for tool in advanced_tools:
-            assert tool in html_content, f"Advanced tool '{tool}' not found in web interface"
+            assert tool in html_content, "Advanced tool '{tool}' not found in web interface"
 
     def test_web_interface_styling_consistency(self):
         """Test that advanced tools have consistent styling with basic tools."""

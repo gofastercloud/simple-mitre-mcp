@@ -90,33 +90,33 @@ def _format_group_techniques_response(group: dict, technique_details: list, data
         str: Formatted group techniques response
     """
     if not technique_details:
-        return f"No techniques found for group '{group.get('id', 'Unknown')}' ({group.get('name', 'Unknown')})."
+        return "No techniques found for group '{group.get('id', 'Unknown')}' ({group.get('name', 'Unknown')})."
 
     # Build detailed response
-    result_text = f"GROUP TECHNIQUES\n"
-    result_text += f"================\n\n"
-    result_text += f"Group ID: {group.get('id', 'N/A')}\n"
-    result_text += f"Group Name: {group.get('name', 'N/A')}\n"
+    result_text = "GROUP TECHNIQUES\n"
+    result_text += "================\n\n"
+    result_text += "Group ID: {group.get('id', 'N/A')}\n"
+    result_text += "Group Name: {group.get('name', 'N/A')}\n"
 
     # Add aliases if available
     aliases = group.get('aliases', [])
     if aliases:
-        result_text += f"Aliases: {', '.join(aliases)}\n"
+        result_text += "Aliases: {', '.join(aliases)}\n"
 
-    result_text += f"\nDescription:\n{group.get('description', 'No description available')}\n\n"
+    result_text += "\nDescription:\n{group.get('description', 'No description available')}\n\n"
 
-    result_text += f"Techniques Used ({len(technique_details)}):\n"
-    result_text += f"{'-' * 40}\n\n"
+    result_text += "Techniques Used ({len(technique_details)}):\n"
+    result_text += "{'-' * 40}\n\n"
 
     # Format technique details
     for i, tech in enumerate(technique_details, 1):
-        result_text += f"{i}. {tech['id']}: {tech['name']}\n"
+        result_text += "{i}. {tech['id']}: {tech['name']}\n"
 
         # Add description preview
         desc = tech['description']
         if len(desc) > 150:
             desc = desc[:150] + "..."
-        result_text += f"   Description: {desc}\n"
+        result_text += "   Description: {desc}\n"
 
         # Add tactics if available
         if tech['tactics']:
@@ -125,15 +125,15 @@ def _format_group_techniques_response(group: dict, technique_details: list, data
                 # Look up tactic name
                 for tactic in data.get('tactics', []):
                     if tactic.get('id') == tactic_id:
-                        tactic_names.append(f"{tactic_id} ({tactic.get('name', 'Unknown')})")
+                        tactic_names.append("{tactic_id} ({tactic.get('name', 'Unknown')})")
                         break
                 else:
-                    tactic_names.append(f"{tactic_id} (Name not found)")
-            result_text += f"   Tactics: {', '.join(tactic_names)}\n"
+                    tactic_names.append("{tactic_id} (Name not found)")
+            result_text += "   Tactics: {', '.join(tactic_names)}\n"
 
         # Add platforms if available
         if tech['platforms']:
-            result_text += f"   Platforms: {', '.join(tech['platforms'])}\n"
+            result_text += "   Platforms: {', '.join(tech['platforms'])}\n"
 
         result_text += "\n"
 

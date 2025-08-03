@@ -125,7 +125,7 @@ class TestBuildAttackPath:
         assert len(result) > 0
 
         content = result[0].text
-        assert "TA0001 - Initial Access" in content and "TA0002 - Execution" in content  # Implementation shows step format
+        assert "TA0001 - Initial Access" in content and "TA0002 - Execution" in content
         assert "Initial Access" in content
         assert "Execution" in content
         # Should not contain Impact since we're stopping at Execution
@@ -267,8 +267,8 @@ class TestBuildAttackPath:
         techniques = []
         for i in range(12):
             techniques.append({
-                'id': f'T{1000 + i}',
-                'name': f'Test Technique {i + 1}',
+                'id': 'T{1000 + i}',
+                'name': 'Test Technique {i + 1}',
                 'description': f'Test technique {i + 1} description.',
                 'tactics': ['TA0001'],
                 'platforms': ['Windows'],

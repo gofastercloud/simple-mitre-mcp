@@ -66,25 +66,23 @@ def _search_entities(query: str, data: Dict[str, List[Dict[str, Any]]]) -> List[
             matches = []
 
             # Search in entity ID
-            entity_id = entity.get('id', '').lower()
             if query in entity_id:
-                matches.append(f"ID contains '{query}'")
+                matches.append("ID contains '{query}'")
 
             # Search in entity name
-            entity_name = entity.get('name', '').lower()
             if query in entity_name:
-                matches.append(f"name contains '{query}'")
+                matches.append("name contains '{query}'")
 
             # Search in description
             entity_desc = entity.get('description', '').lower()
             if query in entity_desc:
-                matches.append(f"description contains '{query}'")
+                matches.append("description contains '{query}'")
 
             # Search in aliases (for groups)
             if entity_type == 'groups' and 'aliases' in entity:
                 for alias in entity.get('aliases', []):
                     if query in alias.lower():
-                        matches.append(f"alias '{alias}' contains '{query}'")
+                        matches.append("alias '{alias}' contains '{query}'")
                         break
 
             # If we found matches, add to results
@@ -135,8 +133,6 @@ def create_mcp_server(data_loader=None):
 
     # Load tools configuration
     config_loader = ConfigLoader()
-    tools_config = config_loader.load_tools_config()
-
     logger.info("Registering MCP tools...")
 
     # Register search_attack tool
@@ -152,7 +148,7 @@ def create_mcp_server(data_loader=None):
             List[TextContent]: Search results with entity type indicators
         """
         try:
-            logger.info(f"Executing search_attack with query: {query}")
+            logger.info("Executing search_attack with query: {query}")
 
             if not app.data_loader:
                 return [TextContent(
@@ -174,25 +170,20 @@ def create_mcp_server(data_loader=None):
             if not search_results:
                 return [TextContent(
                     type="text",
-                    text=f"No results found for query: '{query}'"
+                    text="No results found for query: '{query}'"
                 )]
 
             # Format results
-            result_text = f"Search results for '{query}' ({len(search_results)} matches):\n\n"
+            result_text = "Search results for '{query}' ({len(search_results)} matches):\n\n"
 
             for result in search_results:
-                entity_type = result['entity_type'].upper()
-                entity_id = result['id']
-                entity_name = result['name']
-                match_reason = result['match_reason']
 
-                result_text += f"[{entity_type}] {entity_id}: {entity_name}\n"
-                result_text += f"  Match: {match_reason}\n"
+                result_text += "[{entity_type}] {entity_id}: {entity_name}\n"
+                result_text += "  Match: {match_reason}\n"
 
                 # Add description preview if available
                 if 'description' in result and result['description']:
-                    desc_preview = result['description'][:100] + "..." if len(result['description']) > 100 else result['description']
-                    result_text += f"  Description: {desc_preview}\n"
+                    result_text += "  Description: {desc_preview}\n"
 
                 result_text += "\n"
 
@@ -201,11 +192,11 @@ def create_mcp_server(data_loader=None):
                 text=result_text
             )]
 
-        except Exception as e:
-            logger.error(f"Error in search_attack: {e}")
+        except Exception:
+            logger.error("Error in search_attack: {e}")
             return [TextContent(
                 type="text",
-                text=f"Error executing search: {str(e)}"
+                text="Error executing search: {str(e)}"
             )]
 
     # Register get_technique tool
@@ -221,7 +212,7 @@ def create_mcp_server(data_loader=None):
             List[TextContent]: Technique details including tactics, platforms, and mitigations
         """
         try:
-            logger.info(f"Executing get_technique with ID: {technique_id}")
+            logger.info("Executing get_technique with ID: {technique_id}")
 
             if not app.data_loader:
                 return [TextContent(
@@ -250,32 +241,32 @@ def create_mcp_server(data_loader=None):
             if not technique:
                 return [TextContent(
                     type="text",
-                    text=f"Technique '{technique_id}' not found. Please verify the technique ID is correct."
+                    text="Technique '{technique_id}' not found. Please verify the technique ID is correct."
                 )]
 
             # Build detailed response
-            result_text = f"TECHNIQUE DETAILS\n"
-            result_text += f"================\n\n"
-            result_text += f"ID: {technique.get('id', 'N/A')}\n"
-            result_text += f"Name: {technique.get('name', 'N/A')}\n\n"
+            result_text = "TECHNIQUE DETAILS\n"
+            result_text += "================\n\n"
+            result_text += "ID: {technique.get('id', 'N/A')}\n"
+            result_text += "Name: {technique.get('name', 'N/A')}\n\n"
 
             # Description
             description = technique.get('description', 'No description available')
-            result_text += f"Description:\n{description}\n\n"
+            result_text += "Description:\n{description}\n\n"
 
             # Associated tactics
             tactics = technique.get('tactics', [])
             if tactics:
-                result_text += f"Associated Tactics ({len(tactics)}):\n"
+                result_text += "Associated Tactics ({len(tactics)}):\n"
                 # Look up tactic names
                 tactic_details = []
                 for tactic_id in tactics:
                     for tactic in data.get('tactics', []):
                         if tactic.get('id') == tactic_id:
-                            tactic_details.append(f"  - {tactic_id}: {tactic.get('name', 'Unknown')}")
+                            tactic_details.append("  - {tactic_id}: {tactic.get('name', 'Unknown')}")
                             break
                     else:
-                        tactic_details.append(f"  - {tactic_id}: (Name not found)")
+                        tactic_details.append("  - {tactic_id}: (Name not found)")
                 result_text += "\n".join(tactic_details) + "\n\n"
             else:
                 result_text += "Associated Tactics: None\n\n"
@@ -283,7 +274,7 @@ def create_mcp_server(data_loader=None):
             # Platforms
             platforms = technique.get('platforms', [])
             if platforms:
-                result_text += f"Platforms ({len(platforms)}):\n"
+                result_text += "Platforms ({len(platforms)}):\n"
                 result_text += "  " + ", ".join(platforms) + "\n\n"
             else:
                 result_text += "Platforms: Not specified\n\n"
@@ -291,37 +282,37 @@ def create_mcp_server(data_loader=None):
             # Mitigations
             mitigations = technique.get('mitigations', [])
             if mitigations:
-                result_text += f"Mitigations ({len(mitigations)}):\n"
+                result_text += "Mitigations ({len(mitigations)}):\n"
                 # Look up mitigation names
                 mitigation_details = []
                 for mitigation_id in mitigations:
                     for mitigation in data.get('mitigations', []):
                         if mitigation.get('id') == mitigation_id:
-                            mitigation_details.append(f"  - {mitigation_id}: {mitigation.get('name', 'Unknown')}")
+                            mitigation_details.append("  - {mitigation_id}: {mitigation.get('name', 'Unknown')}")
                             break
                     else:
-                        mitigation_details.append(f"  - {mitigation_id}: (Name not found)")
+                        mitigation_details.append("  - {mitigation_id}: (Name not found)")
                 result_text += "\n".join(mitigation_details) + "\n\n"
             else:
                 result_text += "Mitigations: None available\n\n"
 
             # Additional metadata
             if technique.get('data_sources'):
-                result_text += f"Data Sources: {', '.join(technique['data_sources'])}\n"
+                result_text += "Data Sources: {', '.join(technique['data_sources'])}\n"
 
             if technique.get('detection'):
-                result_text += f"\nDetection:\n{technique['detection']}\n"
+                result_text += "\nDetection:\n{technique['detection']}\n"
 
             return [TextContent(
                 type="text",
                 text=result_text
             )]
 
-        except Exception as e:
-            logger.error(f"Error in get_technique: {e}")
+        except Exception:
+            logger.error("Error in get_technique: {e}")
             return [TextContent(
                 type="text",
-                text=f"Error retrieving technique: {str(e)}"
+                text="Error retrieving technique: {str(e)}"
             )]
 
     # Register list_tactics tool
@@ -363,30 +354,30 @@ def create_mcp_server(data_loader=None):
             sorted_tactics = sorted(tactics, key=lambda x: x.get('id', ''))
 
             # Build formatted response
-            result_text = f"MITRE ATT&CK TACTICS\n"
-            result_text += f"===================\n\n"
-            result_text += f"Total tactics: {len(sorted_tactics)}\n\n"
+            result_text = "MITRE ATT&CK TACTICS\n"
+            result_text += "===================\n\n"
+            result_text += "Total tactics: {len(sorted_tactics)}\n\n"
 
             for tactic in sorted_tactics:
                 tactic_id = tactic.get('id', 'N/A')
                 tactic_name = tactic.get('name', 'N/A')
                 tactic_description = tactic.get('description', 'No description available')
 
-                result_text += f"ID: {tactic_id}\n"
-                result_text += f"Name: {tactic_name}\n"
-                result_text += f"Description: {tactic_description}\n"
-                result_text += f"{'-' * 50}\n\n"
+                result_text += "ID: {tactic_id}\n"
+                result_text += "Name: {tactic_name}\n"
+                result_text += "Description: {tactic_description}\n"
+                result_text += "{'-' * 50}\n\n"
 
             return [TextContent(
                 type="text",
                 text=result_text
             )]
 
-        except Exception as e:
-            logger.error(f"Error in list_tactics: {e}")
+        except Exception:
+            logger.error("Error in list_tactics: {e}")
             return [TextContent(
                 type="text",
-                text=f"Error listing tactics: {str(e)}"
+                text="Error listing tactics: {str(e)}"
             )]
 
     # Register get_group_techniques tool
@@ -402,7 +393,7 @@ def create_mcp_server(data_loader=None):
             List[TextContent]: List of techniques with basic details used by the group
         """
         try:
-            logger.info(f"Executing get_group_techniques with ID: {group_id}")
+            logger.info("Executing get_group_techniques with ID: {group_id}")
 
             if not app.data_loader:
                 return [TextContent(
@@ -431,7 +422,7 @@ def create_mcp_server(data_loader=None):
             if not group:
                 return [TextContent(
                     type="text",
-                    text=f"Group '{group_id}' not found. Please verify the group ID is correct."
+                    text="Group '{group_id}' not found. Please verify the group ID is correct."
                 )]
 
             # Get techniques used by this group
@@ -440,24 +431,24 @@ def create_mcp_server(data_loader=None):
             if not group_techniques:
                 return [TextContent(
                     type="text",
-                    text=f"No techniques found for group '{group_id}' ({group.get('name', 'Unknown')})."
+                    text="No techniques found for group '{group_id}' ({group.get('name', 'Unknown')})."
                 )]
 
             # Build detailed response
-            result_text = f"GROUP TECHNIQUES\n"
-            result_text += f"================\n\n"
-            result_text += f"Group ID: {group.get('id', 'N/A')}\n"
-            result_text += f"Group Name: {group.get('name', 'N/A')}\n"
+            result_text = "GROUP TECHNIQUES\n"
+            result_text += "================\n\n"
+            result_text += "Group ID: {group.get('id', 'N/A')}\n"
+            result_text += "Group Name: {group.get('name', 'N/A')}\n"
 
             # Add aliases if available
             aliases = group.get('aliases', [])
             if aliases:
-                result_text += f"Aliases: {', '.join(aliases)}\n"
+                result_text += "Aliases: {', '.join(aliases)}\n"
 
-            result_text += f"\nDescription:\n{group.get('description', 'No description available')}\n\n"
+            result_text += "\nDescription:\n{group.get('description', 'No description available')}\n\n"
 
-            result_text += f"Techniques Used ({len(group_techniques)}):\n"
-            result_text += f"{'-' * 40}\n\n"
+            result_text += "Techniques Used ({len(group_techniques)}):\n"
+            result_text += "{'-' * 40}\n\n"
 
             # Look up technique details
             technique_details = []
@@ -491,13 +482,13 @@ def create_mcp_server(data_loader=None):
 
             # Format technique details
             for i, tech in enumerate(technique_details, 1):
-                result_text += f"{i}. {tech['id']}: {tech['name']}\n"
+                result_text += "{i}. {tech['id']}: {tech['name']}\n"
 
                 # Add description preview
                 desc = tech['description']
                 if len(desc) > 150:
                     desc = desc[:150] + "..."
-                result_text += f"   Description: {desc}\n"
+                result_text += "   Description: {desc}\n"
 
                 # Add tactics if available
                 if tech['tactics']:
@@ -506,15 +497,15 @@ def create_mcp_server(data_loader=None):
                         # Look up tactic name
                         for tactic in data.get('tactics', []):
                             if tactic.get('id') == tactic_id:
-                                tactic_names.append(f"{tactic_id} ({tactic.get('name', 'Unknown')})")
+                                tactic_names.append("{tactic_id} ({tactic.get('name', 'Unknown')})")
                                 break
                         else:
-                            tactic_names.append(f"{tactic_id} (Name not found)")
-                    result_text += f"   Tactics: {', '.join(tactic_names)}\n"
+                            tactic_names.append("{tactic_id} (Name not found)")
+                    result_text += "   Tactics: {', '.join(tactic_names)}\n"
 
                 # Add platforms if available
                 if tech['platforms']:
-                    result_text += f"   Platforms: {', '.join(tech['platforms'])}\n"
+                    result_text += "   Platforms: {', '.join(tech['platforms'])}\n"
 
                 result_text += "\n"
 
@@ -523,11 +514,11 @@ def create_mcp_server(data_loader=None):
                 text=result_text
             )]
 
-        except Exception as e:
-            logger.error(f"Error in get_group_techniques: {e}")
+        except Exception:
+            logger.error("Error in get_group_techniques: {e}")
             return [TextContent(
                 type="text",
-                text=f"Error retrieving group techniques: {str(e)}"
+                text="Error retrieving group techniques: {str(e)}"
             )]
 
     # Register get_technique_mitigations tool
@@ -543,7 +534,7 @@ def create_mcp_server(data_loader=None):
             List[TextContent]: List of applicable mitigations for the technique
         """
         try:
-            logger.info(f"Executing get_technique_mitigations with ID: {technique_id}")
+            logger.info("Executing get_technique_mitigations with ID: {technique_id}")
 
             if not app.data_loader:
                 return [TextContent(
@@ -572,7 +563,7 @@ def create_mcp_server(data_loader=None):
             if not technique:
                 return [TextContent(
                     type="text",
-                    text=f"Technique '{technique_id}' not found. Please verify the technique ID is correct."
+                    text="Technique '{technique_id}' not found. Please verify the technique ID is correct."
                 )]
 
             # Get mitigations for this technique
@@ -581,23 +572,23 @@ def create_mcp_server(data_loader=None):
             if not technique_mitigations:
                 return [TextContent(
                     type="text",
-                    text=f"No mitigations found for technique '{technique_id}' ({technique.get('name', 'Unknown')})."
+                    text="No mitigations found for technique '{technique_id}' ({technique.get('name', 'Unknown')})."
                 )]
 
             # Build detailed response
-            result_text = f"TECHNIQUE MITIGATIONS\n"
-            result_text += f"====================\n\n"
-            result_text += f"Technique ID: {technique.get('id', 'N/A')}\n"
-            result_text += f"Technique Name: {technique.get('name', 'N/A')}\n\n"
+            result_text = "TECHNIQUE MITIGATIONS\n"
+            result_text += "====================\n\n"
+            result_text += "Technique ID: {technique.get('id', 'N/A')}\n"
+            result_text += "Technique Name: {technique.get('name', 'N/A')}\n\n"
 
             # Add technique description preview
             description = technique.get('description', 'No description available')
             if len(description) > 200:
                 description = description[:200] + "..."
-            result_text += f"Description: {description}\n\n"
+            result_text += "Description: {description}\n\n"
 
-            result_text += f"Mitigations ({len(technique_mitigations)}):\n"
-            result_text += f"{'-' * 40}\n\n"
+            result_text += "Mitigations ({len(technique_mitigations)}):\n"
+            result_text += "{'-' * 40}\n\n"
 
             # Look up mitigation details
             mitigation_details = []
@@ -627,24 +618,24 @@ def create_mcp_server(data_loader=None):
 
             # Format mitigation details
             for i, mitigation in enumerate(mitigation_details, 1):
-                result_text += f"{i}. {mitigation['id']}: {mitigation['name']}\n"
+                result_text += "{i}. {mitigation['id']}: {mitigation['name']}\n"
 
                 # Add description
                 desc = mitigation['description']
                 if len(desc) > 300:
                     desc = desc[:300] + "..."
-                result_text += f"   Description: {desc}\n\n"
+                result_text += "   Description: {desc}\n\n"
 
             return [TextContent(
                 type="text",
                 text=result_text
             )]
 
-        except Exception as e:
-            logger.error(f"Error in get_technique_mitigations: {e}")
+        except Exception:
+            logger.error("Error in get_technique_mitigations: {e}")
             return [TextContent(
                 type="text",
-                text=f"Error retrieving technique mitigations: {str(e)}"
+                text="Error retrieving technique mitigations: {str(e)}"
             )]
 
     # Register build_attack_path tool
@@ -663,7 +654,7 @@ def create_mcp_server(data_loader=None):
             List[TextContent]: Attack path with technique sequences across tactics
         """
         try:
-            logger.info(f"Executing build_attack_path from {start_tactic} to {end_tactic}")
+            logger.info("Executing build_attack_path from {start_tactic} to {end_tactic}")
 
             if not app.data_loader:
                 return [TextContent(
@@ -690,13 +681,13 @@ def create_mcp_server(data_loader=None):
             if start_tactic not in valid_tactics:
                 return [TextContent(
                     type="text",
-                    text=f"Error: Start tactic '{start_tactic}' not found. Valid tactics: {', '.join(sorted(valid_tactics))}"
+                    text="Error: Start tactic '{start_tactic}' not found. Valid tactics: {', '.join(sorted(valid_tactics))}"
                 )]
 
             if end_tactic not in valid_tactics:
                 return [TextContent(
                     type="text",
-                    text=f"Error: End tactic '{end_tactic}' not found. Valid tactics: {', '.join(sorted(valid_tactics))}"
+                    text="Error: End tactic '{end_tactic}' not found. Valid tactics: {', '.join(sorted(valid_tactics))}"
                 )]
 
             # Validate group ID if provided
@@ -705,7 +696,7 @@ def create_mcp_server(data_loader=None):
                 if not group_exists:
                     return [TextContent(
                         type="text",
-                        text=f"Error: Group '{group_id}' not found. Please verify the group ID is correct."
+                        text="Error: Group '{group_id}' not found. Please verify the group ID is correct."
                     )]
 
             # Define the standard MITRE ATT&CK kill chain order
@@ -730,16 +721,16 @@ def create_mcp_server(data_loader=None):
             try:
                 start_index = kill_chain_order.index(start_tactic)
                 end_index = kill_chain_order.index(end_tactic)
-            except ValueError as e:
+            except ValueError:
                 return [TextContent(
                     type="text",
-                    text=f"Error: Tactic not found in kill chain order: {e}"
+                    text="Error: Tactic not found in kill chain order: {e}"
                 )]
 
             if start_index >= end_index:
                 return [TextContent(
                     type="text",
-                    text=f"Error: Start tactic must come before end tactic in the kill chain. Start: {start_tactic}, End: {end_tactic}"
+                    text="Error: Start tactic must come before end tactic in the kill chain. Start: {start_tactic}, End: {end_tactic}"
                 )]
 
             # Get tactics in the path
@@ -776,11 +767,11 @@ def create_mcp_server(data_loader=None):
                         techniques_by_tactic[tactic_id].append(technique)
 
             # Build attack path
-            result_text = f"ATTACK PATH CONSTRUCTION\\n"
-            result_text += f"========================\\n\\n"
-            result_text += f"Path Configuration:\\n"
-            result_text += f"  Start Tactic: {start_tactic}\\n"
-            result_text += f"  End Tactic: {end_tactic}\\n"
+            result_text = "ATTACK PATH CONSTRUCTION\\n"
+            result_text += "========================\\n\\n"
+            result_text += "Path Configuration:\\n"
+            result_text += "  Start Tactic: {start_tactic}\\n"
+            result_text += "  End Tactic: {end_tactic}\\n"
 
             if group_id:
                 group_name = "Unknown"
@@ -788,12 +779,12 @@ def create_mcp_server(data_loader=None):
                     if group.get('id') == group_id:
                         group_name = group.get('name', 'Unknown')
                         break
-                result_text += f"  Group Filter: {group_id} ({group_name})\\n"
+                result_text += "  Group Filter: {group_id} ({group_name})\\n"
 
             if platform:
-                result_text += f"  Platform Filter: {platform}\\n"
+                result_text += "  Platform Filter: {platform}\\n"
 
-            result_text += f"\\n"
+            result_text += "\\n"
 
             # Generate path for each tactic
             total_techniques = 0
@@ -809,20 +800,20 @@ def create_mcp_server(data_loader=None):
                         tactic_description = tactic.get('description', '')
                         break
 
-                result_text += f"STEP {i + 1}: {tactic_id} - {tactic_name}\\n"
-                result_text += f"{'=' * (len(f'STEP {i + 1}: {tactic_id} - {tactic_name}'))}\\n"
+                result_text += "STEP {i + 1}: {tactic_id} - {tactic_name}\\n"
+                result_text += "{'=' * (len(f'STEP {i + 1}: {tactic_id} - {tactic_name}'))}\\n"
 
                 if tactic_description:
                     # Truncate long descriptions
                     if len(tactic_description) > 100:
                         tactic_description = tactic_description[:100] + "..."
-                    result_text += f"Description: {tactic_description}\\n"
+                    result_text += "Description: {tactic_description}\\n"
 
                 # List available techniques for this tactic
                 tactic_techniques = techniques_by_tactic.get(tactic_id, [])
 
                 if tactic_techniques:
-                    result_text += f"Available Techniques ({len(tactic_techniques)}): \\n"
+                    result_text += "Available Techniques ({len(tactic_techniques)}): \\n"
 
                     # Sort techniques by ID for consistent output
                     tactic_techniques.sort(key=lambda x: x.get('id', ''))
@@ -833,50 +824,50 @@ def create_mcp_server(data_loader=None):
                         technique_name = technique.get('name', 'Unknown')
                         platforms = technique.get('platforms', [])
 
-                        result_text += f"  • {technique_id}: {technique_name}"
+                        result_text += "  • {technique_id}: {technique_name}"
                         if platforms:
-                            result_text += f" (Platforms: {', '.join(platforms[:3])})"
-                        result_text += f"\\n"
+                            result_text += " (Platforms: {', '.join(platforms[:3])})"
+                        result_text += "\\n"
 
                     if len(tactic_techniques) > 10:
-                        result_text += f"  ... and {len(tactic_techniques) - 10} more techniques\\n"
+                        result_text += "  ... and {len(tactic_techniques) - 10} more techniques\\n"
 
                     total_techniques += len(tactic_techniques)
                 else:
-                    result_text += f"⚠️  No techniques available for this tactic"
+                    result_text += "⚠️  No techniques available for this tactic"
                     if group_id or platform:
-                        result_text += f" with current filters"
-                    result_text += f"\\n"
+                        result_text += " with current filters"
+                    result_text += "\\n"
                     path_complete = False
 
-                result_text += f"\\n"
+                result_text += "\\n"
 
             # Path summary
-            result_text += f"ATTACK PATH SUMMARY\\n"
-            result_text += f"==================\\n"
-            result_text += f"Total Tactics in Path: {len(path_tactics)}\\n"
-            result_text += f"Total Available Techniques: {total_techniques}\\n"
-            result_text += f"Path Completeness: {'✅ Complete' if path_complete else '⚠️  Incomplete (some tactics have no techniques)'}\\n"
+            result_text += "ATTACK PATH SUMMARY\\n"
+            result_text += "==================\\n"
+            result_text += "Total Tactics in Path: {len(path_tactics)}\\n"
+            result_text += "Total Available Techniques: {total_techniques}\\n"
+            result_text += "Path Completeness: {'✅ Complete' if path_complete else '⚠️  Incomplete (some tactics have no techniques)'}\\n"
 
             if not path_complete:
-                result_text += f"\\nNote: Some tactics in the path have no available techniques with the current filters.\\n"
-                result_text += f"Consider removing filters or selecting different tactics to build a complete path.\\n"
+                result_text += "\\nNote: Some tactics in the path have no available techniques with the current filters.\\n"
+                result_text += "Consider removing filters or selecting different tactics to build a complete path.\\n"
 
             if total_techniques == 0:
-                result_text += f"\\nNo techniques found for the specified path and filters.\\n"
-                result_text += f"This could indicate that the selected group doesn't use techniques in this tactic sequence,\\n"
-                result_text += f"or the platform filter is too restrictive.\\n"
+                result_text += "\\nNo techniques found for the specified path and filters.\\n"
+                result_text += "This could indicate that the selected group doesn't use techniques in this tactic sequence,\\n"
+                result_text += "or the platform filter is too restrictive.\\n"
 
             return [TextContent(
                 type="text",
                 text=result_text
             )]
 
-        except Exception as e:
-            logger.error(f"Error in build_attack_path: {e}")
+        except Exception:
+            logger.error("Error in build_attack_path: {e}")
             return [TextContent(
                 type="text",
-                text=f"Error building attack path: {str(e)}"
+                text="Error building attack path: {str(e)}"
             )]
 
     # Register analyze_coverage_gaps tool
@@ -894,7 +885,7 @@ def create_mcp_server(data_loader=None):
             List[TextContent]: Coverage gap analysis with prioritization recommendations
         """
         try:
-            logger.info(f"Executing analyze_coverage_gaps with groups: {threat_groups}, techniques: {technique_list}")
+            logger.info("Executing analyze_coverage_gaps with groups: {threat_groups}, techniques: {technique_list}")
 
             if not app.data_loader:
                 return [TextContent(
@@ -942,7 +933,7 @@ def create_mcp_server(data_loader=None):
                     if not group:
                         return [TextContent(
                             type="text",
-                            text=f"Error: Group '{group_id}' not found. Please verify the group ID is correct."
+                            text="Error: Group '{group_id}' not found. Please verify the group ID is correct."
                         )]
 
                     group_techniques = group.get('techniques', [])
@@ -956,7 +947,7 @@ def create_mcp_server(data_loader=None):
                     if tech_id not in valid_technique_ids:
                         return [TextContent(
                             type="text",
-                            text=f"Error: Technique '{tech_id}' not found. Please verify the technique ID is correct."
+                            text="Error: Technique '{tech_id}' not found. Please verify the technique ID is correct."
                         )]
 
                 techniques_to_analyze.update(technique_list)
@@ -1025,8 +1016,8 @@ def create_mcp_server(data_loader=None):
             coverage_analysis.sort(key=lambda x: (x['coverage_status'] != 'GAP', x['technique_id']))
 
             # Build detailed response
-            result_text = f"COVERAGE GAP ANALYSIS\\n"
-            result_text += f"====================\\n\\n"
+            result_text = "COVERAGE GAP ANALYSIS\\n"
+            result_text += "====================\\n\\n"
 
             # Analysis parameters
             if threat_groups:
@@ -1034,75 +1025,75 @@ def create_mcp_server(data_loader=None):
                 for group_id in threat_groups:
                     for grp in data.get('groups', []):
                         if grp.get('id') == group_id:
-                            group_names.append(f"{group_id} ({grp.get('name', 'Unknown')})")
+                            group_names.append("{group_id} ({grp.get('name', 'Unknown')})")
                             break
                     else:
-                        group_names.append(f"{group_id} (Name not found)")
-                result_text += f"Threat Groups Analyzed: {', '.join(group_names)}\\n"
+                        group_names.append("{group_id} (Name not found)")
+                result_text += "Threat Groups Analyzed: {', '.join(group_names)}\\n"
 
             if technique_list:
-                result_text += f"Specific Techniques: {', '.join(technique_list)}\\n"
+                result_text += "Specific Techniques: {', '.join(technique_list)}\\n"
 
             if exclude_mitigations:
-                result_text += f"Excluded Mitigations: {', '.join(exclude_mitigations)}\\n"
+                result_text += "Excluded Mitigations: {', '.join(exclude_mitigations)}\\n"
 
-            result_text += f"Total Techniques Analyzed: {total_techniques}\\n\\n"
+            result_text += "Total Techniques Analyzed: {total_techniques}\\n\\n"
 
             # Coverage statistics
             coverage_percentage = (techniques_with_mitigations / total_techniques * 100) if total_techniques > 0 else 0
-            result_text += f"COVERAGE STATISTICS\\n"
-            result_text += f"==================\\n"
-            result_text += f"Techniques with Available Mitigations: {techniques_with_mitigations} ({coverage_percentage:.1f}%)\\n"
-            result_text += f"Techniques with Coverage Gaps: {techniques_without_mitigations} ({100-coverage_percentage:.1f}%)\\n"
-            result_text += f"Total Available Mitigations: {len(all_available_mitigations)}\\n"
+            result_text += "COVERAGE STATISTICS\\n"
+            result_text += "==================\\n"
+            result_text += "Techniques with Available Mitigations: {techniques_with_mitigations} ({coverage_percentage:.1f}%)\\n"
+            result_text += "Techniques with Coverage Gaps: {techniques_without_mitigations} ({100-coverage_percentage:.1f}%)\\n"
+            result_text += "Total Available Mitigations: {len(all_available_mitigations)}\\n"
 
             if excluded_mitigations_found:
-                result_text += f"Excluded Mitigations Found: {len(excluded_mitigations_found)}\\n"
+                result_text += "Excluded Mitigations Found: {len(excluded_mitigations_found)}\\n"
 
-            result_text += f"\\n"
+            result_text += "\\n"
 
             # Detailed gap analysis
             gaps_found = [analysis for analysis in coverage_analysis if analysis['coverage_status'] in ['GAP', 'NO_MITIGATIONS']]
 
             if gaps_found:
-                result_text += f"DETAILED GAP ANALYSIS\\n"
-                result_text += f"====================\\n"
-                result_text += f"Techniques Requiring Attention ({len(gaps_found)}):\\n\\n"
+                result_text += "DETAILED GAP ANALYSIS\\n"
+                result_text += "====================\\n"
+                result_text += "Techniques Requiring Attention ({len(gaps_found)}):\\n\\n"
 
                 for i, analysis in enumerate(gaps_found[:20], 1):  # Limit to 20 for readability
-                    result_text += f"{i}. {analysis['technique_id']} - {analysis['technique_name']}\\n"
-                    result_text += f"   Status: {analysis['coverage_status']}\\n"
-                    result_text += f"   Tactics: {', '.join(analysis['tactics'])}\\n"
-                    result_text += f"   Platforms: {', '.join(analysis['platforms']) if analysis['platforms'] else 'Not specified'}\\n"
+                    result_text += "{i}. {analysis['technique_id']} - {analysis['technique_name']}\\n"
+                    result_text += "   Status: {analysis['coverage_status']}\\n"
+                    result_text += "   Tactics: {', '.join(analysis['tactics'])}\\n"
+                    result_text += "   Platforms: {', '.join(analysis['platforms']) if analysis['platforms'] else 'Not specified'}\\n"
 
                     if analysis['coverage_status'] == 'GAP':
-                        result_text += f"   Issue: All {analysis['total_mitigations']} mitigations are excluded\\n"
-                        result_text += f"   Excluded: {', '.join(analysis['excluded_mitigations'])}\\n"
+                        result_text += "   Issue: All {analysis['total_mitigations']} mitigations are excluded\\n"
+                        result_text += "   Excluded: {', '.join(analysis['excluded_mitigations'])}\\n"
                     else:
-                        result_text += f"   Issue: No mitigations available in MITRE ATT&CK\\n"
+                        result_text += "   Issue: No mitigations available in MITRE ATT&CK\\n"
 
-                    result_text += f"\\n"
+                    result_text += "\\n"
 
                 if len(gaps_found) > 20:
-                    result_text += f"... and {len(gaps_found) - 20} more techniques with gaps\\n\\n"
+                    result_text += "... and {len(gaps_found) - 20} more techniques with gaps\\n\\n"
 
             # Prioritization recommendations
-            result_text += f"PRIORITIZATION RECOMMENDATIONS\\n"
-            result_text += f"=============================\\n"
+            result_text += "PRIORITIZATION RECOMMENDATIONS\\n"
+            result_text += "=============================\\n"
 
             if coverage_percentage >= 80:
-                result_text += f"✅ GOOD: Coverage is strong at {coverage_percentage:.1f}%\\n"
-                result_text += f"Focus on addressing the remaining {techniques_without_mitigations} techniques with gaps.\\n"
+                result_text += "✅ GOOD: Coverage is strong at {coverage_percentage:.1f}%\\n"
+                result_text += "Focus on addressing the remaining {techniques_without_mitigations} techniques with gaps.\\n"
             elif coverage_percentage >= 60:
-                result_text += f"⚠️  MODERATE: Coverage needs improvement at {coverage_percentage:.1f}%\\n"
-                result_text += f"Priority: Address the {techniques_without_mitigations} techniques without coverage.\\n"
+                result_text += "⚠️  MODERATE: Coverage needs improvement at {coverage_percentage:.1f}%\\n"
+                result_text += "Priority: Address the {techniques_without_mitigations} techniques without coverage.\\n"
             else:
-                result_text += f"🚨 CRITICAL: Coverage is insufficient at {coverage_percentage:.1f}%\\n"
-                result_text += f"Urgent: Implement mitigations for {techniques_without_mitigations} uncovered techniques.\\n"
+                result_text += "🚨 CRITICAL: Coverage is insufficient at {coverage_percentage:.1f}%\\n"
+                result_text += "Urgent: Implement mitigations for {techniques_without_mitigations} uncovered techniques.\\n"
 
             # Top mitigation recommendations
             if all_available_mitigations:
-                result_text += f"\\nTop Mitigation Recommendations:\\n"
+                result_text += "\\nTop Mitigation Recommendations:\\n"
                 mitigation_counts = {}
                 for analysis in coverage_analysis:
                     for mit_id in analysis['available_mitigations']:
@@ -1119,18 +1110,18 @@ def create_mcp_server(data_loader=None):
                             mit_name = mitigation.get('name', 'Unknown')
                             break
 
-                    result_text += f"  • {mit_id}: {mit_name} (covers {count} techniques)\\n"
+                    result_text += "  • {mit_id}: {mit_name} (covers {count} techniques)\\n"
 
             return [TextContent(
                 type="text",
                 text=result_text
             )]
 
-        except Exception as e:
-            logger.error(f"Error in analyze_coverage_gaps: {e}")
+        except Exception:
+            logger.error("Error in analyze_coverage_gaps: {e}")
             return [TextContent(
                 type="text",
-                text=f"Error analyzing coverage gaps: {str(e)}"
+                text="Error analyzing coverage gaps: {str(e)}"
             )]
 
     # Register detect_technique_relationships tool
@@ -1141,14 +1132,14 @@ def create_mcp_server(data_loader=None):
 
         Args:
             technique_id: Primary technique to analyze relationships for (e.g., T1055)
-            relationship_types: Types to include: ['detects', 'subtechnique-of', 'attributed-to', 'uses', 'mitigates'] (default: all)
+            relationship_types: Types to include: ['detects', 'subtechnique-o', 'attributed-to', 'uses', 'mitigates'] (default: all)
             depth: Relationship traversal depth (default: 2, max: 3)
 
         Returns:
             List[TextContent]: Complex relationship analysis with hierarchies and attribution chains
         """
         try:
-            logger.info(f"Executing detect_technique_relationships for {technique_id} with depth {depth}")
+            logger.info("Executing detect_technique_relationships for {technique_id} with depth {depth}")
 
             if not app.data_loader:
                 return [TextContent(
@@ -1172,11 +1163,11 @@ def create_mcp_server(data_loader=None):
 
             # Default relationship types if not specified
             if relationship_types is None:
-                relationship_types = ['detects', 'subtechnique-of', 'attributed-to', 'uses', 'mitigates']
+                relationship_types = ['detects', 'subtechnique-o', 'attributed-to', 'uses', 'mitigates']
 
             # Normalize relationship types
             relationship_types = [rt.lower().strip() for rt in relationship_types]
-            valid_types = ['detects', 'subtechnique-of', 'attributed-to', 'uses', 'mitigates', 'revoked-by']
+            valid_types = ['detects', 'subtechnique-o', 'attributed-to', 'uses', 'mitigates', 'revoked-by']
             relationship_types = [rt for rt in relationship_types if rt in valid_types]
 
             if not relationship_types:
@@ -1195,7 +1186,7 @@ def create_mcp_server(data_loader=None):
             if not technique:
                 return [TextContent(
                     type="text",
-                    text=f"Technique '{technique_id}' not found. Please verify the technique ID is correct."
+                    text="Technique '{technique_id}' not found. Please verify the technique ID is correct."
                 )]
 
             # Download raw data to get STIX ID mappings
@@ -1226,7 +1217,7 @@ def create_mcp_server(data_loader=None):
             if not target_stix_id:
                 return [TextContent(
                     type="text",
-                    text=f"Could not find STIX ID for technique '{technique_id}'. This may indicate a data processing issue."
+                    text="Could not find STIX ID for technique '{technique_id}'. This may indicate a data processing issue."
                 )]
 
             # Find all relationships involving our technique
@@ -1239,8 +1230,8 @@ def create_mcp_server(data_loader=None):
 
             for rel in relationships:
                 rel_type = rel.get('relationship_type', '')
-                source_ref = rel.get('source_ref', '')
-                target_ref = rel.get('target_ref', '')
+                source_ref = rel.get('source_re', '')
+                target_ref = rel.get('target_re', '')
 
                 if rel_type in relationship_types:
                     if target_ref == target_stix_id:
@@ -1263,17 +1254,17 @@ def create_mcp_server(data_loader=None):
                             })
 
             # Build detailed response
-            result_text = f"TECHNIQUE RELATIONSHIP ANALYSIS\\n"
-            result_text += f"==============================\\n\\n"
-            result_text += f"Primary Technique: {technique_id} - {technique.get('name', 'Unknown')}\\n"
-            result_text += f"Analysis Depth: {depth}\\n"
-            result_text += f"Relationship Types: {', '.join(relationship_types)}\\n\\n"
+            result_text = "TECHNIQUE RELATIONSHIP ANALYSIS\\n"
+            result_text += "==============================\\n\\n"
+            result_text += "Primary Technique: {technique_id} - {technique.get('name', 'Unknown')}\\n"
+            result_text += "Analysis Depth: {depth}\\n"
+            result_text += "Relationship Types: {', '.join(relationship_types)}\\n\\n"
 
             # Add technique description
             description = technique.get('description', 'No description available')
             if len(description) > 200:
                 description = description[:200] + "..."
-            result_text += f"Description: {description}\\n\\n"
+            result_text += "Description: {description}\\n\\n"
 
             # Analyze each relationship type
             total_relationships = 0
@@ -1282,70 +1273,64 @@ def create_mcp_server(data_loader=None):
                 outgoing = discovered_relationships[rel_type]['outgoing']
 
                 if incoming or outgoing:
-                    result_text += f"{rel_type.upper().replace('-', ' ')} RELATIONSHIPS\\n"
-                    result_text += f"{'=' * (len(rel_type.replace('-', ' ')) + 14)}\\n\\n"
+                    result_text += "{rel_type.upper().replace('-', ' ')} RELATIONSHIPS\\n"
+                    result_text += "{'=' * (len(rel_type.replace('-', ' ')) + 14)}\\n\\n"
 
                     if incoming:
-                        result_text += f"Incoming {rel_type} relationships ({len(incoming)}): \\n"
+                        result_text += "Incoming {rel_type} relationships ({len(incoming)}): \\n"
                         for rel_info in incoming[:10]:  # Limit to 10 per type
-                            entity_id = rel_info['entity_id']
-                            entity_name = _get_entity_name(entity_id, data)
-                            entity_type = _get_entity_type(entity_id)
-                            result_text += f"  • {entity_id} ({entity_type}): {entity_name}\\n"
+                            result_text += "  • {entity_id} ({entity_type}): {entity_name}\\n"
 
                         if len(incoming) > 10:
-                            result_text += f"  ... and {len(incoming) - 10} more\\n"
-                        result_text += f"\\n"
+                            result_text += "  ... and {len(incoming) - 10} more\\n"
+                        result_text += "\\n"
                         total_relationships += len(incoming)
 
                     if outgoing:
-                        result_text += f"Outgoing {rel_type} relationships ({len(outgoing)}): \\n"
+                        result_text += "Outgoing {rel_type} relationships ({len(outgoing)}): \\n"
                         for rel_info in outgoing[:10]:  # Limit to 10 per type
-                            entity_id = rel_info['entity_id']
-                            entity_name = _get_entity_name(entity_id, data)
-                            entity_type = _get_entity_type(entity_id)
-                            result_text += f"  • {entity_id} ({entity_type}): {entity_name}\\n"
+                            result_text += "  • {entity_id} ({entity_type}): {entity_name}\\n"
 
                         if len(outgoing) > 10:
-                            result_text += f"  ... and {len(outgoing) - 10} more\\n"
-                        result_text += f"\\n"
+                            result_text += "  ... and {len(outgoing) - 10} more\\n"
+                        result_text += "\\n"
                         total_relationships += len(outgoing)
 
             # Special analysis for subtechniques
-            if 'subtechnique-of' in relationship_types:
-                subtechniques = discovered_relationships['subtechnique-of']['incoming']
-                parent_techniques = discovered_relationships['subtechnique-of']['outgoing']
+            if 'subtechnique-o' in relationship_types:
+                subtechniques = discovered_relationships['subtechnique-o']['incoming']
+                parent_techniques = discovered_relationships['subtechnique-o']['outgoing']
 
                 if subtechniques or parent_techniques:
-                    result_text += f"TECHNIQUE HIERARCHY\\n"
-                    result_text += f"==================\\n\\n"
+                    result_text += "TECHNIQUE HIERARCHY\\n"
+                    result_text += "==================\\n\\n"
 
                     if parent_techniques:
-                        result_text += f"Parent Techniques:\\n"
+                        result_text += "Parent Techniques:\\n"
                         for rel_info in parent_techniques:
                             parent_id = rel_info['entity_id']
                             parent_name = _get_entity_name(parent_id, data)
-                            result_text += f"  ↑ {parent_id}: {parent_name}\\n"
-                        result_text += f"\\n"
+                            result_text += "  ↑ {parent_id}: {parent_name}\\n"
+                        result_text += "\\n"
 
                     if subtechniques:
-                        result_text += f"Subtechniques ({len(subtechniques)}): \\n"
+                        result_text += "Subtechniques ({len(subtechniques)}): \\n"
                         for rel_info in subtechniques[:15]:  # Show more subtechniques
                             sub_id = rel_info['entity_id']
                             sub_name = _get_entity_name(sub_id, data)
-                            result_text += f"  ↓ {sub_id}: {sub_name}\\n"
+                            result_text += "  ↓ {sub_id}: {sub_name}\\n"
 
                         if len(subtechniques) > 15:
-                            result_text += f"  ... and {len(subtechniques) - 15} more subtechniques\\n"
-                        result_text += f"\\n"
+                            result_text += "  ... and {len(subtechniques) - 15} more subtechniques\\n"
+                        result_text += "\\n"
 
             # Attribution analysis
             if 'uses' in relationship_types:
                 using_groups = discovered_relationships['uses']['incoming']
                 if using_groups:
-                    result_text += f"ATTRIBUTION ANALYSIS\\n"
-                    result_text += f"===================\\n\\n"
-                    result_text += f"Threat Groups Using This Technique ({len(using_groups)}): \\n"
+                    result_text += "ATTRIBUTION ANALYSIS\\n"
+                    result_text += "===================\\n\\n"
+                    result_text += "Threat Groups Using This Technique ({len(using_groups)}): \\n"
 
                     for rel_info in using_groups[:10]:
                         group_id = rel_info['entity_id']
@@ -1358,50 +1343,50 @@ def create_mcp_server(data_loader=None):
                                 group_aliases = group.get('aliases', [])
                                 break
 
-                        result_text += f"  • {group_id}: {group_name}\\n"
+                        result_text += "  • {group_id}: {group_name}\\n"
                         if group_aliases:
-                            result_text += f"    Aliases: {', '.join(group_aliases[:3])}\\n"
+                            result_text += "    Aliases: {', '.join(group_aliases[:3])}\\n"
 
                     if len(using_groups) > 10:
-                        result_text += f"  ... and {len(using_groups) - 10} more groups\\n"
-                    result_text += f"\\n"
+                        result_text += "  ... and {len(using_groups) - 10} more groups\\n"
+                    result_text += "\\n"
 
             # Detection analysis
             if 'detects' in relationship_types:
                 detecting_entities = discovered_relationships['detects']['incoming']
                 if detecting_entities:
-                    result_text += f"DETECTION ANALYSIS\\n"
-                    result_text += f"=================\\n\\n"
-                    result_text += f"Entities That Can Detect This Technique ({len(detecting_entities)}): \\n"
+                    result_text += "DETECTION ANALYSIS\\n"
+                    result_text += "=================\\n\\n"
+                    result_text += "Entities That Can Detect This Technique ({len(detecting_entities)}): \\n"
 
                     for rel_info in detecting_entities:
                         detector_id = rel_info['entity_id']
                         detector_name = _get_entity_name(detector_id, data)
                         detector_type = _get_entity_type(detector_id)
-                        result_text += f"  • {detector_id} ({detector_type}): {detector_name}\\n"
-                    result_text += f"\\n"
+                        result_text += "  • {detector_id} ({detector_type}): {detector_name}\\n"
+                    result_text += "\\n"
 
             # Summary
-            result_text += f"RELATIONSHIP SUMMARY\\n"
-            result_text += f"===================\\n"
-            result_text += f"Total Relationships Found: {total_relationships}\\n"
-            result_text += f"Relationship Types Analyzed: {len([rt for rt in relationship_types if discovered_relationships[rt]['incoming'] or discovered_relationships[rt]['outgoing']])}\\n"
-            result_text += f"Analysis Completed at Depth: {depth}\\n\\n"
+            result_text += "RELATIONSHIP SUMMARY\\n"
+            result_text += "===================\\n"
+            result_text += "Total Relationships Found: {total_relationships}\\n"
+            result_text += "Relationship Types Analyzed: {len([rt for rt in relationship_types if discovered_relationships[rt]['incoming'] or discovered_relationships[rt]['outgoing']])}\\n"
+            result_text += "Analysis Completed at Depth: {depth}\\n\\n"
 
             if total_relationships == 0:
-                result_text += f"No relationships found for technique {technique_id} with the specified relationship types.\\n"
-                result_text += f"This could indicate the technique is isolated or the relationship types don't apply.\\n"
+                result_text += "No relationships found for technique {technique_id} with the specified relationship types.\\n"
+                result_text += "This could indicate the technique is isolated or the relationship types don't apply.\\n"
 
             return [TextContent(
                 type="text",
                 text=result_text
             )]
 
-        except Exception as e:
-            logger.error(f"Error in detect_technique_relationships: {e}")
+        except Exception:
+            logger.error("Error in detect_technique_relationships: {e}")
             return [TextContent(
                 type="text",
-                text=f"Error analyzing technique relationships: {str(e)}"
+                text="Error analyzing technique relationships: {str(e)}"
             )]
 
     logger.info("Registered 8 MCP tools successfully")
@@ -1439,7 +1424,7 @@ class MCPServer:
         Args:
             transport: Transport protocol to use ("stdio", "sse", or "streamable-http")
         """
-        logger.info(f"Starting MCP server with {transport} transport")
+        logger.info("Starting MCP server with {transport} transport")
         self.app.run(transport=transport)
 
 

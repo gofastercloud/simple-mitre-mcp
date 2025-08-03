@@ -41,19 +41,19 @@ def _format_tactics_response(tactics: list) -> str:
         return "No tactics found in the loaded data."
 
     # Build formatted response
-    result_text = f"MITRE ATT&CK TACTICS\n"
-    result_text += f"===================\n\n"
-    result_text += f"Total tactics: {len(tactics)}\n\n"
+    result_text = "MITRE ATT&CK TACTICS\n"
+    result_text += "===================\n\n"
+    result_text += "Total tactics: {len(tactics)}\n\n"
 
     for tactic in tactics:
         tactic_id = tactic.get('id', 'N/A')
         tactic_name = tactic.get('name', 'N/A')
         tactic_description = tactic.get('description', 'No description available')
 
-        result_text += f"ID: {tactic_id}\n"
-        result_text += f"Name: {tactic_name}\n"
-        result_text += f"Description: {tactic_description}\n"
-        result_text += f"{'-' * 50}\n\n"
+        result_text += "ID: {tactic_id}\n"
+        result_text += "Name: {tactic_name}\n"
+        result_text += "Description: {tactic_description}\n"
+        result_text += "{'-' * 50}\n\n"
 
     return result_text
 

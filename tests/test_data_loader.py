@@ -1,3 +1,11 @@
+import unittest
+from unittest.mock import patch, MagicMock
+import sys
+import os
+from data_loader import DataLoader
+from config_loader import load_config
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+
 """
 Unit tests for the data loading functionality.
 
@@ -5,16 +13,9 @@ Tests the DataLoader class and related components to ensure proper
 functionality for downloading, parsing, and processing MITRE ATT&CK data.
 """
 
-import unittest
-from unittest.mock import patch, MagicMock
-import sys
-import os
 
 # Add src directory to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
-from data_loader import DataLoader
-from config_loader import load_config
 
 
 class TestDataLoader(unittest.TestCase):

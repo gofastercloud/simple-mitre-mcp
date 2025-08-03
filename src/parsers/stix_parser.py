@@ -68,7 +68,6 @@ class STIXParser:
 
         for obj in stix_data['objects']:
             objects_processed += 1
-            entity_type = self._map_stix_type(obj.get('type', ''))
 
             if entity_type in entity_types:
                 parsed_entity = self._extract_entity(obj, entity_type)
@@ -76,9 +75,9 @@ class STIXParser:
                     parsed_entities[entity_type].append(parsed_entity)
                     entities_extracted += 1
 
-        logger.info(f"Processed {objects_processed} STIX objects, extracted {entities_extracted} entities")
+        logger.info("Processed {objects_processed} STIX objects, extracted {entities_extracted} entities")
         for entity_type, entities in parsed_entities.items():
-            logger.info(f"  {entity_type}: {len(entities)} entities")
+            logger.info("  {entity_type}: {len(entities)} entities")
 
         return parsed_entities
 
@@ -107,7 +106,7 @@ class STIXParser:
 
             # Validate basic required fields
             if not entity_data['id'] or not entity_data['name']:
-                logger.debug(f"Skipping {entity_type} entity with missing ID or name")
+                logger.debug("Skipping {entity_type} entity with missing ID or name")
                 return None
 
             # Extract entity-specific fields
@@ -122,8 +121,8 @@ class STIXParser:
 
             return entity_data
 
-        except Exception as e:
-            logger.error(f"Error extracting {entity_type} entity: {e}")
+        except Exception:
+            logger.error("Error extracting {entity_type} entity: {e}")
             return None
 
     def _extract_mitre_id(self, stix_obj: Dict[str, Any]) -> str:

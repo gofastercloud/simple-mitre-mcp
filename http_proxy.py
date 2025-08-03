@@ -47,7 +47,7 @@ class MCPHTTPHandler(BaseHTTPRequestHandler):
             try:
                 request_data = json.loads(post_data.decode('utf-8'))
             except json.JSONDecodeError as e:
-                self.send_error_response(400, f"Invalid JSON: {e}")
+                self.send_error_response(400, "Invalid JSON: {e}")
                 return
 
             # Extract method and params
@@ -55,7 +55,7 @@ class MCPHTTPHandler(BaseHTTPRequestHandler):
             params = request_data.get('params', {})
             request_id = request_data.get('id', 1)
 
-            logger.info(f"Received request: {method} with params: {params}")
+            logger.info("Received request: {method} with params: {params}")
 
             # Handle different MCP methods
             if method == 'tools/list':
@@ -77,9 +77,9 @@ class MCPHTTPHandler(BaseHTTPRequestHandler):
             # Send response
             self.send_json_response(response)
 
-        except Exception as e:
-            logger.error(f"Error handling request: {e}")
-            self.send_error_response(500, f"Internal server error: {e}")
+        except Exception:
+            logger.error("Error handling request: {e}")
+            self.send_error_response(500, "Internal server error: {e}")
 
     def handle_tools_list(self, request_id):
         """Handle tools/list request."""
@@ -220,21 +220,16 @@ class MCPHTTPHandler(BaseHTTPRequestHandler):
                 search_results = _search_entities(query.lower(), data)
 
                 if not search_results:
-                    result_text = f"No results found for query: '{query}'"
+                    result_text = "No results found for query: '{query}'"
                 else:
-                    result_text = f"Search results for '{query}' ({len(search_results)} matches):\n\n"
+                    result_text = "Search results for '{query}' ({len(search_results)} matches):\n\n"
                     for result in search_results:
-                        entity_type = result['entity_type'].upper()
-                        entity_id = result['id']
-                        entity_name = result['name']
-                        match_reason = result['match_reason']
 
-                        result_text += f"[{entity_type}] {entity_id}: {entity_name}\n"
-                        result_text += f"  Match: {match_reason}\n"
+                        result_text += "[{entity_type}] {entity_id}: {entity_name}\n"
+                        result_text += "  Match: {match_reason}\n"
 
                         if 'description' in result and result['description']:
-                            desc_preview = result['description'][:100] + "..." if len(result['description']) > 100 else result['description']
-                            result_text += f"  Description: {desc_preview}\n"
+                            result_text += "  Description: {desc_preview}\n"
 
                         result_text += "\n"
 
@@ -252,19 +247,19 @@ class MCPHTTPHandler(BaseHTTPRequestHandler):
                     result_text = "No tactics found in the loaded data."
                 else:
                     sorted_tactics = sorted(tactics, key=lambda x: x.get('id', ''))
-                    result_text = f"MITRE ATT&CK TACTICS\n"
-                    result_text += f"===================\n\n"
-                    result_text += f"Total tactics: {len(sorted_tactics)}\n\n"
+                    result_text = "MITRE ATT&CK TACTICS\n"
+                    result_text += "===================\n\n"
+                    result_text += "Total tactics: {len(sorted_tactics)}\n\n"
 
                     for tactic in sorted_tactics:
                         tactic_id = tactic.get('id', 'N/A')
                         tactic_name = tactic.get('name', 'N/A')
                         tactic_description = tactic.get('description', 'No description available')
 
-                        result_text += f"ID: {tactic_id}\n"
-                        result_text += f"Name: {tactic_name}\n"
-                        result_text += f"Description: {tactic_description}\n"
-                        result_text += f"{'-' * 50}\n\n"
+                        result_text += "ID: {tactic_id}\n"
+                        result_text += "Name: {tactic_name}\n"
+                        result_text += "Description: {tactic_description}\n"
+                        result_text += "{'-' * 50}\n\n"
 
                 return {
                     "jsonrpc": "2.0",
@@ -285,28 +280,28 @@ class MCPHTTPHandler(BaseHTTPRequestHandler):
                         break
 
                 if not technique:
-                    result_text = f"Technique '{technique_id}' not found. Please verify the technique ID is correct."
+                    result_text = "Technique '{technique_id}' not found. Please verify the technique ID is correct."
                 else:
-                    result_text = f"TECHNIQUE DETAILS\n"
-                    result_text += f"================\n\n"
-                    result_text += f"ID: {technique.get('id', 'N/A')}\n"
-                    result_text += f"Name: {technique.get('name', 'N/A')}\n\n"
+                    result_text = "TECHNIQUE DETAILS\n"
+                    result_text += "================\n\n"
+                    result_text += "ID: {technique.get('id', 'N/A')}\n"
+                    result_text += "Name: {technique.get('name', 'N/A')}\n\n"
 
                     description = technique.get('description', 'No description available')
-                    result_text += f"Description:\n{description}\n\n"
+                    result_text += "Description:\n{description}\n\n"
 
                     # Associated tactics
                     tactics = technique.get('tactics', [])
                     if tactics:
-                        result_text += f"Associated Tactics ({len(tactics)}):\n"
+                        result_text += "Associated Tactics ({len(tactics)}):\n"
                         tactic_details = []
                         for tactic_id in tactics:
                             for tactic in data.get('tactics', []):
                                 if tactic.get('id') == tactic_id:
-                                    tactic_details.append(f"  - {tactic_id}: {tactic.get('name', 'Unknown')}")
+                                    tactic_details.append("  - {tactic_id}: {tactic.get('name', 'Unknown')}")
                                     break
                             else:
-                                tactic_details.append(f"  - {tactic_id}: (Name not found)")
+                                tactic_details.append("  - {tactic_id}: (Name not found)")
                         result_text += "\n".join(tactic_details) + "\n\n"
                     else:
                         result_text += "Associated Tactics: None\n\n"
@@ -314,7 +309,7 @@ class MCPHTTPHandler(BaseHTTPRequestHandler):
                     # Platforms
                     platforms = technique.get('platforms', [])
                     if platforms:
-                        result_text += f"Platforms ({len(platforms)}):\n"
+                        result_text += "Platforms ({len(platforms)}):\n"
                         result_text += "  " + ", ".join(platforms) + "\n\n"
                     else:
                         result_text += "Platforms: Not specified\n\n"
@@ -338,23 +333,23 @@ class MCPHTTPHandler(BaseHTTPRequestHandler):
                         break
 
                 if not group:
-                    result_text = f"Group '{group_id}' not found. Please verify the group ID is correct."
+                    result_text = "Group '{group_id}' not found. Please verify the group ID is correct."
                 else:
                     group_techniques = group.get('techniques', [])
                     if not group_techniques:
-                        result_text = f"No techniques found for group '{group_id}' ({group.get('name', 'Unknown')})."
+                        result_text = "No techniques found for group '{group_id}' ({group.get('name', 'Unknown')})."
                     else:
-                        result_text = f"GROUP TECHNIQUES\n"
-                        result_text += f"================\n\n"
-                        result_text += f"Group ID: {group.get('id', 'N/A')}\n"
-                        result_text += f"Group Name: {group.get('name', 'N/A')}\n"
+                        result_text = "GROUP TECHNIQUES\n"
+                        result_text += "================\n\n"
+                        result_text += "Group ID: {group.get('id', 'N/A')}\n"
+                        result_text += "Group Name: {group.get('name', 'N/A')}\n"
 
                         aliases = group.get('aliases', [])
                         if aliases:
-                            result_text += f"Aliases: {', '.join(aliases)}\n"
+                            result_text += "Aliases: {', '.join(aliases)}\n"
 
-                        result_text += f"\nTechniques Used ({len(group_techniques)}):\n"
-                        result_text += f"{'-' * 40}\n\n"
+                        result_text += "\nTechniques Used ({len(group_techniques)}):\n"
+                        result_text += "{'-' * 40}\n\n"
 
                         for i, technique_id in enumerate(group_techniques, 1):
                             # Find technique details
@@ -365,13 +360,13 @@ class MCPHTTPHandler(BaseHTTPRequestHandler):
                                     break
 
                             if technique_info:
-                                result_text += f"{i}. {technique_id}: {technique_info.get('name', 'Unknown')}\n"
+                                result_text += "{i}. {technique_id}: {technique_info.get('name', 'Unknown')}\n"
                                 desc = technique_info.get('description', 'No description available')
                                 if len(desc) > 150:
                                     desc = desc[:150] + "..."
-                                result_text += f"   Description: {desc}\n\n"
+                                result_text += "   Description: {desc}\n\n"
                             else:
-                                result_text += f"{i}. {technique_id}: (Name not found)\n\n"
+                                result_text += "{i}. {technique_id}: (Name not found)\n\n"
 
                 return {
                     "jsonrpc": "2.0",
@@ -392,19 +387,19 @@ class MCPHTTPHandler(BaseHTTPRequestHandler):
                         break
 
                 if not technique:
-                    result_text = f"Technique '{technique_id}' not found. Please verify the technique ID is correct."
+                    result_text = "Technique '{technique_id}' not found. Please verify the technique ID is correct."
                 else:
                     technique_mitigations = technique.get('mitigations', [])
                     if not technique_mitigations:
-                        result_text = f"No mitigations found for technique '{technique_id}' ({technique.get('name', 'Unknown')})."
+                        result_text = "No mitigations found for technique '{technique_id}' ({technique.get('name', 'Unknown')})."
                     else:
-                        result_text = f"TECHNIQUE MITIGATIONS\n"
-                        result_text += f"====================\n\n"
-                        result_text += f"Technique ID: {technique.get('id', 'N/A')}\n"
-                        result_text += f"Technique Name: {technique.get('name', 'N/A')}\n\n"
+                        result_text = "TECHNIQUE MITIGATIONS\n"
+                        result_text += "====================\n\n"
+                        result_text += "Technique ID: {technique.get('id', 'N/A')}\n"
+                        result_text += "Technique Name: {technique.get('name', 'N/A')}\n\n"
 
-                        result_text += f"Mitigations ({len(technique_mitigations)}):\n"
-                        result_text += f"{'-' * 40}\n\n"
+                        result_text += "Mitigations ({len(technique_mitigations)}):\n"
+                        result_text += "{'-' * 40}\n\n"
 
                         for i, mitigation_id in enumerate(technique_mitigations, 1):
                             # Find mitigation details
@@ -415,13 +410,13 @@ class MCPHTTPHandler(BaseHTTPRequestHandler):
                                     break
 
                             if mitigation_info:
-                                result_text += f"{i}. {mitigation_id}: {mitigation_info.get('name', 'Unknown')}\n"
+                                result_text += "{i}. {mitigation_id}: {mitigation_info.get('name', 'Unknown')}\n"
                                 desc = mitigation_info.get('description', 'No description available')
                                 if len(desc) > 300:
                                     desc = desc[:300] + "..."
-                                result_text += f"   Description: {desc}\n\n"
+                                result_text += "   Description: {desc}\n\n"
                             else:
-                                result_text += f"{i}. {mitigation_id}: (Name not found)\n\n"
+                                result_text += "{i}. {mitigation_id}: (Name not found)\n\n"
 
                 return {
                     "jsonrpc": "2.0",
@@ -441,8 +436,8 @@ class MCPHTTPHandler(BaseHTTPRequestHandler):
                     }
                 }
 
-        except Exception as e:
-            logger.error(f"Error calling tool {tool_name}: {e}")
+        except Exception:
+            logger.error("Error calling tool {tool_name}: {e}")
             return {
                 "jsonrpc": "2.0",
                 "id": request_id,
@@ -485,7 +480,7 @@ class MCPHTTPHandler(BaseHTTPRequestHandler):
 
     def log_message(self, format, *args):
         """Override to use our logger."""
-        logger.info(f"{self.address_string()} - {format % args}")
+        logger.info("{self.address_string()} - {format % args}")
 
 
 def create_handler_class(mcp_app):
@@ -503,9 +498,7 @@ def main():
     try:
         # Initialize data loader and load MITRE ATT&CK data
         logger.info("Loading MITRE ATT&CK data...")
-        data_loader = DataLoader()
-        attack_data = data_loader.load_data_source('mitre_attack')
-        logger.info("MITRE ATT&CK data loaded successfully")
+        data_loader = DataLoader()        logger.info("MITRE ATT&CK data loaded successfully")
 
         # Create MCP server app (but don't run it)
         mcp_app = create_mcp_server(data_loader)
@@ -522,8 +515,8 @@ def main():
 
     except KeyboardInterrupt:
         logger.info("Server stopped by user")
-    except Exception as e:
-        logger.error(f"Failed to start HTTP proxy server: {e}")
+    except Exception:
+        logger.error("Failed to start HTTP proxy server: {e}")
         raise
 
 

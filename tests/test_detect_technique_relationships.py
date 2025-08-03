@@ -232,7 +232,7 @@ class TestDetectTechniqueRelationships:
         # Execute with specific relationship types
         result, _ = await mcp_server.call_tool('detect_technique_relationships', {
             'technique_id': 'T1055',
-            'relationship_types': ['uses', 'subtechnique-of']
+            'relationship_types': ['uses', 'subtechnique-o']
         })
 
         assert result is not None
@@ -240,7 +240,7 @@ class TestDetectTechniqueRelationships:
 
         content = result[0].text
         assert "TECHNIQUE RELATIONSHIP ANALYSIS" in content
-        assert "Relationship Types: uses, subtechnique-of" in content
+        assert "Relationship Types: uses, subtechnique-o" in content
         assert "USES RELATIONSHIPS" in content
         assert "SUBTECHNIQUE OF RELATIONSHIPS" in content
 
@@ -280,7 +280,7 @@ class TestDetectTechniqueRelationships:
         # Execute focusing on subtechnique relationships
         result, _ = await mcp_server.call_tool('detect_technique_relationships', {
             'technique_id': 'T1055',
-            'relationship_types': ['subtechnique-of']
+            'relationship_types': ['subtechnique-o']
         })
 
         assert result is not None
