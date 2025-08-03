@@ -1,0 +1,23 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Development tools
+.kiro/
+.vscode/
+
+# OS-specific files
+.DS_Store
+*.swp
+*.swo
+
+# IDE files
+.idea/
+*.iml

@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MITRE ATT&CK MCP Explorer</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      overflow: hidden;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+
+    .header h1 {
+      font-size: 2.5em;
+      margin-bottom: 10px;
+      font-weight: 300;
+    }
+
+    .header p {
+      font-size: 1.1em;
+      opacity: 0.9;
+    }
+
+    .main-content {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      min-height: 600px;
+    }
+
+    .left-panel {
+      padding: 30px;
+      border-right: 1px solid #eee;
+      background: #f8f9fa;
+    }
+
+    .right-panel {
+      padding: 30px;
+      background: white;
+    }
+
+    .connection-status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+      padding: 15px;
+      border-radius: 8px;
+      font-weight: 500;
+    }
+
+    .status-connected {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .status-disconnected {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    .status-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    .status-connected .status-indicator {
+      background: #28a745;
+    }
+
+    .status-disconnected .status-indicator {
+      background: #dc3545;
+    }
+
+    .tool-section {
+      margin-bottom: 30px;
+    }
+
+    .tool-section h3 {
+      color: #2c3e50;
+      margin-bottom: 15px;
+      font-size: 1.3em;
+      border-bottom: 2px solid #3498db;
+      padding-bottom: 5px;
+    }
+
+    .tool-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .tool-button {
+      background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+      color: white;
+      border: none;
+      padding: 15px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1em;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      text-align: left;
+    }
+
+    .tool-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+    }
+
+    .tool-button:active {
+      transform: translateY(0);
+    }
+
+    .tool-button.with-input {
+      background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    }
+
+    .tool-button.with-input:hover {
+      box-shadow: 0 5px 15px rgba(231, 76, 60, 0.3);
+    }
+
+    .input-group {
+      margin-top: 20px;
+    }
+
+    .input-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #2c3e50;
+    }
+
+    .input-group input {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #ddd;
+      border-radius: 6px;
+      font-size: 1em;
+      transition: border-color 0.3s ease;
+    }
+
+    .input-group input:focus {
+      outline: none;
+      border-color: #3498db;
+    }
+
+    .execute-button {
+      background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+      color: white;
+      border: none;
+      padding: 12px 25px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1em;
+      font-weight: 600;
+      margin-top: 15px;
+      transition: all 0.3s ease;
+    }
+
+    .execute-button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+    }
+
+    .execute-button:disabled {
+      background: #95a5a6;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .output-section h3 {
+      color: #2c3e50;
+      margin-bottom: 15px;
+      font-size: 1.3em;
+      border-bottom: 2px solid #e74c3c;
+      padding-bottom: 5px;
+    }
+
+    .output-container {
+      background: #2c3e50;
+      color: #ecf0f1;
+      padding: 20px;
+      border-radius: 8px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9em;
+      line-height: 1.6;
+      max-height: 500px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    .output-container::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .output-container::-webkit-scrollbar-track {
+      background: #34495e;
+    }
+
+    .output-container::-webkit-scrollbar-thumb {
+      background: #7f8c8d;
+      border-radius: 4px;
+    }
+
+    .loading {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #f39c12;
+      font-style: italic;
+    }
+
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid #f39c12;
+      border-top: 2px solid transparent;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    .error {
+      color: #e74c3c;
+      background: #fdf2f2;
+      padding: 15px;
+      border-radius: 6px;
+      border-left: 4px solid #e74c3c;
+      margin: 10px 0;
+    }
+
+    .success {
+      color: #27ae60;
+      background: #f0f9f4;
+      padding: 15px;
+      border-radius: 6px;
+      border-left: 4px solid #27ae60;
+      margin: 10px 0;
+    }
+
+    @media (max-width: 768px) {
+      .main-content {
+        grid-template-columns: 1fr;
+      }
+
+      .left-panel {
+        border-right: none;
+        border-bottom: 1px solid #eee;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🛡️ MITRE ATT&CK MCP Explorer</h1>
+      <p>Interactive tool for testing MCP server functionality</p>
+    </div>
+
+    <div class="main-content">
+      <div class="left-panel">
+        <div id="connectionStatus" class="connection-status status-disconnected">
+          <div class="status-indicator"></div>
+          <span>Disconnected from MCP Server</span>
+        </div>
+
+        <div class="tool-section">
+          <h3>🔍 Search Tools</h3>
+          <div class="tool-grid">
+            <button class="tool-button with-input" onclick="showInputForm('search_attack', 'Search Query')">
+              Search ATT&CK Framework
+            </button>
+          </div>
+        </div>
+
+        <div class="tool-section">
+          <h3>📋 List Tools</h3>
+          <div class="tool-grid">
+            <button class="tool-button" onclick="executeTool('list_tactics', {})">
+              List All Tactics
+            </button>
+          </div>
+        </div>
+
+        <div class="tool-section">
+          <h3>🎯 Detail Tools</h3>
+          <div class="tool-grid">
+            <button class="tool-button with-input"
+              onclick="showInputForm('get_technique', 'Technique ID (e.g., T1055)')">
+              Get Technique Details
+            </button>
+            <button class="tool-button with-input"
+              onclick="showInputForm('get_group_techniques', 'Group ID (e.g., G0016)')">
+              Get Group Techniques
+            </button>
+            <button class="tool-button with-input"
+              onclick="showInputForm('get_technique_mitigations', 'Technique ID (e.g., T1055)')">
+              Get Technique Mitigations
+            </button>
+          </div>
+        </div>
+
+        <div id="inputForm" class="input-group" style="display: none;">
+          <label id="inputLabel">Input:</label>
+          <input type="text" id="inputValue" placeholder="Enter value...">
+          <button class="execute-button" onclick="executeWithInput()">Execute Tool</button>
+        </div>
+      </div>
+
+      <div class="right-panel">
+        <div class="output-section">
+          <h3>📤 Output</h3>
+          <div id="output" class="output-container">
+            Welcome to the MITRE ATT&CK MCP Explorer!
+
+            This tool connects to your local MCP server to test the available tools.
+
+            To get started:
+            1. Make sure your MCP server is running (python main.py)
+            2. Click any tool button on the left to execute it
+            3. Results will appear here
+
+            Available Tools:
+            • search_attack - Search across all ATT&CK entities
+            • list_tactics - Get all MITRE ATT&CK tactics
+            • get_technique - Get detailed technique information
+            • get_group_techniques - Get techniques used by a group
+            • get_technique_mitigations - Get mitigations for a technique
+
+            The server should be running on http://localhost:8000 by default.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentTool = null;
+    let serverUrl = 'http://127.0.0.1:8000';
+
+    // Check server connection on load
+    window.addEventListener('load', checkConnection);
+
+    async function checkConnection() {
+      try {
+        const requestBody = {
+          jsonrpc: "2.0",
+          id: Date.now(),
+          method: 'tools/list'
+        };
+
+        const response = await fetch(serverUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody)
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          if (result.result && result.result.tools) {
+            updateConnectionStatus(true);
+          } else {
+            updateConnectionStatus(false);
+          }
+        } else {
+          updateConnectionStatus(false);
+        }
+      } catch (error) {
+        updateConnectionStatus(false);
+      }
+    }
+
+    function updateConnectionStatus(connected) {
+      const statusElement = document.getElementById('connectionStatus');
+      const statusText = statusElement.querySelector('span');
+
+      if (connected) {
+        statusElement.className = 'connection-status status-connected';
+        statusText.textContent = 'Connected to MCP Server';
+      } else {
+        statusElement.className = 'connection-status status-disconnected';
+        statusText.textContent = 'Disconnected from MCP Server';
+      }
+    }
+
+    function showInputForm(toolName, labelText) {
+      currentTool = toolName;
+      const inputForm = document.getElementById('inputForm');
+      const inputLabel = document.getElementById('inputLabel');
+      const inputValue = document.getElementById('inputValue');
+
+      inputLabel.textContent = labelText + ':';
+      inputValue.value = '';
+      inputValue.placeholder = `Enter ${labelText.toLowerCase()}...`;
+      inputForm.style.display = 'block';
+      inputValue.focus();
+    }
+
+    function executeWithInput() {
+      const inputValue = document.getElementById('inputValue').value.trim();
+      if (!inputValue) {
+        showError('Please enter a value');
+        return;
+      }
+
+      let params = {};
+      if (currentTool === 'search_attack') {
+        params.query = inputValue;
+      } else if (currentTool === 'get_technique') {
+        params.technique_id = inputValue;
+      } else if (currentTool === 'get_group_techniques') {
+        params.group_id = inputValue;
+      } else if (currentTool === 'get_technique_mitigations') {
+        params.technique_id = inputValue;
+      }
+
+      executeTool(currentTool, params);
+
+      // Hide input form
+      document.getElementById('inputForm').style.display = 'none';
+    }
+
+    async function executeTool(toolName, params) {
+      const outputElement = document.getElementById('output');
+
+      // Show loading state
+      outputElement.innerHTML = `<div class="loading"><div class="spinner"></div>Executing ${toolName}...</div>`;
+
+      try {
+        const requestBody = {
+          jsonrpc: "2.0",
+          id: Date.now(),
+          method: 'tools/call',
+          params: {
+            name: toolName,
+            arguments: params
+          }
+        };
+
+        console.log('Sending request:', requestBody);
+
+        const response = await fetch(serverUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody)
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        console.log('Received response:', result);
+
+        // Display the result
+        if (result.result && result.result.content && result.result.content.length > 0) {
+          const content = result.result.content[0];
+          if (content.type === 'text') {
+            outputElement.innerHTML = `<div class="success">✅ Tool executed successfully</div>${escapeHtml(content.text)}`;
+          } else {
+            outputElement.innerHTML = `<div class="success">✅ Tool executed successfully</div>${JSON.stringify(result.result, null, 2)}`;
+          }
+        } else if (result.error) {
+          outputElement.innerHTML = `<div class="error">❌ Error: ${escapeHtml(result.error.message || JSON.stringify(result.error))}</div>`;
+        } else {
+          outputElement.innerHTML = `<div class="error">❌ Unexpected response format</div>${JSON.stringify(result, null, 2)}`;
+        }
+
+        updateConnectionStatus(true);
+
+      } catch (error) {
+        console.error('Error executing tool:', error);
+        outputElement.innerHTML = `<div class="error">❌ Connection Error: ${escapeHtml(error.message)}</div>
+
+Make sure your MCP server is running:
+1. Open a terminal
+2. Navigate to your project directory  
+3. Run: uv run http_proxy.py
+4. The server should start on http://127.0.0.1:8000
+
+Error details: ${escapeHtml(error.toString())}`;
+
+        updateConnectionStatus(false);
+      }
+    }
+
+    function showError(message) {
+      const outputElement = document.getElementById('output');
+      outputElement.innerHTML = `<div class="error">❌ ${escapeHtml(message)}</div>`;
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Allow Enter key to execute in input field
+    document.getElementById('inputValue').addEventListener('keypress', function (e) {
+      if (e.key === 'Enter') {
+        executeWithInput();
+      }
+    });
+
+    // Periodically check connection
+    setInterval(checkConnection, 10000); // Check every 10 seconds
+  </script>
+</body>
+
+</html>

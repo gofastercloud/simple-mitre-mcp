@@ -1,0 +1,37 @@
+# MCP tool configurations
+tools:
+  search_attack:
+    description: "Search across all ATT&CK entities (tactics, techniques, groups, mitigations)"
+    parameters:
+      - name: "query"
+        type: "string"
+        required: true
+        description: "Search term to find matching entities"
+    
+  get_technique:
+    description: "Get detailed information about a specific technique"
+    parameters:
+      - name: "technique_id"
+        type: "string"
+        required: true
+        description: "MITRE technique ID (e.g., T1055)"
+    
+  list_tactics:
+    description: "Get all MITRE ATT&CK tactics"
+    parameters: []
+    
+  get_group_techniques:
+    description: "Get all techniques used by a specific threat group"
+    parameters:
+      - name: "group_id"
+        type: "string"
+        required: true
+        description: "MITRE group ID (e.g., G0016)"
+    
+  get_technique_mitigations:
+    description: "Get mitigations for a specific technique"
+    parameters:
+      - name: "technique_id"
+        type: "string"
+        required: true
+        description: "MITRE technique ID"
