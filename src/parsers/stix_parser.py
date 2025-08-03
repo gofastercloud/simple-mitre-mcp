@@ -69,15 +69,19 @@ class STIXParser:
         for obj in stix_data['objects']:
             objects_processed += 1
 
-            if entity_type in entity_types:
+            # Determine entity type from STIX object
+            obj_type = obj.get('type', '')
+            entity_type = self._map_stix_type(obj_type)
+            
+            if entity_type and entity_type in entity_types:
                 parsed_entity = self._extract_entity(obj, entity_type)
                 if parsed_entity:
                     parsed_entities[entity_type].append(parsed_entity)
                     entities_extracted += 1
 
-        logger.info("Processed {objects_processed} STIX objects, extracted {entities_extracted} entities")
+        logger.info(f"Processed {objects_processed} STIX objects, extracted {entities_extracted} entities")
         for entity_type, entities in parsed_entities.items():
-            logger.info("  {entity_type}: {len(entities)} entities")
+            logger.info(f"  {entity_type}: {len(entities)} entities")
 
         return parsed_entities
 
