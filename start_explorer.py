@@ -32,7 +32,7 @@ def start_http_proxy():
     """Start the HTTP proxy server using uv run."""
     try:
         logger.info("Starting HTTP proxy server with uv...")
-        
+
         # Use uv run if available, otherwise fall back to python
         if check_uv_available():
             cmd = ['uv', 'run', 'http_proxy.py']
@@ -40,7 +40,7 @@ def start_http_proxy():
         else:
             cmd = [sys.executable, 'http_proxy.py']
             logger.info("uv not found, using python directly")
-        
+
         process = subprocess.Popen(
             cmd,
             stdout=subprocess.PIPE,
@@ -48,12 +48,12 @@ def start_http_proxy():
             universal_newlines=True,
             bufsize=1
         )
-        
+
         # Stream output
         for line in iter(process.stdout.readline, ''):
             if line:
                 print(f"[HTTP Proxy] {line.strip()}")
-                
+
         return process
     except Exception as e:
         logger.error(f"Failed to start HTTP proxy server: {e}")
@@ -66,10 +66,10 @@ def open_web_explorer():
         # Get the absolute path to the HTML file
         html_file = Path(__file__).parent / 'web_explorer.html'
         file_url = f"file://{html_file.absolute()}"
-        
+
         logger.info(f"Opening web explorer: {file_url}")
         webbrowser.open(file_url)
-        
+
     except Exception as e:
         logger.error(f"Failed to open web explorer: {e}")
 
@@ -79,7 +79,7 @@ def check_dependencies():
     try:
         if check_uv_available():
             # Check if dependencies are synced
-            result = subprocess.run(['uv', 'sync', '--check'], 
+            result = subprocess.run(['uv', 'sync', '--check'],
                                   capture_output=True, text=True)
             if result.returncode != 0:
                 logger.warning("Dependencies may not be synced. Running uv sync...")
@@ -87,14 +87,14 @@ def check_dependencies():
                 logger.info("Dependencies synced successfully")
         else:
             logger.warning("uv not found. Make sure dependencies are installed manually.")
-            
+
     except subprocess.CalledProcessError as e:
         logger.error(f"Failed to sync dependencies: {e}")
         return False
     except Exception as e:
         logger.error(f"Error checking dependencies: {e}")
         return False
-    
+
     return True
 
 
@@ -102,39 +102,39 @@ def main():
     """Main function to start everything."""
     print("🛡️  MITRE ATT&CK MCP Explorer Startup")
     print("=" * 50)
-    
+
     # Check if web_explorer.html exists
     html_file = Path('web_explorer.html')
     if not html_file.exists():
         logger.error("web_explorer.html not found in current directory")
         sys.exit(1)
-    
+
     # Check if http_proxy.py exists
     proxy_file = Path('http_proxy.py')
     if not proxy_file.exists():
         logger.error("http_proxy.py not found in current directory")
         sys.exit(1)
-    
+
     # Check dependencies
     if not check_dependencies():
         logger.error("Dependency check failed")
         sys.exit(1)
-    
+
     try:
         # Start HTTP proxy server in background thread
         def run_server():
             start_http_proxy()
-        
+
         server_thread = threading.Thread(target=run_server, daemon=True)
         server_thread.start()
-        
+
         # Wait a bit for server to start
         logger.info("Waiting for HTTP proxy server to start...")
         time.sleep(8)
-        
+
         # Open web explorer
         open_web_explorer()
-        
+
         print("\n✅ Setup complete!")
         print("📋 Instructions:")
         print("   1. The HTTP proxy server is running on http://127.0.0.1:8000")
@@ -142,25 +142,25 @@ def main():
         print("   3. If not, manually open: web_explorer.html")
         print("   4. The web explorer connects to the HTTP proxy, which provides access to MCP tools")
         print("   5. Press Ctrl+C to stop the server")
-        
+
         print("\n🔧 Available Tools:")
         print("   • search_attack - Search across all ATT&CK entities")
         print("   • list_tactics - Get all MITRE ATT&CK tactics")
         print("   • get_technique - Get detailed technique information")
         print("   • get_group_techniques - Get techniques used by a group")
         print("   • get_technique_mitigations - Get mitigations for a technique")
-        
+
         if not check_uv_available():
             print("\n💡 Tip: Install uv for better dependency management:")
             print("   https://docs.astral.sh/uv/getting-started/installation/")
-        
+
         # Keep the main thread alive
         try:
             while True:
                 time.sleep(1)
         except KeyboardInterrupt:
             print("\n🛑 Shutting down...")
-            
+
     except Exception as e:
         logger.error(f"Error during startup: {e}")
         sys.exit(1)

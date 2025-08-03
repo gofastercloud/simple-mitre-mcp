@@ -14,12 +14,12 @@ from src.data_loader import DataLoader
 
 class TestDetectTechniqueRelationships:
     """Test detect_technique_relationships tool functionality."""
-    
+
     @pytest.fixture
     def mock_data_loader(self):
         """Create a mock data loader with sample MITRE ATT&CK data and relationships."""
         mock_loader = Mock(spec=DataLoader)
-        
+
         # Sample test data
         sample_data = {
             'techniques': [
@@ -91,7 +91,7 @@ class TestDetectTechniqueRelationships:
                 }
             ]
         }
-        
+
         # Sample STIX relationships
         sample_relationships = [
             {
@@ -125,12 +125,12 @@ class TestDetectTechniqueRelationships:
                 'target_ref': 'attack-pattern--43e7dc91-05b2-474c-b9ac-2ed4fe101f4d'   # T1055
             }
         ]
-        
+
         mock_loader.get_cached_data.side_effect = lambda key: {
             'mitre_attack': sample_data,
             'mitre_attack_relationships': sample_relationships
         }.get(key)
-        
+
         # Mock the download_data method to return sample raw data
         mock_raw_data = {
             'objects': [
@@ -192,7 +192,7 @@ class TestDetectTechniqueRelationships:
                 }
             ]
         }
-        
+
         mock_loader.download_data.return_value = mock_raw_data
         mock_loader.config = {
             'data_sources': {
@@ -201,14 +201,14 @@ class TestDetectTechniqueRelationships:
                 }
             }
         }
-        
+
         return mock_loader
-    
+
     @pytest.fixture
     def mcp_server(self, mock_data_loader):
         """Create MCP server with mock data loader."""
         return create_mcp_server(mock_data_loader)
-    
+
     @pytest.mark.asyncio
     async def test_detect_technique_relationships_basic(self, mcp_server):
         """Test basic relationship detection for a technique."""
@@ -216,16 +216,16 @@ class TestDetectTechniqueRelationships:
         result, _ = await mcp_server.call_tool('detect_technique_relationships', {
             'technique_id': 'T1055'
         })
-        
+
         assert result is not None
         assert len(result) > 0
         assert result[0].type == "text"
-        
+
         content = result[0].text
         assert "TECHNIQUE RELATIONSHIP ANALYSIS" in content
         assert "T1055 - Process Injection" in content
         assert "RELATIONSHIP SUMMARY" in content
-    
+
     @pytest.mark.asyncio
     async def test_detect_technique_relationships_specific_types(self, mcp_server):
         """Test relationship detection with specific relationship types."""
@@ -234,16 +234,16 @@ class TestDetectTechniqueRelationships:
             'technique_id': 'T1055',
             'relationship_types': ['uses', 'subtechnique-of']
         })
-        
+
         assert result is not None
         assert len(result) > 0
-        
+
         content = result[0].text
         assert "TECHNIQUE RELATIONSHIP ANALYSIS" in content
         assert "Relationship Types: uses, subtechnique-of" in content
         assert "USES RELATIONSHIPS" in content
         assert "SUBTECHNIQUE OF RELATIONSHIPS" in content
-    
+
     @pytest.mark.asyncio
     async def test_detect_technique_relationships_custom_depth(self, mcp_server):
         """Test relationship detection with custom depth."""
@@ -252,13 +252,13 @@ class TestDetectTechniqueRelationships:
             'technique_id': 'T1055',
             'depth': 3
         })
-        
+
         assert result is not None
         assert len(result) > 0
-        
+
         content = result[0].text
         assert "Analysis Depth: 3" in content
-    
+
     @pytest.mark.asyncio
     async def test_detect_technique_relationships_depth_limits(self, mcp_server):
         """Test that depth is properly limited."""
@@ -267,13 +267,13 @@ class TestDetectTechniqueRelationships:
             'technique_id': 'T1055',
             'depth': 10
         })
-        
+
         assert result is not None
         assert len(result) > 0
-        
+
         content = result[0].text
         assert "Analysis Depth: 3" in content  # Should be capped at 3
-    
+
     @pytest.mark.asyncio
     async def test_detect_technique_relationships_subtechnique_hierarchy(self, mcp_server):
         """Test subtechnique hierarchy analysis."""
@@ -282,15 +282,15 @@ class TestDetectTechniqueRelationships:
             'technique_id': 'T1055',
             'relationship_types': ['subtechnique-of']
         })
-        
+
         assert result is not None
         assert len(result) > 0
-        
+
         content = result[0].text
         assert "TECHNIQUE HIERARCHY" in content
         assert "Subtechniques" in content
         assert "T1055.001" in content
-    
+
     @pytest.mark.asyncio
     async def test_detect_technique_relationships_attribution(self, mcp_server):
         """Test attribution analysis."""
@@ -299,16 +299,16 @@ class TestDetectTechniqueRelationships:
             'technique_id': 'T1055',
             'relationship_types': ['uses']
         })
-        
+
         assert result is not None
         assert len(result) > 0
-        
+
         content = result[0].text
         assert "ATTRIBUTION ANALYSIS" in content
         assert "Threat Groups Using This Technique" in content
         assert "G0016" in content  # APT29
         assert "G0032" in content  # Lazarus Group
-    
+
     @pytest.mark.asyncio
     async def test_detect_technique_relationships_detection(self, mcp_server):
         """Test detection relationship analysis."""
@@ -317,14 +317,14 @@ class TestDetectTechniqueRelationships:
             'technique_id': 'T1055',
             'relationship_types': ['detects']
         })
-        
+
         assert result is not None
         assert len(result) > 0
-        
+
         content = result[0].text
         assert "DETECTION ANALYSIS" in content
         assert "Entities That Can Detect This Technique" in content
-    
+
     @pytest.mark.asyncio
     async def test_detect_technique_relationships_invalid_technique(self, mcp_server):
         """Test error handling for invalid technique ID."""
@@ -332,13 +332,13 @@ class TestDetectTechniqueRelationships:
         result, _ = await mcp_server.call_tool('detect_technique_relationships', {
             'technique_id': 'T9999'
         })
-        
+
         assert result is not None
         assert len(result) > 0
-        
+
         content = result[0].text
         assert "Technique 'T9999' not found" in content
-    
+
     @pytest.mark.asyncio
     async def test_detect_technique_relationships_invalid_relationship_types(self, mcp_server):
         """Test error handling for invalid relationship types."""
@@ -347,48 +347,48 @@ class TestDetectTechniqueRelationships:
             'technique_id': 'T1055',
             'relationship_types': ['invalid_type', 'another_invalid']
         })
-        
+
         assert result is not None
         assert len(result) > 0
-        
+
         content = result[0].text
         assert "No valid relationship types specified" in content
-    
+
     @pytest.mark.asyncio
     async def test_detect_technique_relationships_no_data_loader(self):
         """Test error handling when data loader is not available."""
         # Create server without data loader
         server = create_mcp_server(None)
-        
+
         result, _ = await server.call_tool('detect_technique_relationships', {
             'technique_id': 'T1055'
         })
-        
+
         assert result is not None
         assert len(result) > 0
-        
+
         content = result[0].text
         assert "Data loader not available" in content
-    
+
     @pytest.mark.asyncio
     async def test_detect_technique_relationships_no_cached_data(self, mcp_server):
         """Test error handling when cached data is not available."""
         # Mock data loader to return None for both cached data calls
         def mock_get_cached_data(key):
             return None
-        
+
         mcp_server.data_loader.get_cached_data.side_effect = mock_get_cached_data
-        
+
         result, _ = await mcp_server.call_tool('detect_technique_relationships', {
             'technique_id': 'T1055'
         })
-        
+
         assert result is not None
         assert len(result) > 0
-        
+
         content = result[0].text
         assert "MITRE ATT&CK data not loaded" in content
-    
+
     @pytest.mark.asyncio
     async def test_detect_technique_relationships_case_insensitive(self, mcp_server):
         """Test that technique ID is case insensitive."""
@@ -396,13 +396,13 @@ class TestDetectTechniqueRelationships:
         result, _ = await mcp_server.call_tool('detect_technique_relationships', {
             'technique_id': 't1055'
         })
-        
+
         assert result is not None
         assert len(result) > 0
-        
+
         content = result[0].text
         assert "T1055 - Process Injection" in content  # Should be normalized to uppercase
-    
+
     @pytest.mark.asyncio
     async def test_detect_technique_relationships_no_relationships(self, mcp_server):
         """Test handling of techniques with no relationships."""
@@ -411,15 +411,15 @@ class TestDetectTechniqueRelationships:
             'technique_id': 'T1059',  # This technique has no relationships in our mock
             'relationship_types': ['detects']  # Specific type that won't match
         })
-        
+
         assert result is not None
         assert len(result) > 0
-        
+
         content = result[0].text
         assert "TECHNIQUE RELATIONSHIP ANALYSIS" in content
         assert "Total Relationships Found: 0" in content
         assert "No relationships found" in content
-    
+
     @pytest.mark.asyncio
     async def test_detect_technique_relationships_mixed_types(self, mcp_server):
         """Test with a mix of valid and invalid relationship types."""
@@ -428,14 +428,14 @@ class TestDetectTechniqueRelationships:
             'technique_id': 'T1055',
             'relationship_types': ['uses', 'invalid_type', 'mitigates', 'another_invalid']
         })
-        
+
         assert result is not None
         assert len(result) > 0
-        
+
         content = result[0].text
         assert "TECHNIQUE RELATIONSHIP ANALYSIS" in content
         assert "Relationship Types: uses, mitigates" in content  # Should filter out invalid types
-    
+
     @pytest.mark.asyncio
     async def test_detect_technique_relationships_all_types(self, mcp_server):
         """Test with all valid relationship types."""
@@ -444,10 +444,10 @@ class TestDetectTechniqueRelationships:
             'technique_id': 'T1055',
             'relationship_types': ['detects', 'subtechnique-of', 'attributed-to', 'uses', 'mitigates', 'revoked-by']
         })
-        
+
         assert result is not None
         assert len(result) > 0
-        
+
         content = result[0].text
         assert "TECHNIQUE RELATIONSHIP ANALYSIS" in content
         assert "detects, subtechnique-of, attributed-to, uses, mitigates, revoked-by" in content

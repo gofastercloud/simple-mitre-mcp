@@ -14,32 +14,32 @@ from src.data_loader import DataLoader
 
 class TestMCPServer:
     """Test cases for MCP server functionality."""
-    
+
     def test_mcp_server_initialization(self):
         """Test that MCP server initializes correctly."""
         # Mock data loader to avoid actual data loading in tests
         mock_data_loader = Mock(spec=DataLoader)
-        
+
         # Initialize MCP server
         server = MCPServer(mock_data_loader)
-        
+
         # Verify server is created
         assert server is not None
         assert server.data_loader == mock_data_loader
         assert server.app is not None
         assert server.app.name == "mitre-attack-mcp-server"
-    
+
     def test_create_mcp_server_function(self):
         """Test the create_mcp_server function."""
         mock_data_loader = Mock(spec=DataLoader)
-        
+
         app = create_mcp_server(mock_data_loader)
-        
+
         assert app is not None
         assert app.name == "mitre-attack-mcp-server"
         assert hasattr(app, 'data_loader')
         assert app.data_loader == mock_data_loader
-    
+
     @patch('src.mcp_server.ConfigLoader')
     def test_tools_registration(self, mock_config_loader):
         """Test that MCP tools are registered correctly."""
@@ -52,36 +52,36 @@ class TestMCPServer:
                 }
             }
         }
-        
+
         mock_data_loader = Mock(spec=DataLoader)
         server = MCPServer(mock_data_loader)
-        
+
         # Verify server was created successfully
         assert server.app is not None
-    
+
     def test_server_has_data_loader_attribute(self):
         """Test that the server stores the data loader correctly."""
         mock_data_loader = Mock(spec=DataLoader)
         app = create_mcp_server(mock_data_loader)
-        
+
         # Verify the data loader is stored
         assert hasattr(app, 'data_loader')
         assert app.data_loader == mock_data_loader
-    
+
     def test_server_name_and_instructions(self):
         """Test that the server has correct name and instructions."""
         mock_data_loader = Mock(spec=DataLoader)
         app = create_mcp_server(mock_data_loader)
-        
+
         # Verify server configuration
         assert app.name == "mitre-attack-mcp-server"
         assert "MITRE ATT&CK framework" in app.instructions
-    
+
     def test_server_configuration(self):
         """Test that the server is configured correctly."""
         mock_data_loader = Mock(spec=DataLoader)
         app = create_mcp_server(mock_data_loader)
-        
+
         # Verify server is properly configured
         assert app is not None
         assert hasattr(app, 'name')

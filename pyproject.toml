@@ -33,4 +33,7 @@ dev-dependencies = [
     "pytest-asyncio>=1.1.0",
     "aiohttp>=3.8.0",
     "pytest-cov>=6.2.1",
+    "mypy>=1.17.1",
+    "bandit>=1.8.6",
+    "safety>=3.6.0",
 ]

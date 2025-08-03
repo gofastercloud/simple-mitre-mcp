@@ -23,12 +23,12 @@ logger = logging.getLogger(__name__)
 
 class TestWebInterface:
     """Test cases for web interface HTTP communication."""
-    
+
     @pytest.fixture
     def mock_data_loader(self):
         """Create a mock data loader with sample data for testing."""
         mock_loader = Mock(spec=DataLoader)
-        
+
         # Sample test data
         sample_data = {
             'tactics': [
@@ -65,103 +65,103 @@ class TestWebInterface:
                 }
             ]
         }
-        
+
         mock_loader.get_cached_data.return_value = sample_data
         return mock_loader
-    
+
     @pytest.mark.asyncio
     async def test_json_rpc_tools_list_format(self, mock_data_loader):
         """Test that JSON-RPC tools/list request format is correct."""
         app = create_mcp_server(mock_data_loader)
-        
+
         # Test the internal method that would handle tools/list
         tools = await app.list_tools()
-        
+
         assert tools is not None
         assert len(tools) == 8
-        
+
         # Verify tool structure matches what web interface expects
         for tool in tools:
             assert hasattr(tool, 'name')
             assert hasattr(tool, 'description')
             assert hasattr(tool, 'inputSchema')
             assert isinstance(tool.inputSchema, dict)
-    
+
     @pytest.mark.asyncio
     async def test_json_rpc_tool_call_format(self, mock_data_loader):
         """Test that JSON-RPC tools/call request format is correct."""
         app = create_mcp_server(mock_data_loader)
-        
+
         # Test list_tactics tool call
         result, _ = await app.call_tool('list_tactics', {})
-        
+
         assert result is not None
         assert len(result) > 0
         assert result[0].type == "text"
         assert isinstance(result[0].text, str)
         assert len(result[0].text) > 0
-    
+
     @pytest.mark.asyncio
     async def test_search_tool_with_parameters(self, mock_data_loader):
         """Test search tool with parameters as web interface would use."""
         app = create_mcp_server(mock_data_loader)
-        
+
         # Test search_attack tool call with query parameter
         result, _ = await app.call_tool('search_attack', {'query': 'process'})
-        
+
         assert result is not None
         assert len(result) > 0
         assert result[0].type == "text"
         assert 'process' in result[0].text.lower()
-    
+
     @pytest.mark.asyncio
     async def test_technique_detail_tool(self, mock_data_loader):
         """Test technique detail tool as web interface would use."""
         app = create_mcp_server(mock_data_loader)
-        
+
         # Test get_technique tool call
         result, _ = await app.call_tool('get_technique', {'technique_id': 'T1055'})
-        
+
         assert result is not None
         assert len(result) > 0
         assert result[0].type == "text"
         assert 'T1055' in result[0].text
         assert 'Process Injection' in result[0].text
-    
+
     @pytest.mark.asyncio
     async def test_error_handling_for_web_interface(self, mock_data_loader):
         """Test error handling as web interface would encounter."""
         app = create_mcp_server(mock_data_loader)
-        
+
         # Test with invalid technique ID
         result, _ = await app.call_tool('get_technique', {'technique_id': 'INVALID'})
-        
+
         assert result is not None
         assert len(result) > 0
         assert result[0].type == "text"
         assert 'not found' in result[0].text.lower()
-    
+
     def test_web_interface_tool_parameters(self, mock_data_loader):
         """Test that tool parameters match web interface expectations."""
         app = create_mcp_server(mock_data_loader)
-        
+
         # Get tools synchronously for parameter validation
         import asyncio
         tools = asyncio.run(app.list_tools())
         tool_dict = {tool.name: tool for tool in tools}
-        
+
         # Verify search_attack parameters
         search_tool = tool_dict['search_attack']
         assert 'query' in search_tool.inputSchema['properties']
         assert search_tool.inputSchema['properties']['query']['type'] == 'string'
         assert 'query' in search_tool.inputSchema.get('required', [])
-        
+
         # Verify get_technique parameters
         technique_tool = tool_dict['get_technique']
         assert 'technique_id' in technique_tool.inputSchema['properties']
         assert technique_tool.inputSchema['properties']['technique_id']['type'] == 'string'
         assert 'technique_id' in technique_tool.inputSchema.get('required', [])
-        
+
         # Verify list_tactics has no required parameters
         tactics_tool = tool_dict['list_tactics']
         assert len(tactics_tool.inputSchema['properties']) == 0
@@ -170,7 +170,7 @@ class TestWebInterface:
 
 class TestWebInterfaceIntegration:
     """Integration tests for web interface with actual HTTP requests."""
-    
+
     @pytest.mark.integration
     @pytest.mark.asyncio
     async def test_http_request_format(self):
@@ -178,7 +178,7 @@ class TestWebInterfaceIntegration:
         # This test would require a running server
         # Skip if server is not available
         pytest.skip("Integration test requires running MCP server")
-        
+
         async with aiohttp.ClientSession() as session:
             # Test tools/list request
             payload = {
@@ -186,7 +186,7 @@ class TestWebInterfaceIntegration:
                 "id": 1,
                 "method": "tools/list"
             }
-            
+
             try:
                 async with session.post('http://localhost:3000', json=payload) as response:
                     assert response.status == 200
@@ -195,13 +195,13 @@ class TestWebInterfaceIntegration:
                     assert 'tools' in result['result']
             except aiohttp.ClientError:
                 pytest.skip("MCP server not running on localhost:3000")
-    
+
     @pytest.mark.integration
     @pytest.mark.asyncio
     async def test_tool_call_http_format(self):
         """Test actual tool call HTTP format (requires running server)."""
         pytest.skip("Integration test requires running MCP server")
-        
+
         async with aiohttp.ClientSession() as session:
             # Test tools/call request
             payload = {
@@ -213,7 +213,7 @@ class TestWebInterfaceIntegration:
                     "arguments": {}
                 }
             }
-            
+
             try:
                 async with session.post('http://localhost:3000', json=payload) as response:
                     assert response.status == 200
