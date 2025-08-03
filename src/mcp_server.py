@@ -174,20 +174,26 @@ def create_mcp_server(data_loader=None):
             if not search_results:
                 return [TextContent(
                     type="text",
-                    text="No results found for query: '{query}'"
+                    text=f"No results found for query: '{query}'"
                 )]
 
             # Format results
-            result_text = "Search results for '{query}' ({len(search_results)} matches):\n\n"
+            result_text = f"Search results for '{query}' ({len(search_results)} matches):\n\n"
 
             for result in search_results:
+                entity_type = result['entity_type'].title()
+                entity_id = result['id']
+                entity_name = result['name']
+                match_reason = result['match_reason']
 
-                result_text += "[{entity_type}] {entity_id}: {entity_name}\n"
-                result_text += "  Match: {match_reason}\n"
+                result_text += f"[{entity_type}] {entity_id}: {entity_name}\n"
+                result_text += f"  Match: {match_reason}\n"
 
                 # Add description preview if available
                 if 'description' in result and result['description']:
-                    result_text += "  Description: {desc_preview}\n"
+                    desc = result['description']
+                    desc_preview = desc[:100] + "..." if len(desc) > 100 else desc
+                    result_text += f"  Description: {desc_preview}\n"
 
                 result_text += "\n"
 
