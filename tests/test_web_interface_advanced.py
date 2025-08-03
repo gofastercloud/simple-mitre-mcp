@@ -101,31 +101,26 @@ class TestWebInterfaceAdvanced:
         assert 'analyze_coverage_gaps' in proxy_content, "analyze_coverage_gaps not found in HTTP proxy"
         assert 'detect_technique_relationships' in proxy_content, "detect_technique_relationships not found in HTTP proxy"
 
-        # Check for array parameter support
-        assert '"type": "array"' in proxy_content, "Array parameter support not found in HTTP proxy"
-        assert '"items": {"type": "string"}' in proxy_content, "Array items schema not found in HTTP proxy"
+        # Check for tool categories
+        assert '"category": "advanced"' in proxy_content, "Advanced tool category not found in HTTP proxy"
+        assert '"category": "basic"' in proxy_content, "Basic tool category not found in HTTP proxy"
 
     def test_http_proxy_tool_schemas(self):
-        """Test that HTTP proxy contains proper schemas for advanced tools."""
+        """Test that HTTP proxy contains proper tool information."""
         # Use relative path that works in both local and CI environments
         proxy_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'http_proxy.py')
         
         with open(proxy_path, 'r') as f:
             proxy_content = f.read()
 
-        # Check for build_attack_path schema elements
-        assert 'start_tactic' in proxy_content, "start_tactic parameter not found in HTTP proxy"
-        assert 'end_tactic' in proxy_content, "end_tactic parameter not found in HTTP proxy"
-        assert 'group_id' in proxy_content, "group_id parameter not found in HTTP proxy"
+        # Check for tool descriptions (HTTP proxy contains descriptions, not detailed schemas)
+        assert 'Build attack paths through the kill chain' in proxy_content, "build_attack_path description not found"
+        assert 'Analyze security coverage gaps' in proxy_content, "analyze_coverage_gaps description not found"
+        assert 'Detect complex technique relationships' in proxy_content, "detect_technique_relationships description not found"
 
-        # Check for analyze_coverage_gaps schema elements
-        assert 'threat_groups' in proxy_content, "threat_groups parameter not found in HTTP proxy"
-        assert 'technique_list' in proxy_content, "technique_list parameter not found in HTTP proxy"
-        assert 'exclude_mitigations' in proxy_content, "exclude_mitigations parameter not found in HTTP proxy"
-
-        # Check for detect_technique_relationships schema elements
-        assert 'relationship_types' in proxy_content, "relationship_types parameter not found in HTTP proxy"
-        assert 'depth' in proxy_content, "depth parameter not found in HTTP proxy"
+        # Check for basic tool descriptions
+        assert 'Search across all MITRE ATT&CK entities' in proxy_content, "search_attack description not found"
+        assert 'List all MITRE ATT&CK tactics' in proxy_content, "list_tactics description not found"
 
     @pytest.mark.integration
     def test_start_explorer_script_compatibility(self):
