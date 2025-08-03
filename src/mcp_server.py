@@ -255,28 +255,29 @@ def create_mcp_server(data_loader=None):
                 )]
 
             # Build detailed response
+            # Build detailed response
             result_text = "TECHNIQUE DETAILS\n"
             result_text += "================\n\n"
-            result_text += "ID: {technique.get('id', 'N/A')}\n"
-            result_text += "Name: {technique.get('name', 'N/A')}\n\n"
+            result_text += f"ID: {technique.get('id', 'N/A')}\n"
+            result_text += f"Name: {technique.get('name', 'N/A')}\n\n"
 
             # Description
             description = technique.get('description', 'No description available')
-            result_text += "Description:\n{description}\n\n"
+            result_text += f"Description:\n{description}\n\n"
 
             # Associated tactics
             tactics = technique.get('tactics', [])
             if tactics:
-                result_text += "Associated Tactics ({len(tactics)}):\n"
+                result_text += f"Associated Tactics ({len(tactics)}):\n"
                 # Look up tactic names
                 tactic_details = []
                 for tactic_id in tactics:
                     for tactic in data.get('tactics', []):
                         if tactic.get('id') == tactic_id:
-                            tactic_details.append("  - {tactic_id}: {tactic.get('name', 'Unknown')}")
+                            tactic_details.append(f"  - {tactic_id}: {tactic.get('name', 'Unknown')}")
                             break
                     else:
-                        tactic_details.append("  - {tactic_id}: (Name not found)")
+                        tactic_details.append(f"  - {tactic_id}: (Name not found)")
                 result_text += "\n".join(tactic_details) + "\n\n"
             else:
                 result_text += "Associated Tactics: None\n\n"
@@ -284,7 +285,7 @@ def create_mcp_server(data_loader=None):
             # Platforms
             platforms = technique.get('platforms', [])
             if platforms:
-                result_text += "Platforms ({len(platforms)}):\n"
+                result_text += f"Platforms ({len(platforms)}):\n"
                 result_text += "  " + ", ".join(platforms) + "\n\n"
             else:
                 result_text += "Platforms: Not specified\n\n"
@@ -292,26 +293,26 @@ def create_mcp_server(data_loader=None):
             # Mitigations
             mitigations = technique.get('mitigations', [])
             if mitigations:
-                result_text += "Mitigations ({len(mitigations)}):\n"
+                result_text += f"Mitigations ({len(mitigations)}):\n"
                 # Look up mitigation names
                 mitigation_details = []
                 for mitigation_id in mitigations:
                     for mitigation in data.get('mitigations', []):
                         if mitigation.get('id') == mitigation_id:
-                            mitigation_details.append("  - {mitigation_id}: {mitigation.get('name', 'Unknown')}")
+                            mitigation_details.append(f"  - {mitigation_id}: {mitigation.get('name', 'Unknown')}")
                             break
                     else:
-                        mitigation_details.append("  - {mitigation_id}: (Name not found)")
+                        mitigation_details.append(f"  - {mitigation_id}: (Name not found)")
                 result_text += "\n".join(mitigation_details) + "\n\n"
             else:
                 result_text += "Mitigations: None available\n\n"
 
             # Additional metadata
             if technique.get('data_sources'):
-                result_text += "Data Sources: {', '.join(technique['data_sources'])}\n"
+                result_text += f"Data Sources: {', '.join(technique['data_sources'])}\n"
 
             if technique.get('detection'):
-                result_text += "\nDetection:\n{technique['detection']}\n"
+                result_text += f"\nDetection:\n{technique['detection']}\n"
 
             return [TextContent(
                 type="text",
@@ -366,17 +367,17 @@ def create_mcp_server(data_loader=None):
             # Build formatted response
             result_text = "MITRE ATT&CK TACTICS\n"
             result_text += "===================\n\n"
-            result_text += "Total tactics: {len(sorted_tactics)}\n\n"
+            result_text += f"Total tactics: {len(sorted_tactics)}\n\n"
 
             for tactic in sorted_tactics:
                 tactic_id = tactic.get('id', 'N/A')
                 tactic_name = tactic.get('name', 'N/A')
                 tactic_description = tactic.get('description', 'No description available')
 
-                result_text += "ID: {tactic_id}\n"
-                result_text += "Name: {tactic_name}\n"
-                result_text += "Description: {tactic_description}\n"
-                result_text += "{'-' * 50}\n\n"
+                result_text += f"ID: {tactic_id}\n"
+                result_text += f"Name: {tactic_name}\n"
+                result_text += f"Description: {tactic_description}\n"
+                result_text += f"{'-' * 50}\n\n"
 
             return [TextContent(
                 type="text",
@@ -403,7 +404,7 @@ def create_mcp_server(data_loader=None):
             List[TextContent]: List of techniques with basic details used by the group
         """
         try:
-            logger.info("Executing get_group_techniques with ID: {group_id}")
+            logger.info(f"Executing get_group_techniques with ID: {group_id}")
 
             if not app.data_loader:
                 return [TextContent(
@@ -441,24 +442,24 @@ def create_mcp_server(data_loader=None):
             if not group_techniques:
                 return [TextContent(
                     type="text",
-                    text="No techniques found for group '{group_id}' ({group.get('name', 'Unknown')})."
+                    text=f"No techniques found for group '{group_id}' ({group.get('name', 'Unknown')})."
                 )]
 
             # Build detailed response
             result_text = "GROUP TECHNIQUES\n"
             result_text += "================\n\n"
-            result_text += "Group ID: {group.get('id', 'N/A')}\n"
-            result_text += "Group Name: {group.get('name', 'N/A')}\n"
+            result_text += f"Group ID: {group.get('id', 'N/A')}\n"
+            result_text += f"Group Name: {group.get('name', 'N/A')}\n"
 
             # Add aliases if available
             aliases = group.get('aliases', [])
             if aliases:
-                result_text += "Aliases: {', '.join(aliases)}\n"
+                result_text += f"Aliases: {', '.join(aliases)}\n"
 
-            result_text += "\nDescription:\n{group.get('description', 'No description available')}\n\n"
+            result_text += f"\nDescription:\n{group.get('description', 'No description available')}\n\n"
 
-            result_text += "Techniques Used ({len(group_techniques)}):\n"
-            result_text += "{'-' * 40}\n\n"
+            result_text += f"Techniques Used ({len(group_techniques)}):\n"
+            result_text += f"{'-' * 40}\n\n"
 
             # Look up technique details
             technique_details = []
@@ -492,13 +493,13 @@ def create_mcp_server(data_loader=None):
 
             # Format technique details
             for i, tech in enumerate(technique_details, 1):
-                result_text += "{i}. {tech['id']}: {tech['name']}\n"
+                result_text += f"{i}. {tech['id']}: {tech['name']}\n"
 
                 # Add description preview
                 desc = tech['description']
                 if len(desc) > 150:
                     desc = desc[:150] + "..."
-                result_text += "   Description: {desc}\n"
+                result_text += f"   Description: {desc}\n"
 
                 # Add tactics if available
                 if tech['tactics']:
@@ -507,15 +508,15 @@ def create_mcp_server(data_loader=None):
                         # Look up tactic name
                         for tactic in data.get('tactics', []):
                             if tactic.get('id') == tactic_id:
-                                tactic_names.append("{tactic_id} ({tactic.get('name', 'Unknown')})")
+                                tactic_names.append(f"{tactic_id} ({tactic.get('name', 'Unknown')})")
                                 break
                         else:
-                            tactic_names.append("{tactic_id} (Name not found)")
-                    result_text += "   Tactics: {', '.join(tactic_names)}\n"
+                            tactic_names.append(f"{tactic_id} (Name not found)")
+                    result_text += f"   Tactics: {', '.join(tactic_names)}\n"
 
                 # Add platforms if available
                 if tech['platforms']:
-                    result_text += "   Platforms: {', '.join(tech['platforms'])}\n"
+                    result_text += f"   Platforms: {', '.join(tech['platforms'])}\n"
 
                 result_text += "\n"
 
@@ -544,7 +545,7 @@ def create_mcp_server(data_loader=None):
             List[TextContent]: List of applicable mitigations for the technique
         """
         try:
-            logger.info("Executing get_technique_mitigations with ID: {technique_id}")
+            logger.info(f"Executing get_technique_mitigations with ID: {technique_id}")
 
             if not app.data_loader:
                 return [TextContent(
@@ -582,23 +583,23 @@ def create_mcp_server(data_loader=None):
             if not technique_mitigations:
                 return [TextContent(
                     type="text",
-                    text="No mitigations found for technique '{technique_id}' ({technique.get('name', 'Unknown')})."
+                    text=f"No mitigations found for technique '{technique_id}' ({technique.get('name', 'Unknown')})."
                 )]
 
             # Build detailed response
             result_text = "TECHNIQUE MITIGATIONS\n"
             result_text += "====================\n\n"
-            result_text += "Technique ID: {technique.get('id', 'N/A')}\n"
-            result_text += "Technique Name: {technique.get('name', 'N/A')}\n\n"
+            result_text += f"Technique ID: {technique.get('id', 'N/A')}\n"
+            result_text += f"Technique Name: {technique.get('name', 'N/A')}\n\n"
 
             # Add technique description preview
             description = technique.get('description', 'No description available')
             if len(description) > 200:
                 description = description[:200] + "..."
-            result_text += "Description: {description}\n\n"
+            result_text += f"Description: {description}\n\n"
 
-            result_text += "Mitigations ({len(technique_mitigations)}):\n"
-            result_text += "{'-' * 40}\n\n"
+            result_text += f"Mitigations ({len(technique_mitigations)}):\n"
+            result_text += f"{'-' * 40}\n\n"
 
             # Look up mitigation details
             mitigation_details = []
@@ -628,13 +629,13 @@ def create_mcp_server(data_loader=None):
 
             # Format mitigation details
             for i, mitigation in enumerate(mitigation_details, 1):
-                result_text += "{i}. {mitigation['id']}: {mitigation['name']}\n"
+                result_text += f"{i}. {mitigation['id']}: {mitigation['name']}\n"
 
                 # Add description
                 desc = mitigation['description']
                 if len(desc) > 300:
                     desc = desc[:300] + "..."
-                result_text += "   Description: {desc}\n\n"
+                result_text += f"   Description: {desc}\n\n"
 
             return [TextContent(
                 type="text",
@@ -691,13 +692,13 @@ def create_mcp_server(data_loader=None):
             if start_tactic not in valid_tactics:
                 return [TextContent(
                     type="text",
-                    text="Error: Start tactic '{start_tactic}' not found. Valid tactics: {', '.join(sorted(valid_tactics))}"
+                    text=f"Error: Start tactic '{start_tactic}' not found. Valid tactics: {', '.join(sorted(valid_tactics))}"
                 )]
 
             if end_tactic not in valid_tactics:
                 return [TextContent(
                     type="text",
-                    text="Error: End tactic '{end_tactic}' not found. Valid tactics: {', '.join(sorted(valid_tactics))}"
+                    text=f"Error: End tactic '{end_tactic}' not found. Valid tactics: {', '.join(sorted(valid_tactics))}"
                 )]
 
             # Validate group ID if provided
