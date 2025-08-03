@@ -153,8 +153,8 @@ class DataLoader:
 
     def _process_single_relationship(self, rel_obj: Dict[str, Any], parsed_data: Dict[str, List[Dict[str, Any]]], stix_id_to_mitre_id: Dict[str, str]):
         """Process a single STIX relationship object."""
-        source_ref = rel_obj.get('source_re', '')
-        target_ref = rel_obj.get('target_re', '')
+        source_ref = rel_obj.get('source_ref', '')
+        target_ref = rel_obj.get('target_ref', '')
         relationship_type = rel_obj.get('relationship_type', '')
 
         source_mitre_id = stix_id_to_mitre_id.get(source_ref, '')
@@ -162,6 +162,18 @@ class DataLoader:
 
         if not source_mitre_id or not target_mitre_id:
             return
+
+        # Store the relationship for later analysis
+        if 'relationships' not in parsed_data:
+            parsed_data['relationships'] = []
+        
+        parsed_data['relationships'].append({
+            'type': relationship_type,
+            'source_ref': source_ref,
+            'target_ref': target_ref,
+            'source_id': source_mitre_id,
+            'target_id': target_mitre_id
+        })
 
         # Handle different relationship types
         if relationship_type == 'uses':

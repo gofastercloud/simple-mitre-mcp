@@ -49,11 +49,38 @@ The MCP server exposes 5 core tools:
 
 ## Configuration
 
+### YAML Configuration Files
+
 The server uses YAML configuration files in the `config/` directory:
 
 - `data_sources.yaml` - Define threat intelligence data sources
 - `entity_schemas.yaml` - Configure entity type schemas
 - `tools.yaml` - Define MCP tool configurations
+
+### Environment Variables
+
+The server supports configuration via environment variables:
+
+```bash
+# HTTP Proxy Server Configuration
+MCP_HTTP_HOST=localhost    # Default: localhost
+MCP_HTTP_PORT=8000        # Default: 8000
+
+# Copy .env.example to .env for local configuration
+cp .env.example .env
+```
+
+### Web Interface
+
+The web interface is available at `http://localhost:8000` by default. You can customize the host and port using environment variables:
+
+```bash
+# Start with custom port
+MCP_HTTP_PORT=3000 python start_explorer.py
+
+# Start with custom host and port
+MCP_HTTP_HOST=0.0.0.0 MCP_HTTP_PORT=8080 python start_explorer.py
+```
 
 ## Development
 

@@ -183,7 +183,11 @@ def create_http_handler(mcp_server):
         return MCPHTTPHandler(*args, mcp_server=mcp_server, **kwargs)
     return handler
 
-async def start_http_proxy(host='localhost', port=8000):
+async def start_http_proxy(host=None, port=None):
+    """Start the HTTP proxy server."""
+    # Use environment variables with defaults
+    host = host or os.getenv('MCP_HTTP_HOST', 'localhost')
+    port = port or int(os.getenv('MCP_HTTP_PORT', '8000'))
     """Start the HTTP proxy server."""
     try:
         # Initialize data loader and MCP server

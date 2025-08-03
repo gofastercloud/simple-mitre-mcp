@@ -1160,9 +1160,8 @@ def create_mcp_server(data_loader=None):
 
             # Get cached data
             data = app.data_loader.get_cached_data('mitre_attack')
-            relationships = app.data_loader.get_cached_data('mitre_attack_relationships')
-
-            if not data or not relationships:
+            
+            if not data:
                 return [TextContent(
                     type="text",
                     text="Error: MITRE ATT&CK data not loaded. Please load data first."
@@ -1239,10 +1238,13 @@ def create_mcp_server(data_loader=None):
                     'outgoing': []   # Relationships where our technique is the source
                 }
 
+            # Get relationships from the data
+            relationships = data.get('relationships', [])
+            
             for rel in relationships:
-                rel_type = rel.get('relationship_type', '')
-                source_ref = rel.get('source_re', '')
-                target_ref = rel.get('target_re', '')
+                rel_type = rel.get('type', '')  # Changed from 'relationship_type' to 'type'
+                source_ref = rel.get('source_ref', '')  # Fixed typo
+                target_ref = rel.get('target_ref', '')  # Fixed typo
 
                 if rel_type in relationship_types:
                     if target_ref == target_stix_id:
@@ -1399,11 +1401,11 @@ def create_mcp_server(data_loader=None):
                 text=result_text
             )]
 
-        except Exception:
+        except Exception as e:
             logger.error(f"Error in detect_technique_relationships: {e}")
             return [TextContent(
                 type="text",
-                text="Error analyzing technique relationships: {str(e)}"
+                text=f"Error analyzing technique relationships: {str(e)}"
             )]
 
     logger.info("Registered 8 MCP tools successfully")

@@ -37,9 +37,9 @@ async def main():
     print("=" * 50)
     print()
     
-    # Configuration
-    host = 'localhost'
-    port = 8000
+    # Configuration with environment variable support
+    host = os.getenv('MCP_HTTP_HOST', 'localhost')
+    port = int(os.getenv('MCP_HTTP_PORT', '8000'))
     url = f"http://{host}:{port}"
     
     print(f"Starting MITRE ATT&CK MCP Explorer...")

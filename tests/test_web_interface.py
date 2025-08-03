@@ -12,6 +12,7 @@ import logging
 import pytest
 import threading
 import time
+import os
 from unittest.mock import Mock, patch
 from src.mcp_server import create_mcp_server
 from src.data_loader import DataLoader
@@ -19,6 +20,11 @@ from src.data_loader import DataLoader
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Configuration with environment variable support
+MCP_HTTP_HOST = os.getenv('MCP_HTTP_HOST', 'localhost')
+MCP_HTTP_PORT = int(os.getenv('MCP_HTTP_PORT', '8000'))
+MCP_HTTP_URL = f"http://{MCP_HTTP_HOST}:{MCP_HTTP_PORT}"
 
 
 class TestWebInterface:
@@ -188,13 +194,13 @@ class TestWebInterfaceIntegration:
             }
 
             try:
-                async with session.post('http://localhost:3000', json=payload) as response:
+                async with session.post(MCP_HTTP_URL, json=payload) as response:
                     assert response.status == 200
                     result = await response.json()
                     assert 'result' in result
                     assert 'tools' in result['result']
             except aiohttp.ClientError:
-                pytest.skip("MCP server not running on localhost:3000")
+                pytest.skip(f"MCP server not running on {MCP_HTTP_URL}")
 
     @pytest.mark.integration
     @pytest.mark.asyncio
@@ -215,13 +221,13 @@ class TestWebInterfaceIntegration:
             }
 
             try:
-                async with session.post('http://localhost:3000', json=payload) as response:
+                async with session.post(MCP_HTTP_URL, json=payload) as response:
                     assert response.status == 200
                     result = await response.json()
                     assert 'result' in result
                     assert 'content' in result['result']
             except aiohttp.ClientError:
-                pytest.skip("MCP server not running on localhost:3000")
+                pytest.skip(f"MCP server not running on {MCP_HTTP_URL}")
 
 
 if __name__ == '__main__':
