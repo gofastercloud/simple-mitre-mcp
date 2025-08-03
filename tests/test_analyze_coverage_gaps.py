@@ -144,7 +144,7 @@ class TestAnalyzeCoverageGaps:
         # T1566 has mitigations, T1055 doesn't
         assert "50.0%" in content  # Should show 50% coverage
         assert "DETAILED GAP ANALYSIS" in content
-        assert "T1055: Process Injection" in content
+        assert "T1055 - Process Injection" in content
     
     @pytest.mark.asyncio
     async def test_analyze_coverage_gaps_with_exclusions(self, mcp_server):
