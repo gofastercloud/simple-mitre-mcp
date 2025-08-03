@@ -141,8 +141,9 @@ jobs:
             
             # Start HTTP server in background
             def start_server():
+                from http.server import HTTPServer
                 handler_class = http_proxy.create_http_handler(mcp_server)
-                server = http_proxy.HTTPServer(('127.0.0.1', 8003), handler_class)
+                server = HTTPServer(('127.0.0.1', 8003), handler_class)
                 server.serve_forever()
             
             server_thread = threading.Thread(target=start_server, daemon=True)
