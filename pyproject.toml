@@ -37,3 +37,8 @@ dev-dependencies = [
     "bandit>=1.8.6",
     "safety>=3.6.0",
 ]
+
+[tool.pytest.ini_options]
+markers = [
+    "integration: marks tests as integration tests (deselect with '-m \"not integration\"')",
+]

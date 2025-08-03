@@ -50,26 +50,26 @@ def _format_technique_response(technique: dict, data: dict) -> str:
     """
     result_text = "TECHNIQUE DETAILS\n"
     result_text += "================\n\n"
-    result_text += "ID: {technique.get('id', 'N/A')}\n"
-    result_text += "Name: {technique.get('name', 'N/A')}\n\n"
+    result_text += f"ID: {technique.get('id', 'N/A')}\n"
+    result_text += f"Name: {technique.get('name', 'N/A')}\n\n"
 
     # Description
     description = technique.get('description', 'No description available')
-    result_text += "Description:\n{description}\n\n"
+    result_text += f"Description:\n{description}\n\n"
 
     # Associated tactics
     tactics = technique.get('tactics', [])
     if tactics:
-        result_text += "Associated Tactics ({len(tactics)}):\n"
+        result_text += f"Associated Tactics ({len(tactics)}):\n"
         # Look up tactic names
         tactic_details = []
         for tactic_id in tactics:
             for tactic in data.get('tactics', []):
                 if tactic.get('id') == tactic_id:
-                    tactic_details.append("  - {tactic_id}: {tactic.get('name', 'Unknown')}")
+                    tactic_details.append(f"  - {tactic_id}: {tactic.get('name', 'Unknown')}")
                     break
             else:
-                tactic_details.append("  - {tactic_id}: (Name not found)")
+                tactic_details.append(f"  - {tactic_id}: (Name not found)")
         result_text += "\n".join(tactic_details) + "\n\n"
     else:
         result_text += "Associated Tactics: None\n\n"
@@ -77,7 +77,7 @@ def _format_technique_response(technique: dict, data: dict) -> str:
     # Platforms
     platforms = technique.get('platforms', [])
     if platforms:
-        result_text += "Platforms ({len(platforms)}):\n"
+        result_text += f"Platforms ({len(platforms)}):\n"
         result_text += "  " + ", ".join(platforms) + "\n\n"
     else:
         result_text += "Platforms: Not specified\n\n"
@@ -85,26 +85,26 @@ def _format_technique_response(technique: dict, data: dict) -> str:
     # Mitigations
     mitigations = technique.get('mitigations', [])
     if mitigations:
-        result_text += "Mitigations ({len(mitigations)}):\n"
+        result_text += f"Mitigations ({len(mitigations)}):\n"
         # Look up mitigation names
         mitigation_details = []
         for mitigation_id in mitigations:
             for mitigation in data.get('mitigations', []):
                 if mitigation.get('id') == mitigation_id:
-                    mitigation_details.append("  - {mitigation_id}: {mitigation.get('name', 'Unknown')}")
+                    mitigation_details.append(f"  - {mitigation_id}: {mitigation.get('name', 'Unknown')}")
                     break
             else:
-                mitigation_details.append("  - {mitigation_id}: (Name not found)")
+                mitigation_details.append(f"  - {mitigation_id}: (Name not found)")
         result_text += "\n".join(mitigation_details) + "\n\n"
     else:
         result_text += "Mitigations: None available\n\n"
 
     # Additional metadata
     if technique.get('data_sources'):
-        result_text += "Data Sources: {', '.join(technique['data_sources'])}\n"
+        result_text += f"Data Sources: {', '.join(technique['data_sources'])}\n"
 
     if technique.get('detection'):
-        result_text += "\nDetection:\n{technique['detection']}\n"
+        result_text += f"\nDetection:\n{technique['detection']}\n"
 
     return result_text
 

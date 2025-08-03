@@ -32,9 +32,9 @@ def load_config() -> Dict[str, Any]:
         with open(data_sources_path, 'r') as f:
             data_sources_config = yaml.safe_load(f)
             config['data_sources'] = data_sources_config.get('data_sources', {})
-            logger.info("Loaded {len(config['data_sources'])} data sources")
+            logger.info(f"Loaded {len(config['data_sources'])} data sources")
     else:
-        logger.warning("Data sources config file not found: {data_sources_path}")
+        logger.warning(f"Data sources config file not found: {data_sources_path}")
         config['data_sources'] = {}
 
     # Load entity schemas configuration
@@ -43,18 +43,20 @@ def load_config() -> Dict[str, Any]:
         with open(entity_schemas_path, 'r') as f:
             entity_schemas_config = yaml.safe_load(f)
             config['entity_schemas'] = entity_schemas_config.get('entity_schemas', {})
-            logger.info("Loaded {len(config['entity_schemas'])} entity schemas")
+            logger.info(f"Loaded {len(config['entity_schemas'])} entity schemas")
     else:
-        logger.warning("Entity schemas config file not found: {entity_schemas_path}")
+        logger.warning(f"Entity schemas config file not found: {entity_schemas_path}")
         config['entity_schemas'] = {}
 
     # Load tools configuration if it exists
     tools_path = 'config/tools.yaml'
     if os.path.exists(tools_path):
         with open(tools_path, 'r') as f:
-            logger.info("Loaded {len(config['tools'])} tool configurations")
+            tools_config = yaml.safe_load(f)
+            config['tools'] = tools_config.get('tools', {})
+            logger.info(f"Loaded {len(config['tools'])} tool configurations")
     else:
-        logger.info("Tools config file not found: {tools_path} (optional)")
+        logger.info(f"Tools config file not found: {tools_path} (optional)")
         config['tools'] = {}
 
     return config
@@ -79,11 +81,11 @@ def validate_config(config: Dict[str, Any]) -> bool:
 
     for source_name, source_config in config['data_sources'].items():
         if 'url' not in source_config:
-            raise ValueError("Data source '{source_name}' missing required 'url' field")
+            raise ValueError(f"Data source '{source_name}' missing required 'url' field")
         if 'format' not in source_config:
-            raise ValueError("Data source '{source_name}' missing required 'format' field")
+            raise ValueError(f"Data source '{source_name}' missing required 'format' field")
         if 'entity_types' not in source_config:
-            raise ValueError("Data source '{source_name}' missing required 'entity_types' field")
+            raise ValueError(f"Data source '{source_name}' missing required 'entity_types' field")
 
     # Validate entity schemas
     if 'entity_schemas' not in config:
@@ -91,11 +93,11 @@ def validate_config(config: Dict[str, Any]) -> bool:
 
     for schema_name, schema_config in config['entity_schemas'].items():
         if 'id_field' not in schema_config:
-            raise ValueError("Entity schema '{schema_name}' missing required 'id_field'")
+            raise ValueError(f"Entity schema '{schema_name}' missing required 'id_field'")
         if 'name_field' not in schema_config:
-            raise ValueError("Entity schema '{schema_name}' missing required 'name_field'")
+            raise ValueError(f"Entity schema '{schema_name}' missing required 'name_field'")
         if 'required_fields' not in schema_config:
-            raise ValueError("Entity schema '{schema_name}' missing required 'required_fields'")
+            raise ValueError(f"Entity schema '{schema_name}' missing required 'required_fields'")
 
     logger.info("Configuration validation passed")
     return True
@@ -110,6 +112,7 @@ class ConfigLoader:
         """Initialize the configuration loader."""
         self.config_dir = 'config'
 
+    def load_tools_config(self) -> Dict[str, Any]:
         """
         Load tools configuration from tools.yaml file.
 
@@ -119,17 +122,17 @@ class ConfigLoader:
         tools_path = os.path.join(self.config_dir, 'tools.yaml')
 
         if not os.path.exists(tools_path):
-            logger.warning("Tools config file not found: {tools_path}")
+            logger.warning(f"Tools config file not found: {tools_path}")
             return {'tools': {}}
 
         try:
             with open(tools_path, 'r') as f:
                 return yaml.safe_load(f) or {'tools': {}}
-        except yaml.YAMLError:
-            logger.error("Error parsing tools config file")
+        except yaml.YAMLError as e:
+            logger.error(f"Error parsing tools config file: {e}")
             return {'tools': {}}
-        except Exception:
-            logger.error("Error loading tools config file")
+        except Exception as e:
+            logger.error(f"Error loading tools config file: {e}")
             return {'tools': {}}
 
     def load_data_sources_config(self) -> Dict[str, Any]:
@@ -142,17 +145,17 @@ class ConfigLoader:
         data_sources_path = os.path.join(self.config_dir, 'data_sources.yaml')
 
         if not os.path.exists(data_sources_path):
-            logger.warning("Data sources config file not found: {data_sources_path}")
+            logger.warning(f"Data sources config file not found: {data_sources_path}")
             return {'data_sources': {}}
 
         try:
             with open(data_sources_path, 'r') as f:
                 data_sources_config = yaml.safe_load(f)
-                logger.info("Loaded {len(data_sources_config.get('data_sources', {}))} data sources")
+                logger.info(f"Loaded {len(data_sources_config.get('data_sources', {}))} data sources")
                 return data_sources_config
         except yaml.YAMLError as e:
-            logger.error("Error parsing data sources config file: {e}")
+            logger.error(f"Error parsing data sources config file: {e}")
             return {'data_sources': {}}
-        except Exception:
-            logger.error("Error loading data sources config file: {e}")
+        except Exception as e:
+            logger.error(f"Error loading data sources config file: {e}")
             return {'data_sources': {}}

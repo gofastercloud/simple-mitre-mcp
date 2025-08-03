@@ -88,27 +88,27 @@ def _format_technique_mitigations_response(technique: dict, mitigation_details: 
     """
     result_text = "TECHNIQUE MITIGATIONS\n"
     result_text += "====================\n\n"
-    result_text += "Technique ID: {technique.get('id', 'N/A')}\n"
-    result_text += "Technique Name: {technique.get('name', 'N/A')}\n\n"
+    result_text += f"Technique ID: {technique.get('id', 'N/A')}\n"
+    result_text += f"Technique Name: {technique.get('name', 'N/A')}\n\n"
 
     # Add technique description preview
     description = technique.get('description', 'No description available')
     if len(description) > 200:
         description = description[:200] + "..."
-    result_text += "Description: {description}\n\n"
+    result_text += f"Description: {description}\n\n"
 
-    result_text += "Mitigations ({len(mitigation_details)}):\n"
-    result_text += "{'-' * 40}\n\n"
+    result_text += f"Mitigations ({len(mitigation_details)}):\n"
+    result_text += f"{'-' * 40}\n\n"
 
     # Format mitigation details
     for i, mitigation in enumerate(mitigation_details, 1):
-        result_text += "{i}. {mitigation['id']}: {mitigation['name']}\n"
+        result_text += f"{i}. {mitigation['id']}: {mitigation['name']}\n"
 
         # Add description
         desc = mitigation['description']
         if len(desc) > 300:
             desc = desc[:300] + "..."
-        result_text += "   Description: {desc}\n\n"
+        result_text += f"   Description: {desc}\n\n"
 
     return result_text
 

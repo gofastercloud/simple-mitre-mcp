@@ -64,25 +64,29 @@ def _search_entities(query: str, data: Dict[str, List[Dict[str, Any]]]) -> List[
 
         for entity in entities:
             matches = []
+            
+            # Get entity fields
+            entity_id = entity.get('id', '').lower()
+            entity_name = entity.get('name', '').lower()
 
             # Search in entity ID
             if query in entity_id:
-                matches.append("ID contains '{query}'")
+                matches.append(f"ID contains '{query}'")
 
             # Search in entity name
             if query in entity_name:
-                matches.append("name contains '{query}'")
+                matches.append(f"name contains '{query}'")
 
             # Search in description
             entity_desc = entity.get('description', '').lower()
             if query in entity_desc:
-                matches.append("description contains '{query}'")
+                matches.append(f"description contains '{query}'")
 
             # Search in aliases (for groups)
             if entity_type == 'groups' and 'aliases' in entity:
                 for alias in entity.get('aliases', []):
                     if query in alias.lower():
-                        matches.append("alias '{alias}' contains '{query}'")
+                        matches.append(f"alias '{alias}' contains '{query}'")
                         break
 
             # If we found matches, add to results

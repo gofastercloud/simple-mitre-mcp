@@ -2,9 +2,9 @@ import unittest
 from unittest.mock import patch, MagicMock
 import sys
 import os
-from data_loader import DataLoader
-from config_loader import load_config
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+from src.data_loader import DataLoader
+from src.config_loader import load_config
 
 """
 Unit tests for the data loading functionality.
