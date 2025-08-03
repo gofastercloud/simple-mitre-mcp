@@ -152,7 +152,7 @@ def create_mcp_server(data_loader=None):
             List[TextContent]: Search results with entity type indicators
         """
         try:
-            logger.info("Executing search_attack with query: {query}")
+            logger.info(f"Executing search_attack with query: {query}")
 
             if not app.data_loader:
                 return [TextContent(
@@ -203,7 +203,7 @@ def create_mcp_server(data_loader=None):
             )]
 
         except Exception:
-            logger.error("Error in search_attack: {e}")
+            logger.error(f"Error in search_attack: {e}")
             return [TextContent(
                 type="text",
                 text="Error executing search: {str(e)}"
@@ -222,7 +222,7 @@ def create_mcp_server(data_loader=None):
             List[TextContent]: Technique details including tactics, platforms, and mitigations
         """
         try:
-            logger.info("Executing get_technique with ID: {technique_id}")
+            logger.info(f"Executing get_technique with ID: {technique_id}")
 
             if not app.data_loader:
                 return [TextContent(
@@ -320,7 +320,7 @@ def create_mcp_server(data_loader=None):
             )]
 
         except Exception:
-            logger.error("Error in get_technique: {e}")
+            logger.error(f"Error in get_technique: {e}")
             return [TextContent(
                 type="text",
                 text="Error retrieving technique: {str(e)}"
@@ -385,7 +385,7 @@ def create_mcp_server(data_loader=None):
             )]
 
         except Exception:
-            logger.error("Error in list_tactics: {e}")
+            logger.error(f"Error in list_tactics: {e}")
             return [TextContent(
                 type="text",
                 text="Error listing tactics: {str(e)}"
@@ -526,7 +526,7 @@ def create_mcp_server(data_loader=None):
             )]
 
         except Exception:
-            logger.error("Error in get_group_techniques: {e}")
+            logger.error(f"Error in get_group_techniques: {e}")
             return [TextContent(
                 type="text",
                 text="Error retrieving group techniques: {str(e)}"
@@ -643,7 +643,7 @@ def create_mcp_server(data_loader=None):
             )]
 
         except Exception:
-            logger.error("Error in get_technique_mitigations: {e}")
+            logger.error(f"Error in get_technique_mitigations: {e}")
             return [TextContent(
                 type="text",
                 text="Error retrieving technique mitigations: {str(e)}"
@@ -707,7 +707,7 @@ def create_mcp_server(data_loader=None):
                 if not group_exists:
                     return [TextContent(
                         type="text",
-                        text="Error: Group '{group_id}' not found. Please verify the group ID is correct."
+                        text=f"Error: Group '{group_id}' not found. Please verify the group ID is correct."
                     )]
 
             # Define the standard MITRE ATT&CK kill chain order
@@ -875,7 +875,7 @@ def create_mcp_server(data_loader=None):
             )]
 
         except Exception:
-            logger.error("Error in build_attack_path: {e}")
+            logger.error(f"Error in build_attack_path: {e}")
             return [TextContent(
                 type="text",
                 text="Error building attack path: {str(e)}"
@@ -1129,7 +1129,7 @@ def create_mcp_server(data_loader=None):
             )]
 
         except Exception:
-            logger.error("Error in analyze_coverage_gaps: {e}")
+            logger.error(f"Error in analyze_coverage_gaps: {e}")
             return [TextContent(
                 type="text",
                 text="Error analyzing coverage gaps: {str(e)}"
@@ -1400,7 +1400,7 @@ def create_mcp_server(data_loader=None):
             )]
 
         except Exception:
-            logger.error("Error in detect_technique_relationships: {e}")
+            logger.error(f"Error in detect_technique_relationships: {e}")
             return [TextContent(
                 type="text",
                 text="Error analyzing technique relationships: {str(e)}"
@@ -1441,7 +1441,7 @@ class MCPServer:
         Args:
             transport: Transport protocol to use ("stdio", "sse", or "streamable-http")
         """
-        logger.info("Starting MCP server with {transport} transport")
+        logger.info(f"Starting MCP server with {transport} transport")
         self.app.run(transport=transport)
 
 

@@ -110,7 +110,7 @@ class STIXParser:
 
             # Validate basic required fields
             if not entity_data['id'] or not entity_data['name']:
-                logger.debug("Skipping {entity_type} entity with missing ID or name")
+                logger.debug(f"Skipping {entity_type} entity with missing ID or name")
                 return None
 
             # Extract entity-specific fields
@@ -126,7 +126,7 @@ class STIXParser:
             return entity_data
 
         except Exception:
-            logger.error("Error extracting {entity_type} entity: {e}")
+            logger.error(f"Error extracting {entity_type} entity: {e}")
             return None
 
     def _extract_mitre_id(self, stix_obj: Dict[str, Any]) -> str:

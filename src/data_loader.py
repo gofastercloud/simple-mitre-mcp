@@ -44,21 +44,21 @@ class DataLoader:
             requests.RequestException: If download fails
             json.JSONDecodeError: If JSON parsing fails
         """
-        logger.info("Downloading data from: {url}")
+        logger.info(f"Downloading data from: {url}")
 
         try:
             response = requests.get(url, timeout=timeout)
             response.raise_for_status()
 
             data = response.json()
-            logger.info("Successfully downloaded {len(str(data))} bytes of data")
+            logger.info(f"Successfully downloaded {len(str(data))} bytes of data")
             return data
 
         except requests.RequestException as e:
-            logger.error("Failed to download data from {url}: {e}")
+            logger.error(f"Failed to download data from {url}: {e}")
             raise
         except json.JSONDecodeError as e:
-            logger.error("Failed to parse JSON from {url}: {e}")
+            logger.error(f"Failed to parse JSON from {url}: {e}")
             raise
 
     def load_data_source(self, source_name: str) -> Dict[str, List[Dict[str, Any]]]:
@@ -98,9 +98,9 @@ class DataLoader:
         raw_relationships = [obj for obj in raw_data.get('objects', []) if obj.get('type') == 'relationship']
         self.data_cache["{source_name}_relationships"] = raw_relationships
 
-        logger.info("Successfully loaded data source '{source_name}'")
+        logger.info(f"Successfully loaded data source '{source_name}'")
         for entity_type, entities in parsed_data.items():
-            logger.info("  {entity_type}: {len(entities)} entities")
+            logger.info(f"  {entity_type}: {len(entities)} entities")
 
         return parsed_data
 
@@ -140,7 +140,7 @@ class DataLoader:
                 self._process_single_relationship(obj, parsed_data, stix_id_to_mitre_id)
                 relationships_processed += 1
 
-        logger.info("Processed {relationships_processed} relationship objects")
+        logger.info(f"Processed {relationships_processed} relationship objects")
         return parsed_data
 
     def _extract_mitre_id_from_stix(self, stix_obj: Dict[str, Any]) -> str:
