@@ -267,8 +267,8 @@ class TestBuildAttackPath:
         techniques = []
         for i in range(12):
             techniques.append({
-                'id': 'T{1000 + i}',
-                'name': 'Test Technique {i + 1}',
+                'id': f'T{1000 + i}',
+                'name': f'Test Technique {i + 1}',
                 'description': f'Test technique {i + 1} description.',
                 'tactics': ['TA0001'],
                 'platforms': ['Windows'],

@@ -89,6 +89,38 @@ class TestDetectTechniqueRelationships:
                     'name': 'Privilege Escalation',
                     'description': 'The adversary is trying to gain higher-level permissions.'
                 }
+            ],
+            'relationships': [
+                {
+                    'type': 'relationship',
+                    'relationship_type': 'uses',
+                    'source_ref': 'intrusion-set--899ce53f-13a0-479b-a0e4-67d46e241542',  # APT29
+                    'target_ref': 'attack-pattern--43e7dc91-05b2-474c-b9ac-2ed4fe101f4d'   # T1055
+                },
+                {
+                    'type': 'relationship',
+                    'relationship_type': 'uses',
+                    'source_ref': 'intrusion-set--68391641-859f-4a9a-9a1e-3e5cf71ec376',  # Lazarus
+                    'target_ref': 'attack-pattern--43e7dc91-05b2-474c-b9ac-2ed4fe101f4d'   # T1055
+                },
+                {
+                    'type': 'relationship',
+                    'relationship_type': 'subtechnique-o',
+                    'source_ref': 'attack-pattern--f4599aa0-4f85-4a32-80ea-fc39dc965945',  # T1055.001
+                    'target_ref': 'attack-pattern--43e7dc91-05b2-474c-b9ac-2ed4fe101f4d'   # T1055
+                },
+                {
+                    'type': 'relationship',
+                    'relationship_type': 'mitigates',
+                    'source_ref': 'course-of-action--90c218c3-fbf8-4830-98a7-e8cfb7eaa485',  # M1040
+                    'target_ref': 'attack-pattern--43e7dc91-05b2-474c-b9ac-2ed4fe101f4d'   # T1055
+                },
+                {
+                    'type': 'relationship',
+                    'relationship_type': 'detects',
+                    'source_ref': 'x-mitre-data-component--685f917a-e95e-4ba0-ade1-c7d354dae6e0',  # Sample detector
+                    'target_ref': 'attack-pattern--43e7dc91-05b2-474c-b9ac-2ed4fe101f4d'   # T1055
+                }
             ]
         }
 

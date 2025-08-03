@@ -1242,7 +1242,7 @@ def create_mcp_server(data_loader=None):
             relationships = data.get('relationships', [])
             
             for rel in relationships:
-                rel_type = rel.get('type', '')  # Changed from 'relationship_type' to 'type'
+                rel_type = rel.get('relationship_type', '')  # Use relationship_type for STIX format
                 source_ref = rel.get('source_ref', '')  # Fixed typo
                 target_ref = rel.get('target_ref', '')  # Fixed typo
 
@@ -1251,18 +1251,32 @@ def create_mcp_server(data_loader=None):
                         # Our technique is the target
                         source_mitre_id = stix_to_mitre.get(source_ref, '')
                         if source_mitre_id:
+                            # Get entity details
+                            source_entity = entity_lookup.get(source_ref, {})
+                            entity_type = source_entity.get('type', 'unknown')
+                            entity_name = source_entity.get('name', 'Unknown')
+                            
                             discovered_relationships[rel_type]['incoming'].append({
                                 'entity_id': source_mitre_id,
                                 'entity_stix_id': source_ref,
+                                'entity_type': entity_type,
+                                'entity_name': entity_name,
                                 'relationship': rel
                             })
                     elif source_ref == target_stix_id:
                         # Our technique is the source
                         target_mitre_id = stix_to_mitre.get(target_ref, '')
                         if target_mitre_id:
+                            # Get entity details
+                            target_entity = entity_lookup.get(target_ref, {})
+                            entity_type = target_entity.get('type', 'unknown')
+                            entity_name = target_entity.get('name', 'Unknown')
+                            
                             discovered_relationships[rel_type]['outgoing'].append({
                                 'entity_id': target_mitre_id,
                                 'entity_stix_id': target_ref,
+                                'entity_type': entity_type,
+                                'entity_name': entity_name,
                                 'relationship': rel
                             })
 
@@ -1286,8 +1300,18 @@ def create_mcp_server(data_loader=None):
                 outgoing = discovered_relationships[rel_type]['outgoing']
 
                 if incoming or outgoing:
-                    result_text += f"{rel_type.upper().replace('-', ' ')} RELATIONSHIPS\n"
-                    result_text += f"{'=' * (len(rel_type.replace('-', ' ')) + 14)}\n\n"
+                    # Format relationship type name for display
+                    if rel_type == 'subtechnique-o':
+                        display_name = "SUBTECHNIQUE OF"
+                    elif rel_type == 'attributed-to':
+                        display_name = "ATTRIBUTED TO"
+                    elif rel_type == 'revoked-by':
+                        display_name = "REVOKED BY"
+                    else:
+                        display_name = rel_type.upper()
+                    
+                    result_text += f"{display_name} RELATIONSHIPS\n"
+                    result_text += f"{'=' * (len(display_name) + 14)}\n\n"
 
                     if incoming:
                         result_text += f"Incoming {rel_type} relationships ({len(incoming)}): \n"

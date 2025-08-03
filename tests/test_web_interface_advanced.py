@@ -15,23 +15,29 @@ class TestWebInterfaceAdvanced:
 
     def test_web_explorer_html_contains_advanced_section(self):
         """Test that web_explorer.html contains the advanced tools section."""
-        with open('/Users/gofastercloud/simple-mitre-mcp/web_explorer.html', 'r') as f:
+        # Use relative path that works in both local and CI environments
+        html_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'web_explorer.html')
+        
+        with open(html_path, 'r') as f:
             html_content = f.read()
 
         # Check for advanced tools section
-        assert '🧠 Advanced Threat Modeling' in html_content, "Advanced tools section header not found"
+        assert '🚀 Advanced Threat Modeling Tools' in html_content, "Advanced tools section header not found"
         assert 'Build Attack Path' in html_content, "Build Attack Path button not found"
         assert 'Analyze Coverage Gaps' in html_content, "Analyze Coverage Gaps button not found"
         assert 'Detect Relationships' in html_content, "Detect Relationships button not found"
 
         # Check for advanced form elements
-        assert 'advancedForm' in html_content, "Advanced form element not found"
-        assert 'showAdvancedForm' in html_content, "showAdvancedForm function not found"
-        assert 'executeAdvancedTool' in html_content, "executeAdvancedTool function not found"
+        assert 'buildAttackPath' in html_content, "buildAttackPath function not found"
+        assert 'analyzeCoverageGaps' in html_content, "analyzeCoverageGaps function not found"
+        assert 'detectTechniqueRelationships' in html_content, "detectTechniqueRelationships function not found"
 
     def test_web_explorer_html_contains_advanced_css(self):
         """Test that web_explorer.html contains CSS for advanced tools."""
-        with open('/Users/gofastercloud/simple-mitre-mcp/web_explorer.html', 'r') as f:
+        # Use relative path that works in both local and CI environments
+        html_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'web_explorer.html')
+        
+        with open(html_path, 'r') as f:
             html_content = f.read()
 
         # Check for advanced tool CSS classes
@@ -43,7 +49,10 @@ class TestWebInterfaceAdvanced:
 
     def test_web_explorer_html_javascript_functions(self):
         """Test that web_explorer.html contains required JavaScript functions."""
-        with open('/Users/gofastercloud/simple-mitre-mcp/web_explorer.html', 'r') as f:
+        # Use relative path that works in both local and CI environments
+        html_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'web_explorer.html')
+        
+        with open(html_path, 'r') as f:
             html_content = f.read()
 
         # Check for JavaScript functions
@@ -59,11 +68,14 @@ class TestWebInterfaceAdvanced:
         ]
 
         for func_name in required_functions:
-            assert 'function {func_name}' in html_content, "JavaScript function '{func_name}' not found"
+            assert f'function {func_name}' in html_content, f"JavaScript function '{func_name}' not found"
 
     def test_web_explorer_html_form_configurations(self):
         """Test that web_explorer.html contains proper form configurations for each tool."""
-        with open('/Users/gofastercloud/simple-mitre-mcp/web_explorer.html', 'r') as f:
+        # Use relative path that works in both local and CI environments
+        html_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'web_explorer.html')
+        
+        with open(html_path, 'r') as f:
             html_content = f.read()
 
         # Check for build_attack_path form elements
@@ -84,7 +96,10 @@ class TestWebInterfaceAdvanced:
 
     def test_http_proxy_contains_advanced_tools(self):
         """Test that http_proxy.py contains the new advanced tools."""
-        with open('/Users/gofastercloud/simple-mitre-mcp/http_proxy.py', 'r') as f:
+        # Use relative path that works in both local and CI environments
+        proxy_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'http_proxy.py')
+        
+        with open(proxy_path, 'r') as f:
             proxy_content = f.read()
 
         # Check for advanced tool names
@@ -99,7 +114,10 @@ class TestWebInterfaceAdvanced:
 
     def test_http_proxy_tool_schemas(self):
         """Test that HTTP proxy contains proper schemas for advanced tools."""
-        with open('/Users/gofastercloud/simple-mitre-mcp/http_proxy.py', 'r') as f:
+        # Use relative path that works in both local and CI environments
+        proxy_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'http_proxy.py')
+        
+        with open(proxy_path, 'r') as f:
             proxy_content = f.read()
 
         # Check for build_attack_path schema elements
@@ -124,18 +142,21 @@ class TestWebInterfaceAdvanced:
         # This is marked as integration test since it requires actual server startup
 
         # For now, just verify the file exists and is readable
-        assert os.path.exists('/Users/gofastercloud/simple-mitre-mcp/start_explorer.py'), "start_explorer.py not found"
+        explorer_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'start_explorer.py')
+        assert os.path.exists(explorer_path), "start_explorer.py not found"
 
-        with open('/Users/gofastercloud/simple-mitre-mcp/start_explorer.py', 'r') as f:
+        with open(explorer_path, 'r') as f:
             content = f.read()
             # Basic check that it's a Python script
-            assert 'python' in (
-                content.lower() or 'import' in content, "start_explorer.py doesn't appear to be a Python script")
+            assert 'python' in content.lower() or 'import' in content, "start_explorer.py doesn't appear to be a Python script"
 
     def test_web_interface_tool_count_consistency(self):
         """Test that web interface expects the correct number of tools."""
         # This test ensures the web interface is consistent with the 6 tools we now have
-        with open('/Users/gofastercloud/simple-mitre-mcp/web_explorer.html', 'r') as f:
+        # Use relative path that works in both local and CI environments
+        html_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'web_explorer.html')
+        
+        with open(html_path, 'r') as f:
             html_content = f.read()
 
         # Count tool buttons in the HTML
@@ -155,15 +176,18 @@ class TestWebInterfaceAdvanced:
 
         # Verify all basic tools are present
         for tool in basic_tools:
-            assert tool in html_content, "Basic tool '{tool}' not found in web interface"
+            assert tool in html_content, f"Basic tool '{tool}' not found in web interface"
 
         # Verify all advanced tools are present
         for tool in advanced_tools:
-            assert tool in html_content, "Advanced tool '{tool}' not found in web interface"
+            assert tool in html_content, f"Advanced tool '{tool}' not found in web interface"
 
     def test_web_interface_styling_consistency(self):
         """Test that advanced tools have consistent styling with basic tools."""
-        with open('/Users/gofastercloud/simple-mitre-mcp/web_explorer.html', 'r') as f:
+        # Use relative path that works in both local and CI environments
+        html_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'web_explorer.html')
+        
+        with open(html_path, 'r') as f:
             html_content = f.read()
 
         # Check that advanced tools use the tool-button class
