@@ -4,259 +4,655 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MITRE ATT&CK MCP Explorer</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        * {
             margin: 0;
-            padding: 20px;
-            background-color: #f5f5f5;
-            color: #333;
-        }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            padding: 30px;
-        }
-        h1 {
-            color: #2c3e50;
-            text-align: center;
-            margin-bottom: 30px;
-            border-bottom: 3px solid #3498db;
-            padding-bottom: 15px;
-        }
-        .tool-section {
-            margin-bottom: 40px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            padding: 20px;
-        }
-        .tool-section h2 {
-            color: #34495e;
-            margin-top: 0;
-            border-bottom: 2px solid #ecf0f1;
-            padding-bottom: 10px;
-        }
-        .advanced-section {
-            background-color: #f8f9fa;
-            border-left: 4px solid #e74c3c;
-        }
-        .advanced-section h2 {
-            color: #e74c3c;
-        }
-        .form-group {
-            margin-bottom: 20px;
-        }
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 600;
-            color: #555;
-        }
-        input, select, textarea {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 14px;
+            padding: 0;
             box-sizing: border-box;
         }
-        button {
-            background-color: #3498db;
-            color: white;
-            padding: 12px 24px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-            margin-right: 10px;
+
+        :root {
+            --primary-color: #2563eb;
+            --primary-dark: #1d4ed8;
+            --secondary-color: #64748b;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --dark-bg: #0f172a;
+            --card-bg: #1e293b;
+            --border-color: #334155;
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px 0;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
             margin-bottom: 10px;
         }
-        button:hover {
-            background-color: #2980b9;
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto;
         }
-        .advanced-button {
-            background-color: #e74c3c;
+
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 15px 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
-        .advanced-button:hover {
-            background-color: #c0392b;
-        }
-        .result-area {
-            background-color: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 4px;
-            padding: 15px;
-            margin-top: 20px;
-            white-space: pre-wrap;
-            font-family: 'Courier New', monospace;
-            font-size: 13px;
-            max-height: 500px;
-            overflow-y: auto;
-        }
-        .array-input {
+
+        .connection-status {
             display: flex;
             align-items: center;
-            margin-bottom: 5px;
+            gap: 10px;
         }
-        .array-input input {
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--success-color);
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.disconnected {
+            background: var(--danger-color);
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
             flex: 1;
-            margin-right: 10px;
+            min-height: 0;
         }
-        .array-input button {
-            padding: 5px 10px;
-            font-size: 12px;
-            margin: 0;
+
+        .left-panel, .right-panel {
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
         }
-        .add-array-item {
-            background-color: #27ae60;
-            color: white;
-            padding: 8px 16px;
-            border: none;
-            border-radius: 4px;
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .card h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .tabs {
+            display: flex;
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 12px;
+            padding: 4px;
+            margin-bottom: 25px;
+            border: 1px solid var(--border-color);
+        }
+
+        .tab {
+            flex: 1;
+            padding: 12px 20px;
+            text-align: center;
+            border-radius: 8px;
             cursor: pointer;
-            font-size: 14px;
-            margin-top: 5px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            color: var(--text-muted);
         }
-        .add-array-item:hover {
-            background-color: #229954;
+
+        .tab.active {
+            background: var(--primary-color);
+            color: white;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        .tab:hover:not(.active) {
+            background: rgba(37, 99, 235, 0.1);
+            color: var(--text-secondary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .demo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .demo-card {
+            background: rgba(37, 99, 235, 0.05);
+            border: 1px solid rgba(37, 99, 235, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .demo-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary-color), var(--success-color));
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .demo-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .demo-card:hover {
+            background: rgba(37, 99, 235, 0.1);
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px -5px rgba(37, 99, 235, 0.2);
+        }
+
+        .demo-card h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .demo-card p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .custom-input-section {
+            background: rgba(15, 23, 42, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .input-group input, .input-group select, .input-group textarea {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--dark-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        .input-group input:focus, .input-group select:focus, .input-group textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            font-size: 0.95rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: white;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(37, 99, 235, 0.4);
+        }
+
+        .btn-secondary {
+            background: var(--secondary-color);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #475569;
+            transform: translateY(-1px);
+        }
+
+        .results-panel {
+            flex: 1;
+            min-height: 0;
+        }
+
+        .results-content {
+            background: var(--dark-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            overflow-y: auto;
+            height: 100%;
+            min-height: 400px;
+            color: var(--text-secondary);
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            color: var(--primary-color);
+            font-weight: 500;
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(37, 99, 235, 0.3);
+            border-top: 2px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            color: var(--danger-color);
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+
+        .success {
+            color: var(--success-color);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .demo-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .status-bar {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+            
+            .tabs {
+                flex-direction: column;
+            }
+            
+            .tab {
+                padding: 10px 15px;
+            }
+            
+            .card {
+                padding: 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .demo-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🛡️ MITRE ATT&CK MCP Explorer</h1>
-        
-        <!-- Basic Tools Section -->
-        <div class="tool-section">
-            <h2>🔍 Basic Analysis Tools</h2>
-            
-            <!-- Search Attack Tool -->
-            <div class="form-group">
-                <label for="search-query">Search MITRE ATT&CK:</label>
-                <input type="text" id="search-query" placeholder="Enter search query (e.g., 'phishing', 'T1566', 'APT1')">
-                <button onclick="callTool('search_attack', {query: document.getElementById('search-query').value})">Search</button>
+        <div class="header">
+            <h1><i class="fas fa-shield-alt"></i> MITRE ATT&CK MCP Explorer</h1>
+            <p>Advanced Threat Intelligence Analysis & Demonstration Platform</p>
+        </div>
+
+        <div class="status-bar">
+            <div class="connection-status">
+                <div class="status-indicator" id="statusIndicator"></div>
+                <span id="statusText">Connecting to MCP Server...</span>
             </div>
-            
-            <!-- Get Technique Tool -->
-            <div class="form-group">
-                <label for="technique-id">Get Technique Details:</label>
-                <input type="text" id="technique-id" placeholder="Enter technique ID (e.g., T1566, T1055)">
-                <button onclick="callTool('get_technique', {technique_id: document.getElementById('technique-id').value})">Get Technique</button>
-            </div>
-            
-            <!-- List Tactics Tool -->
-            <div class="form-group">
-                <button onclick="callTool('list_tactics', {})">List All Tactics</button>
-            </div>
-            
-            <!-- Get Group Techniques Tool -->
-            <div class="form-group">
-                <label for="group-id">Get Group Techniques:</label>
-                <input type="text" id="group-id" placeholder="Enter group ID (e.g., G0016, G0007)">
-                <button onclick="callTool('get_group_techniques', {group_id: document.getElementById('group-id').value})">Get Group Techniques</button>
-            </div>
-            
-            <!-- Get Technique Mitigations Tool -->
-            <div class="form-group">
-                <label for="mitigation-technique-id">Get Technique Mitigations:</label>
-                <input type="text" id="mitigation-technique-id" placeholder="Enter technique ID (e.g., T1566, T1055)">
-                <button onclick="callTool('get_technique_mitigations', {technique_id: document.getElementById('mitigation-technique-id').value})">Get Mitigations</button>
+            <div class="server-info">
+                <span id="serverInfo">8 Tools Available • Real-time Analysis</span>
             </div>
         </div>
-        
-        <!-- Advanced Tools Section -->
-        <div class="tool-section advanced-section">
-            <h2>🚀 Advanced Threat Modeling Tools</h2>
-            
-            <!-- Build Attack Path Tool -->
-            <div class="form-group">
-                <label for="start-tactic">Build Attack Path:</label>
-                <select id="start-tactic">
-                    <option value="TA0001">TA0001 - Initial Access</option>
-                    <option value="TA0002">TA0002 - Execution</option>
-                    <option value="TA0003">TA0003 - Persistence</option>
-                    <option value="TA0004">TA0004 - Privilege Escalation</option>
-                    <option value="TA0005">TA0005 - Defense Evasion</option>
-                    <option value="TA0006">TA0006 - Credential Access</option>
-                    <option value="TA0007">TA0007 - Discovery</option>
-                    <option value="TA0008">TA0008 - Lateral Movement</option>
-                    <option value="TA0009">TA0009 - Collection</option>
-                    <option value="TA0010">TA0010 - Exfiltration</option>
-                    <option value="TA0011">TA0011 - Command and Control</option>
-                    <option value="TA0040">TA0040 - Impact</option>
-                </select>
-                <label for="end-tactic">End Tactic:</label>
-                <select id="end-tactic">
-                    <option value="TA0010">TA0010 - Exfiltration</option>
-                    <option value="TA0040">TA0040 - Impact</option>
-                    <option value="TA0011">TA0011 - Command and Control</option>
-                    <option value="TA0009">TA0009 - Collection</option>
-                    <option value="TA0008">TA0008 - Lateral Movement</option>
-                    <option value="TA0007">TA0007 - Discovery</option>
-                    <option value="TA0006">TA0006 - Credential Access</option>
-                    <option value="TA0005">TA0005 - Defense Evasion</option>
-                    <option value="TA0004">TA0004 - Privilege Escalation</option>
-                    <option value="TA0003">TA0003 - Persistence</option>
-                    <option value="TA0002">TA0002 - Execution</option>
-                    <option value="TA0001">TA0001 - Initial Access</option>
-                </select>
-                <label for="path-group-id">Group Filter (optional):</label>
-                <input type="text" id="path-group-id" placeholder="Enter group ID (e.g., G0016)">
-                <label for="path-platform">Platform Filter (optional):</label>
-                <input type="text" id="path-platform" placeholder="Enter platform (e.g., Windows, Linux, macOS)">
-                <button class="advanced-button" onclick="buildAttackPath()">Build Attack Path</button>
-            </div>
-            
-            <!-- Analyze Coverage Gaps Tool -->
-            <div class="form-group">
-                <label>Analyze Coverage Gaps:</label>
-                <label for="coverage-groups">Threat Groups (comma-separated):</label>
-                <input type="text" id="coverage-groups" placeholder="Enter group IDs (e.g., G0016,G0007,G0032)">
-                <label for="coverage-techniques">Specific Techniques (comma-separated, optional):</label>
-                <input type="text" id="coverage-techniques" placeholder="Enter technique IDs (e.g., T1566,T1055,T1059)">
-                <label for="exclude-mitigations">Exclude Mitigations (comma-separated, optional):</label>
-                <input type="text" id="exclude-mitigations" placeholder="Enter mitigation IDs to exclude (e.g., M1049,M1038)">
-                <button class="advanced-button" onclick="analyzeCoverageGaps()">Analyze Coverage Gaps</button>
-            </div>
-            
-            <!-- Detect Technique Relationships Tool -->
-            <div class="form-group">
-                <label for="relationship-technique-id">Detect Technique Relationships:</label>
-                <input type="text" id="relationship-technique-id" placeholder="Enter technique ID (e.g., T1055)">
-                <label for="relationship-depth">Analysis Depth:</label>
-                <select id="relationship-depth">
-                    <option value="1">1 - Direct relationships</option>
-                    <option value="2" selected>2 - Second-degree relationships</option>
-                    <option value="3">3 - Third-degree relationships</option>
-                    <option value="4">4 - Fourth-degree relationships</option>
-                    <option value="5">5 - Fifth-degree relationships</option>
-                </select>
-                <label>Relationship Types:</label>
-                <div>
-                    <input type="checkbox" id="rel-uses" value="uses" checked> <label for="rel-uses">Uses (Attribution)</label><br>
-                    <input type="checkbox" id="rel-mitigates" value="mitigates" checked> <label for="rel-mitigates">Mitigates</label><br>
-                    <input type="checkbox" id="rel-detects" value="detects"> <label for="rel-detects">Detects</label><br>
-                    <input type="checkbox" id="rel-subtechnique" value="subtechnique-of"> <label for="rel-subtechnique">Subtechnique Hierarchy</label><br>
-                    <input type="checkbox" id="rel-attributed" value="attributed-to"> <label for="rel-attributed">Attribution</label><br>
-                    <input type="checkbox" id="rel-revoked" value="revoked-by"> <label for="rel-revoked">Revoked By</label>
+
+        <div class="main-content">
+            <div class="left-panel">
+                <div class="card">
+                    <h2><i class="fas fa-rocket"></i> Interactive Demo Center</h2>
+                    
+                    <div class="tabs">
+                        <div class="tab active" onclick="switchTab('basic')">
+                            <i class="fas fa-search"></i> Basic Tools
+                        </div>
+                        <div class="tab" onclick="switchTab('advanced')">
+                            <i class="fas fa-brain"></i> Advanced Analysis
+                        </div>
+                        <div class="tab" onclick="switchTab('custom')">
+                            <i class="fas fa-cogs"></i> Custom Query
+                        </div>
+                    </div>
+
+                    <!-- Basic Tools Tab -->
+                    <div id="basic-tab" class="tab-content active">
+                        <div class="demo-grid">
+                            <div class="demo-card" onclick="runDemo('search_powershell')">
+                                <h3><i class="fas fa-search"></i> PowerShell Search</h3>
+                                <p>Search for all PowerShell-related techniques and mitigations</p>
+                            </div>
+                            <div class="demo-card" onclick="runDemo('list_tactics')">
+                                <h3><i class="fas fa-list"></i> All Tactics</h3>
+                                <p>Display complete list of MITRE ATT&CK tactics</p>
+                            </div>
+                            <div class="demo-card" onclick="runDemo('technique_t1055')">
+                                <h3><i class="fas fa-info-circle"></i> Process Injection</h3>
+                                <p>Detailed analysis of T1055 Process Injection technique</p>
+                            </div>
+                            <div class="demo-card" onclick="runDemo('apt29_techniques')">
+                                <h3><i class="fas fa-users"></i> APT29 TTPs</h3>
+                                <p>Techniques used by APT29 (Cozy Bear) threat group</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Advanced Analysis Tab -->
+                    <div id="advanced-tab" class="tab-content">
+                        <div class="demo-grid">
+                            <div class="demo-card" onclick="runDemo('attack_path')">
+                                <h3><i class="fas fa-route"></i> Attack Path Analysis</h3>
+                                <p>Build multi-stage attack path from Initial Access to Impact</p>
+                            </div>
+                            <div class="demo-card" onclick="runDemo('coverage_gaps')">
+                                <h3><i class="fas fa-shield-alt"></i> Coverage Gap Analysis</h3>
+                                <p>Analyze defensive gaps against APT29 and APT1</p>
+                            </div>
+                            <div class="demo-card" onclick="runDemo('technique_relationships')">
+                                <h3><i class="fas fa-project-diagram"></i> Relationship Discovery</h3>
+                                <p>Explore complex relationships for Process Injection</p>
+                            </div>
+                            <div class="demo-card" onclick="runDemo('apt_comparison')">
+                                <h3><i class="fas fa-balance-scale"></i> APT Comparison</h3>
+                                <p>Compare techniques across multiple threat groups</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Custom Query Tab -->
+                    <div id="custom-tab" class="tab-content">
+                        <div class="custom-input-section">
+                            <div class="input-group">
+                                <label for="toolSelect">Select Tool:</label>
+                                <select id="toolSelect" onchange="updateCustomForm()">
+                                    <option value="">Choose a tool...</option>
+                                    <option value="search_attack">Search ATT&CK</option>
+                                    <option value="get_technique">Get Technique Details</option>
+                                    <option value="get_group_techniques">Group Techniques</option>
+                                    <option value="build_attack_path">Build Attack Path</option>
+                                    <option value="analyze_coverage_gaps">Coverage Gap Analysis</option>
+                                    <option value="detect_technique_relationships">Technique Relationships</option>
+                                </select>
+                            </div>
+                            <div id="customParameters"></div>
+                            <button class="btn btn-primary" onclick="runCustomQuery()">
+                                <i class="fas fa-play"></i> Execute Custom Query
+                            </button>
+                        </div>
+                    </div>
                 </div>
-                <button class="advanced-button" onclick="detectTechniqueRelationships()">Detect Relationships</button>
             </div>
-        </div>
-        
-        <!-- Results Area -->
-        <div class="form-group">
-            <label for="results">Results:</label>
-            <div id="results" class="result-area">Click a button above to execute a tool and see results here...</div>
+
+            <div class="right-panel">
+                <div class="card results-panel">
+                    <h2><i class="fas fa-terminal"></i> Analysis Results</h2>
+                    <div class="results-content" id="results">
+                        <div style="text-align: center; color: var(--text-muted); padding: 50px 20px;">
+                            <i class="fas fa-chart-line" style="font-size: 3rem; margin-bottom: 20px; opacity: 0.3;"></i>
+                            <h3>Ready for Analysis</h3>
+                            <p>Select a demo or create a custom query to see results here.</p>
+                            <p style="margin-top: 15px; font-size: 0.9rem;">
+                                💡 Try the <strong>Advanced Analysis</strong> tab for sophisticated threat modeling
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
-        async function callTool(toolName, parameters) {
-            const resultsDiv = document.getElementById('results');
-            resultsDiv.textContent = 'Executing ' + toolName + '...';
+        // Global state
+        let isConnected = false;
+        let currentTool = '';
+        
+        // Demo configurations
+        const demos = {
+            // Basic Tools
+            search_powershell: {
+                tool: 'search_attack',
+                params: { query: 'powershell' },
+                title: 'PowerShell Search Results'
+            },
+            list_tactics: {
+                tool: 'list_tactics',
+                params: {},
+                title: 'MITRE ATT&CK Tactics'
+            },
+            technique_t1055: {
+                tool: 'get_technique',
+                params: { technique_id: 'T1055' },
+                title: 'T1055 Process Injection Analysis'
+            },
+            apt29_techniques: {
+                tool: 'get_group_techniques',
+                params: { group_id: 'G0016' },
+                title: 'APT29 (Cozy Bear) Techniques'
+            },
+            
+            // Advanced Analysis
+            attack_path: {
+                tool: 'build_attack_path',
+                params: { 
+                    start_tactic: 'TA0001', 
+                    end_tactic: 'TA0040',
+                    group_id: 'G0016'
+                },
+                title: 'APT29 Attack Path: Initial Access → Impact'
+            },
+            coverage_gaps: {
+                tool: 'analyze_coverage_gaps',
+                params: { 
+                    threat_groups: ['G0016', 'G0007'],
+                    exclude_mitigations: ['M1013', 'M1026']
+                },
+                title: 'Coverage Gap Analysis: APT29 & APT1'
+            },
+            technique_relationships: {
+                tool: 'detect_technique_relationships',
+                params: { 
+                    technique_id: 'T1055',
+                    depth: 2
+                },
+                title: 'T1055 Relationship Analysis'
+            },
+            apt_comparison: {
+                tool: 'analyze_coverage_gaps',
+                params: { 
+                    threat_groups: ['G0016', 'G0007', 'G0032']
+                },
+                title: 'Multi-APT Coverage Analysis'
+            }
+        };
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            checkConnection();
+            setInterval(checkConnection, 30000); // Check every 30 seconds
+        });
+
+        // Connection management
+        async function checkConnection() {
+            try {
+                const response = await fetch('/tools');
+                if (response.ok) {
+                    setConnectionStatus(true);
+                } else {
+                    setConnectionStatus(false);
+                }
+            } catch (error) {
+                setConnectionStatus(false);
+            }
+        }
+
+        function setConnectionStatus(connected) {
+            isConnected = connected;
+            const indicator = document.getElementById('statusIndicator');
+            const statusText = document.getElementById('statusText');
+            
+            if (connected) {
+                indicator.classList.remove('disconnected');
+                statusText.textContent = 'Connected to MCP Server';
+            } else {
+                indicator.classList.add('disconnected');
+                statusText.textContent = 'Disconnected from MCP Server';
+            }
+        }
+
+        // Tab management
+        function switchTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            document.getElementById(tabName + '-tab').classList.add('active');
+        }
+
+        // Demo execution
+        async function runDemo(demoKey) {
+            const demo = demos[demoKey];
+            if (!demo) return;
+            
+            if (!isConnected) {
+                showError('Not connected to MCP server. Please check the connection.');
+                return;
+            }
+            
+            showLoading(demo.title);
             
             try {
                 const response = await fetch('/call_tool', {
@@ -265,78 +661,177 @@
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        tool: toolName,
-                        parameters: parameters
+                        name: demo.tool,
+                        arguments: demo.params
                     })
                 });
                 
-                if (!response.ok) {
-                    throw new Error('HTTP error! status: ' + response.status);
+                if (response.ok) {
+                    const result = await response.text();
+                    showResults(demo.title, result);
+                } else {
+                    const error = await response.text();
+                    showError(`Tool execution failed: ${error}`);
                 }
-                
-                const result = await response.text();
-                resultsDiv.textContent = result;
             } catch (error) {
-                resultsDiv.textContent = 'Error: ' + error.message;
+                showError(`Network error: ${error.message}`);
             }
         }
-        
-        function buildAttackPath() {
-            const startTactic = document.getElementById('start-tactic').value;
-            const endTactic = document.getElementById('end-tactic').value;
-            const groupId = document.getElementById('path-group-id').value;
-            const platform = document.getElementById('path-platform').value;
+
+        // Custom query management
+        function updateCustomForm() {
+            const toolSelect = document.getElementById('toolSelect');
+            const parametersDiv = document.getElementById('customParameters');
+            const selectedTool = toolSelect.value;
             
-            const params = {
-                start_tactic: startTactic,
-                end_tactic: endTactic
+            if (!selectedTool) {
+                parametersDiv.innerHTML = '';
+                return;
+            }
+            
+            // Tool-specific parameter forms
+            const parameterForms = {
+                search_attack: `
+                    <div class="input-group">
+                        <label for="query">Search Query:</label>
+                        <input type="text" id="query" placeholder="e.g., powershell, process injection, APT29">
+                    </div>
+                `,
+                get_technique: `
+                    <div class="input-group">
+                        <label for="technique_id">Technique ID:</label>
+                        <input type="text" id="technique_id" placeholder="e.g., T1055, T1059">
+                    </div>
+                `,
+                get_group_techniques: `
+                    <div class="input-group">
+                        <label for="group_id">Group ID:</label>
+                        <input type="text" id="group_id" placeholder="e.g., G0016, G0007">
+                    </div>
+                `,
+                build_attack_path: `
+                    <div class="input-group">
+                        <label for="start_tactic">Start Tactic:</label>
+                        <input type="text" id="start_tactic" placeholder="e.g., TA0001" value="TA0001">
+                    </div>
+                    <div class="input-group">
+                        <label for="end_tactic">End Tactic:</label>
+                        <input type="text" id="end_tactic" placeholder="e.g., TA0040" value="TA0040">
+                    </div>
+                    <div class="input-group">
+                        <label for="group_id_path">Group ID (optional):</label>
+                        <input type="text" id="group_id_path" placeholder="e.g., G0016">
+                    </div>
+                `,
+                analyze_coverage_gaps: `
+                    <div class="input-group">
+                        <label for="threat_groups">Threat Groups (comma-separated):</label>
+                        <input type="text" id="threat_groups" placeholder="e.g., G0016,G0007,G0032">
+                    </div>
+                    <div class="input-group">
+                        <label for="exclude_mitigations">Exclude Mitigations (optional):</label>
+                        <input type="text" id="exclude_mitigations" placeholder="e.g., M1013,M1026">
+                    </div>
+                `,
+                detect_technique_relationships: `
+                    <div class="input-group">
+                        <label for="technique_id_rel">Technique ID:</label>
+                        <input type="text" id="technique_id_rel" placeholder="e.g., T1055" value="T1055">
+                    </div>
+                    <div class="input-group">
+                        <label for="depth">Analysis Depth:</label>
+                        <select id="depth">
+                            <option value="1">1 - Direct relationships</option>
+                            <option value="2" selected>2 - Extended relationships</option>
+                            <option value="3">3 - Deep analysis</option>
+                        </select>
+                    </div>
+                `
             };
             
-            if (groupId) params.group_id = groupId;
-            if (platform) params.platform = platform;
-            
-            callTool('build_attack_path', params);
+            parametersDiv.innerHTML = parameterForms[selectedTool] || '';
         }
-        
-        function analyzeCoverageGaps() {
-            const groups = document.getElementById('coverage-groups').value;
-            const techniques = document.getElementById('coverage-techniques').value;
-            const excludeMitigations = document.getElementById('exclude-mitigations').value;
+
+        async function runCustomQuery() {
+            const toolSelect = document.getElementById('toolSelect');
+            const selectedTool = toolSelect.value;
             
+            if (!selectedTool) {
+                showError('Please select a tool first.');
+                return;
+            }
+            
+            if (!isConnected) {
+                showError('Not connected to MCP server. Please check the connection.');
+                return;
+            }
+            
+            // Collect parameters based on selected tool
             const params = {};
+            const parameterDiv = document.getElementById('customParameters');
+            const inputs = parameterDiv.querySelectorAll('input, select');
             
-            if (groups) {
-                params.threat_groups = groups.split(',').map(g => g.trim()).filter(g => g);
-            }
-            if (techniques) {
-                params.technique_list = techniques.split(',').map(t => t.trim()).filter(t => t);
-            }
-            if (excludeMitigations) {
-                params.exclude_mitigations = excludeMitigations.split(',').map(m => m.trim()).filter(m => m);
-            }
+            inputs.forEach(input => {
+                if (input.value.trim()) {
+                    if (input.id === 'threat_groups' || input.id === 'exclude_mitigations') {
+                        // Handle comma-separated arrays
+                        params[input.id] = input.value.split(',').map(s => s.trim()).filter(s => s);
+                    } else if (input.type === 'number') {
+                        params[input.id] = parseInt(input.value);
+                    } else {
+                        params[input.id] = input.value.trim();
+                    }
+                }
+            });
             
-            callTool('analyze_coverage_gaps', params);
+            showLoading(`Custom ${selectedTool} Query`);
+            
+            try {
+                const response = await fetch('/call_tool', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        name: selectedTool,
+                        arguments: params
+                    })
+                });
+                
+                if (response.ok) {
+                    const result = await response.text();
+                    showResults(`Custom ${selectedTool} Results`, result);
+                } else {
+                    const error = await response.text();
+                    showError(`Tool execution failed: ${error}`);
+                }
+            } catch (error) {
+                showError(`Network error: ${error.message}`);
+            }
         }
-        
-        function detectTechniqueRelationships() {
-            const techniqueId = document.getElementById('relationship-technique-id').value;
-            const depth = parseInt(document.getElementById('relationship-depth').value);
-            
-            const relationshipTypes = [];
-            if (document.getElementById('rel-uses').checked) relationshipTypes.push('uses');
-            if (document.getElementById('rel-mitigates').checked) relationshipTypes.push('mitigates');
-            if (document.getElementById('rel-detects').checked) relationshipTypes.push('detects');
-            if (document.getElementById('rel-subtechnique').checked) relationshipTypes.push('subtechnique-of');
-            if (document.getElementById('rel-attributed').checked) relationshipTypes.push('attributed-to');
-            if (document.getElementById('rel-revoked').checked) relationshipTypes.push('revoked-by');
-            
-            const params = {
-                technique_id: techniqueId,
-                depth: depth,
-                relationship_types: relationshipTypes
-            };
-            
-            callTool('detect_technique_relationships', params);
+
+        // Results display
+        function showLoading(title) {
+            const results = document.getElementById('results');
+            results.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <span>Executing ${title}...</span>
+                </div>
+            `;
+        }
+
+        function showResults(title, content) {
+            const results = document.getElementById('results');
+            const timestamp = new Date().toLocaleTimeString();
+            results.innerHTML = `<div class="success">✅ ${title} - ${timestamp}</div>\n\n${content}`;
+            results.scrollTop = 0;
+        }
+
+        function showError(message) {
+            const results = document.getElementById('results');
+            const timestamp = new Date().toLocaleTimeString();
+            results.innerHTML = `<div class="error">❌ Error - ${timestamp}\n\n${message}</div>`;
         }
     </script>
 </body>
