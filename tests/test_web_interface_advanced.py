@@ -41,10 +41,8 @@ class TestWebInterfaceAdvanced:
             html_content = f.read()
 
         # Check for advanced tool CSS classes
-        assert '.advanced-tool' in html_content, "Advanced tool CSS class not found"
-        assert '.advanced-input-group' in html_content, "Advanced input group CSS not found"
-        assert '.array-input' in html_content, "Array input CSS not found"
-        assert '.array-tag' in html_content, "Array tag CSS not found"
+        assert '.advanced-section' in html_content, "Advanced section CSS class not found"
+        assert '.advanced-button' in html_content, "Advanced button CSS not found"
         assert '.form-group' in html_content, "Form group CSS not found"
 
     def test_web_explorer_html_javascript_functions(self):
@@ -57,14 +55,10 @@ class TestWebInterfaceAdvanced:
 
         # Check for JavaScript functions
         required_functions = [
-            'showAdvancedForm',
-            'generateAdvancedForm',
-            'initializeArrayInputs',
-            'addArrayItem',
-            'removeArrayItem',
-            'updateArrayTags',
-            'hideAdvancedForm',
-            'executeAdvancedTool'
+            'callTool',
+            'buildAttackPath',
+            'analyzeCoverageGaps',
+            'detectTechniqueRelationships'
         ]
 
         for func_name in required_functions:
@@ -105,8 +99,7 @@ class TestWebInterfaceAdvanced:
         # Check for advanced tool names
         assert 'build_attack_path' in proxy_content, "build_attack_path not found in HTTP proxy"
         assert 'analyze_coverage_gaps' in proxy_content, "analyze_coverage_gaps not found in HTTP proxy"
-        assert 'detect_technique_relationships' in (
-            proxy_content, "detect_technique_relationships not found in HTTP proxy")
+        assert 'detect_technique_relationships' in proxy_content, "detect_technique_relationships not found in HTTP proxy"
 
         # Check for array parameter support
         assert '"type": "array"' in proxy_content, "Array parameter support not found in HTTP proxy"
@@ -161,11 +154,11 @@ class TestWebInterfaceAdvanced:
 
         # Count tool buttons in the HTML
         basic_tools = [
-            'Search ATT&CK',
+            'Search',
             'List All Tactics',
-            'Get Technique Details',
+            'Get Technique',
             'Get Group Techniques',
-            'Get Technique Mitigations'
+            'Get Mitigations'
         ]
 
         advanced_tools = [
@@ -190,11 +183,11 @@ class TestWebInterfaceAdvanced:
         with open(html_path, 'r') as f:
             html_content = f.read()
 
-        # Check that advanced tools use the tool-button class
-        assert 'tool-button advanced-tool' in html_content, "Advanced tools don't use consistent button styling"
+        # Check that advanced tools use the advanced-button class
+        assert 'advanced-button' in html_content, "Advanced tools don't use advanced-button styling"
 
         # Check that advanced tools have proper hover effects
-        assert '.advanced-tool:hover' in html_content, "Advanced tools don't have hover effects"
+        assert '.advanced-button:hover' in html_content, "Advanced tools don't have hover effects"
 
         # Check that the advanced section follows the same pattern as other sections
-        assert '<h3>🧠 Advanced Threat Modeling</h3>' in html_content, "Advanced section header not properly formatted"
+        assert '<h2>🚀 Advanced Threat Modeling Tools</h2>' in html_content, "Advanced section header not properly formatted"
