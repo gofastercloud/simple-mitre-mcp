@@ -1,0 +1,29 @@
+name: Branch Protection
+
+on:
+  pull_request:
+    branches: [ main ]
+    types: [ opened, synchronize, reopened ]
+
+jobs:
+  validate-source-branch:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Validate source branch
+      run: |
+        echo "Source branch: ${{ github.head_ref }}"
+        echo "Target branch: ${{ github.base_ref }}"
+        
+        # Only allow PRs from staging branch to main
+        if [[ "${{ github.base_ref }}" == "main" && "${{ github.head_ref }}" != "staging" ]]; then
+          echo "❌ Error: Direct merges to main are only allowed from staging branch"
+          echo "Current source branch: ${{ github.head_ref }}"
+          echo "Please merge your changes to staging first, then create a PR from staging to main"
+          exit 1
+        fi
+        
+        echo "✅ Branch validation passed: ${{ github.head_ref }} -> ${{ github.base_ref }}"
+        
+    - name: Add status check
+      run: |
+        echo "Branch source validation completed successfully"
