@@ -4,6 +4,7 @@ Thank you for your interest in contributing to the MITRE ATT&CK MCP Server! This
 
 ## Table of Contents
 - [Code of Conduct](#code-of-conduct)
+- [Branch Protection & Workflow](#branch-protection--workflow)
 - [Getting Started](#getting-started)
 - [Development Setup](#development-setup)
 - [Making Changes](#making-changes)
@@ -16,6 +17,223 @@ Thank you for your interest in contributing to the MITRE ATT&CK MCP Server! This
 ## Code of Conduct
 
 This project adheres to a code of conduct. By participating, you are expected to uphold this code. Please report unacceptable behavior to the project maintainers.
+
+## Branch Protection & Workflow
+
+> **🤖 For Code Assistants & Agentic Workflows**: This section defines the mandatory workflow that all code changes must follow. These rules are enforced by GitHub branch protection and automated checks.
+
+### 🔒 **CRITICAL: Branch Protection Rules**
+
+This repository enforces a **strict staging-to-main workflow** with automated protection:
+
+```
+main (production) ← ONLY from staging via PR
+  ↑
+staging (integration) ← from feature branches  
+  ↑
+feature/* (development)
+```
+
+### ⚠️ **MANDATORY WORKFLOW FOR ALL CHANGES**
+
+**Step 1: Create Feature Branch from Staging**
+```bash
+# ALWAYS start from staging, never from main
+git checkout staging
+git pull origin staging
+git checkout -b feature/your-feature-name
+```
+
+**Step 2: Make Changes and Push to Feature Branch**
+```bash
+# Make your changes
+git add .
+git commit -m "feat: your changes"
+git push origin feature/your-feature-name
+```
+
+**Step 3: Create PR to Staging (NOT main)**
+```bash
+# Create PR to staging first
+gh pr create --base staging --head feature/your-feature-name \
+  --title "Your Feature" --body "Description"
+```
+
+**Step 4: After Staging Merge, Create PR to Main**
+```bash
+# Only after feature is merged to staging
+gh pr create --base main --head staging \
+  --title "Release: Your Feature" --body "Production release"
+```
+
+### 🚫 **BLOCKED ACTIONS (Will Fail)**
+
+These actions are **automatically blocked** by branch protection:
+
+❌ **Direct pushes to main branch**
+```bash
+git push origin main  # ← BLOCKED
+```
+
+❌ **PRs from feature branches to main**
+```bash
+gh pr create --base main --head feature/branch  # ← BLOCKED
+```
+
+❌ **Force pushes to protected branches**
+```bash
+git push --force origin main     # ← BLOCKED
+git push --force origin staging  # ← BLOCKED
+```
+
+❌ **Merging with failing tests**
+- Any failing CI/CD check blocks merge
+- All 9 required status checks must pass
+
+### ✅ **REQUIRED STATUS CHECKS (All Must Pass)**
+
+Before any merge to main, these checks are **mandatory**:
+
+1. **`CI/CD Pipeline/test (3.8)`** - Python 3.8 tests (202+ tests)
+2. **`CI/CD Pipeline/test (3.9)`** - Python 3.9 tests  
+3. **`CI/CD Pipeline/test (3.10)`** - Python 3.10 tests
+4. **`CI/CD Pipeline/test (3.11)`** - Python 3.11 tests
+5. **`CI/CD Pipeline/test (3.12)`** - Python 3.12 tests
+6. **`CI/CD Pipeline/security`** - Security vulnerability scanning
+7. **`CI/CD Pipeline/integration`** - Integration testing
+8. **`CI/CD Pipeline/build`** - Package building verification
+9. **`Branch Protection/validate-source-branch`** - Enforces staging-only merges
+
+### 🤖 **For Agentic Workflows: Automated Compliance**
+
+**Pre-flight Checklist for Code Assistants:**
+```bash
+# 1. Verify current branch is staging
+CURRENT_BRANCH=$(git branch --show-current)
+if [ "$CURRENT_BRANCH" != "staging" ]; then
+  echo "❌ Must start from staging branch"
+  git checkout staging && git pull origin staging
+fi
+
+# 2. Create feature branch
+git checkout -b feature/$(date +%s)-automated-change
+
+# 3. Make changes (your code here)
+
+# 4. Run tests locally before pushing
+uv run pytest tests/ -x --tb=short
+if [ $? -ne 0 ]; then
+  echo "❌ Tests failed - fix before pushing"
+  exit 1
+fi
+
+# 5. Push and create PR to staging
+git add . && git commit -m "feat: automated change"
+git push origin feature/$(date +%s)-automated-change
+gh pr create --base staging --title "Automated Change" --body "Description"
+```
+
+**Status Check Validation:**
+```bash
+# Check if all required checks pass
+gh pr checks $PR_NUMBER --json state,conclusion \
+  --jq '.[] | select(.conclusion != "SUCCESS") | .name'
+
+# If any checks fail, the merge is blocked
+```
+
+### 🔧 **Troubleshooting Branch Protection**
+
+**Error: "Required status checks are failing"**
+```bash
+# Check which tests are failing
+gh pr checks $PR_NUMBER
+
+# Run failing tests locally
+uv run pytest tests/test_specific_module.py -v
+
+# Fix issues and push again
+git add . && git commit -m "fix: resolve test failures"
+git push origin your-branch
+```
+
+**Error: "Branch is not up to date"**
+```bash
+# Update your branch with latest changes
+git checkout staging
+git pull origin staging
+git checkout your-feature-branch
+git merge staging  # or git rebase staging
+git push origin your-feature-branch
+```
+
+**Error: "Only staging branch can merge to main"**
+```bash
+# You tried to create PR from feature branch to main
+# SOLUTION: Merge to staging first
+gh pr create --base staging --head your-feature-branch
+# After staging merge, then create staging → main PR
+```
+
+**Error: "Pull request reviews required"**
+```bash
+# Main branch requires 1 approving review
+# Request review from team member:
+gh pr review $PR_NUMBER --request-reviewer @username
+```
+
+### 📊 **Branch Protection Status**
+
+**Main Branch Protection:**
+- ✅ Pull requests required (no direct pushes)
+- ✅ 1 approving review required
+- ✅ 9 status checks required (all must pass)
+- ✅ Up-to-date branches required
+- ✅ Conversation resolution required
+- ✅ Source branch validation (staging only)
+- ✅ Force push blocked
+- ✅ Branch deletion blocked
+- ✅ Admin enforcement enabled
+
+**Staging Branch Protection:**
+- ✅ Status checks required (tests must pass)
+- ✅ Force push blocked
+- ⚠️ Direct pushes allowed (for faster iteration)
+- ⚠️ No review required (development branch)
+
+### 🚨 **Emergency Procedures**
+
+**For Critical Hotfixes:**
+1. Create hotfix branch from main (admin override required)
+2. Make minimal fix with comprehensive tests
+3. Create PR directly to main (requires admin approval)
+4. After merge, sync staging immediately
+
+**Admin Override Process:**
+- Only for critical production issues
+- Requires documentation in PR comments
+- Must be followed by immediate staging sync
+- Triggers post-incident review
+
+### 🎯 **Success Criteria for Code Assistants**
+
+Your changes are ready for production when:
+- ✅ All 202+ tests pass across Python 3.8-3.12
+- ✅ Security scans show no new vulnerabilities  
+- ✅ Integration tests verify end-to-end functionality
+- ✅ Build process completes successfully
+- ✅ Branch source validation passes
+- ✅ Code review approval received
+- ✅ All PR conversations resolved
+
+**Validation Command:**
+```bash
+# Verify everything is ready
+uv run pytest tests/ --cov=src --cov-report=term-missing
+uv run flake8 src/ --count --statistics
+uv run bandit -r src/ -f json
+gh pr checks $PR_NUMBER --json state,conclusion
+```
 
 ## Getting Started
 
@@ -64,6 +282,8 @@ git checkout -b fix/issue-description
 
 ## Making Changes
 
+> **⚠️ IMPORTANT**: All changes must follow the [Branch Protection & Workflow](#branch-protection--workflow) rules above. Feature branches must merge to staging first, then staging merges to main.
+
 ### Branch Naming Convention
 - Features: `feature/description-of-feature`
 - Bug fixes: `fix/description-of-fix`
@@ -71,6 +291,14 @@ git checkout -b fix/issue-description
 - Refactoring: `refactor/description-of-change`
 - Web interface: `web/description-of-change`
 - Advanced tools: `advanced/description-of-change`
+
+### Required Workflow Steps
+1. **Start from staging**: `git checkout staging && git pull origin staging`
+2. **Create feature branch**: `git checkout -b feature/your-change`
+3. **Make changes and test**: Ensure all 202+ tests pass
+4. **Push to feature branch**: `git push origin feature/your-change`
+5. **Create PR to staging**: `gh pr create --base staging`
+6. **After staging merge**: Create PR from staging to main
 
 ### Commit Message Format
 ```
@@ -126,15 +354,29 @@ uv run pytest tests/ -k "advanced" -v                       # Advanced threat mo
 
 ## Submitting Changes
 
+> **🔒 CRITICAL**: All PRs must comply with [Branch Protection Rules](#branch-protection--workflow). PRs to main are only allowed from staging branch.
+
 ### Pull Request Process
-1. Ensure all tests pass locally
-2. Update documentation if needed
-3. Add/update tests for your changes
-4. Run linting and type checking
-5. Test web interface if UI changes made
-6. Create a pull request with a clear description
-7. Link any related issues
-8. Wait for review and address feedback
+1. **Follow branch protection workflow** (feature → staging → main)
+2. **Ensure all tests pass locally** (202+ tests across Python 3.8-3.12)
+3. **Update documentation** if needed
+4. **Add/update tests** for your changes
+5. **Run linting and type checking** (must pass flake8, mypy)
+6. **Test web interface** if UI changes made
+7. **Create PR to staging first** (never directly to main from feature branch)
+8. **Wait for all 9 status checks** to pass
+9. **Get required review approval** (for main branch PRs)
+10. **Address feedback** and resolve conversations
+
+### Automated Validation
+Every PR triggers these **mandatory checks**:
+- ✅ Python 3.8, 3.9, 3.10, 3.11, 3.12 test suites
+- ✅ Security vulnerability scanning
+- ✅ Integration testing with real data
+- ✅ Package build verification
+- ✅ Branch source validation (staging-only for main)
+
+**All checks must pass before merge is allowed.**
 
 ### Pull Request Checklist
 - [ ] Tests added/updated and passing (all 167+ tests)
