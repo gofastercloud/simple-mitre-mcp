@@ -1,271 +1,254 @@
 # Contributing to MITRE ATT&CK MCP Server
 
-Thank you for your interest in contributing to the MITRE ATT&CK MCP Server! This document provides guidelines and information for contributors.
+Thank you for your interest in contributing to the MITRE ATT&CK MCP Server! This document provides guidelines for both human developers and agentic code assistants.
 
-## Table of Contents
+## 📋 Table of Contents
+
+### For Human Developers
 - [Code of Conduct](#code-of-conduct)
-- [Branch Protection & Workflow](#branch-protection--workflow)
-- [Getting Started](#getting-started)
-- [Development Setup](#development-setup)
-- [Making Changes](#making-changes)
-- [Testing](#testing)
-- [Submitting Changes](#submitting-changes)
-- [Code Style](#code-style)
-- [Adding New MCP Tools](#adding-new-mcp-tools)
+- [Getting Started (Human)](#getting-started-human)
+- [Development Workflow (Human)](#development-workflow-human)
+- [Adding New Features](#adding-new-features)
 - [Web Interface Development](#web-interface-development)
 
-## Code of Conduct
+### For Agentic Code Assistants
+- [🤖 Agentic Workflow Guide](#-agentic-workflow-guide)
+- [🔒 Branch Protection Rules](#-branch-protection-rules)
+- [⚡ Quick Setup Commands](#-quick-setup-commands)
+- [🧪 Testing Requirements](#-testing-requirements)
+- [🚀 Deployment Workflow](#-deployment-workflow)
 
-This project adheres to a code of conduct. By participating, you are expected to uphold this code. Please report unacceptable behavior to the project maintainers.
+---
 
-## Branch Protection & Workflow
+# 🤖 For Agentic Code Assistants
 
-> **🤖 For Code Assistants & Agentic Workflows**: This section defines the mandatory workflow that all code changes must follow. These rules are enforced by GitHub branch protection and automated checks.
+## 🤖 Agentic Workflow Guide
 
-### 🔒 **CRITICAL: Branch Protection Rules**
+> **CRITICAL**: This section provides essential information for AI code assistants. Follow these patterns exactly to ensure successful contributions.
 
-This repository enforces a **strict staging-to-main workflow** with automated protection:
+### 📋 Project Overview
+- **Language**: Python 3.8+
+- **Package Manager**: UV (modern Python package manager)
+- **Architecture**: MCP server with 8 tools (5 basic + 3 advanced)
+- **Testing**: 202+ comprehensive tests with pytest
+- **Branch Strategy**: feature → staging → main (strictly enforced)
 
-```
-main (production) ← ONLY from staging via PR
-  ↑
-staging (integration) ← from feature branches  
-  ↑
-feature/* (development)
-```
+### ⚡ Quick Setup Commands
 
-### ⚠️ **MANDATORY WORKFLOW FOR ALL CHANGES**
-
-**Step 1: Create Feature Branch from Staging**
+**Initial Setup:**
 ```bash
-# ALWAYS start from staging, never from main
-git checkout staging
-git pull origin staging
-git checkout -b feature/your-feature-name
-```
-
-**Step 2: Make Changes and Push to Feature Branch**
-```bash
-# Make your changes
-git add .
-git commit -m "feat: your changes"
-git push origin feature/your-feature-name
-```
-
-**Step 3: Create PR to Staging (NOT main)**
-```bash
-# Create PR to staging first
-gh pr create --base staging --head feature/your-feature-name \
-  --title "Your Feature" --body "Description"
-```
-
-**Step 4: After Staging Merge, Create PR to Main**
-```bash
-# Only after feature is merged to staging
-gh pr create --base main --head staging \
-  --title "Release: Your Feature" --body "Production release"
-```
-
-### 🚫 **BLOCKED ACTIONS (Will Fail)**
-
-These actions are **automatically blocked** by branch protection:
-
-❌ **Direct pushes to main branch**
-```bash
-git push origin main  # ← BLOCKED
-```
-
-❌ **PRs from feature branches to main**
-```bash
-gh pr create --base main --head feature/branch  # ← BLOCKED
-```
-
-❌ **Force pushes to protected branches**
-```bash
-git push --force origin main     # ← BLOCKED
-git push --force origin staging  # ← BLOCKED
-```
-
-❌ **Merging with failing tests**
-- Any failing CI/CD check blocks merge
-- All 9 required status checks must pass
-
-### ✅ **REQUIRED STATUS CHECKS (All Must Pass)**
-
-Before any merge to main, these checks are **mandatory**:
-
-1. **`CI/CD Pipeline/test (3.8)`** - Python 3.8 tests (202+ tests)
-2. **`CI/CD Pipeline/test (3.9)`** - Python 3.9 tests  
-3. **`CI/CD Pipeline/test (3.10)`** - Python 3.10 tests
-4. **`CI/CD Pipeline/test (3.11)`** - Python 3.11 tests
-5. **`CI/CD Pipeline/test (3.12)`** - Python 3.12 tests
-6. **`CI/CD Pipeline/security`** - Security vulnerability scanning
-7. **`CI/CD Pipeline/integration`** - Integration testing
-8. **`CI/CD Pipeline/build`** - Package building verification
-9. **`Branch Protection/validate-source-branch`** - Enforces staging-only merges
-
-### 🤖 **For Agentic Workflows: Automated Compliance**
-
-**Pre-flight Checklist for Code Assistants:**
-```bash
-# 1. Verify current branch is staging
-CURRENT_BRANCH=$(git branch --show-current)
-if [ "$CURRENT_BRANCH" != "staging" ]; then
-  echo "❌ Must start from staging branch"
-  git checkout staging && git pull origin staging
-fi
-
-# 2. Create feature branch
-git checkout -b feature/$(date +%s)-automated-change
-
-# 3. Make changes (your code here)
-
-# 4. Run tests locally before pushing
-uv run pytest tests/ -x --tb=short
-if [ $? -ne 0 ]; then
-  echo "❌ Tests failed - fix before pushing"
-  exit 1
-fi
-
-# 5. Push and create PR to staging
-git add . && git commit -m "feat: automated change"
-git push origin feature/$(date +%s)-automated-change
-gh pr create --base staging --title "Automated Change" --body "Description"
-```
-
-**Status Check Validation:**
-```bash
-# Check if all required checks pass
-gh pr checks $PR_NUMBER --json state,conclusion \
-  --jq '.[] | select(.conclusion != "SUCCESS") | .name'
-
-# If any checks fail, the merge is blocked
-```
-
-### 🔧 **Troubleshooting Branch Protection**
-
-**Error: "Required status checks are failing"**
-```bash
-# Check which tests are failing
-gh pr checks $PR_NUMBER
-
-# Run failing tests locally
-uv run pytest tests/test_specific_module.py -v
-
-# Fix issues and push again
-git add . && git commit -m "fix: resolve test failures"
-git push origin your-branch
-```
-
-**Error: "Branch is not up to date"**
-```bash
-# Update your branch with latest changes
-git checkout staging
-git pull origin staging
-git checkout your-feature-branch
-git merge staging  # or git rebase staging
-git push origin your-feature-branch
-```
-
-**Error: "Only staging branch can merge to main"**
-```bash
-# You tried to create PR from feature branch to main
-# SOLUTION: Merge to staging first
-gh pr create --base staging --head your-feature-branch
-# After staging merge, then create staging → main PR
-```
-
-**Error: "Pull request reviews required"**
-```bash
-# Main branch requires 1 approving review
-# Request review from team member:
-gh pr review $PR_NUMBER --request-reviewer @username
-```
-
-### 📊 **Branch Protection Status**
-
-**Main Branch Protection:**
-- ✅ Pull requests required (no direct pushes)
-- ✅ 1 approving review required
-- ✅ 9 status checks required (all must pass)
-- ✅ Up-to-date branches required
-- ✅ Conversation resolution required
-- ✅ Source branch validation (staging only)
-- ✅ Force push blocked
-- ✅ Branch deletion blocked
-- ✅ Admin enforcement enabled
-
-**Staging Branch Protection:**
-- ✅ Status checks required (tests must pass)
-- ✅ Force push blocked
-- ⚠️ Direct pushes allowed (for faster iteration)
-- ⚠️ No review required (development branch)
-
-### 🚨 **Emergency Procedures**
-
-**For Critical Hotfixes:**
-1. Create hotfix branch from main (admin override required)
-2. Make minimal fix with comprehensive tests
-3. Create PR directly to main (requires admin approval)
-4. After merge, sync staging immediately
-
-**Admin Override Process:**
-- Only for critical production issues
-- Requires documentation in PR comments
-- Must be followed by immediate staging sync
-- Triggers post-incident review
-
-### 🎯 **Success Criteria for Code Assistants**
-
-Your changes are ready for production when:
-- ✅ All 202+ tests pass across Python 3.8-3.12
-- ✅ Security scans show no new vulnerabilities  
-- ✅ Integration tests verify end-to-end functionality
-- ✅ Build process completes successfully
-- ✅ Branch source validation passes
-- ✅ Code review approval received
-- ✅ All PR conversations resolved
-
-**Validation Command:**
-```bash
-# Verify everything is ready
-uv run pytest tests/ --cov=src --cov-report=term-missing
-uv run flake8 src/ --count --statistics
-uv run bandit -r src/ -f json
-gh pr checks $PR_NUMBER --json state,conclusion
-```
-
-## Getting Started
-
-1. Fork the repository on GitHub
-2. Clone your fork locally
-3. Set up the development environment
-4. Create a new branch for your changes
-5. Make your changes
-6. Test your changes
-7. Submit a pull request
-
-## Development Setup
-
-### Prerequisites
-- Python 3.8 or higher
-- UV package manager
-
-### Installation
-```bash
-# Clone your fork
-git clone https://github.com/YOUR_USERNAME/simple-mitre-mcp.git
+# Clone and setup
+git clone https://github.com/gofastercloud/simple-mitre-mcp.git
 cd simple-mitre-mcp
+
+# Install UV if not available
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # Install dependencies
 uv sync
 
 # Verify installation
-uv run pytest tests/ -v
+uv run pytest tests/ -x --tb=short
 ```
 
-### Environment Setup
+**Daily Development Pattern:**
 ```bash
+# 1. Always start from staging
+git checkout staging && git pull origin staging
+
+# 2. Create feature branch
+git checkout -b feature/$(date +%s)-your-change
+
+# 3. Make changes and test
+uv run pytest tests/ -x --tb=short
+
+# 4. Commit and push
+git add . && git commit -m "feat: your change description"
+git push origin feature/$(date +%s)-your-change
+
+# 5. Create PR to staging (NOT main)
+gh pr create --base staging --title "Your Change" --body "Description"
+```
+
+## 🔒 Branch Protection Rules
+
+**MANDATORY WORKFLOW (Automatically Enforced):**
+```
+feature/branch → staging → main
+     ↓              ↓        ↓
+   tests pass   tests pass  all checks + review
+```
+
+### ❌ BLOCKED Actions (Will Fail)
+```bash
+# These commands will be rejected:
+git push origin main                    # Direct push to main
+gh pr create --base main --head feature # PR from feature to main
+git push --force origin main           # Force push to protected branch
+```
+
+### ✅ REQUIRED Actions
+```bash
+# Correct workflow:
+git checkout staging && git pull origin staging
+git checkout -b feature/your-change
+# Make changes
+uv run pytest tests/ -x --tb=short     # Tests must pass
+git add . && git commit -m "feat: change"
+git push origin feature/your-change
+gh pr create --base staging            # PR to staging first
+```
+
+### 🧪 Required Status Checks (All Must Pass)
+1. **Python 3.8-3.12 Tests** - All 202+ tests across 5 Python versions
+2. **Security Scanning** - Bandit + Safety vulnerability checks
+3. **Integration Testing** - End-to-end functionality verification
+4. **Build Verification** - Package building and distribution
+5. **Branch Source Validation** - Enforces staging-to-main flow
+
+### 🔧 Troubleshooting Commands
+```bash
+# Check test failures
+uv run pytest tests/ -v --tb=short
+
+# Fix linting issues
+uv run black . && uv run flake8 .
+
+# Update branch with latest changes
+git checkout staging && git pull origin staging
+git checkout your-branch && git merge staging
+
+# Check PR status
+gh pr checks $PR_NUMBER
+```
+## 🧪 Testing Requirements
+
+### Test Execution Commands
+```bash
+# Run all tests (202+ tests)
+uv run pytest tests/
+
+# Run with coverage reporting
+uv run pytest tests/ --cov=src --cov-report=term-missing
+
+# Run specific test categories
+uv run pytest tests/test_mcp_server.py -v           # Core MCP server
+uv run pytest tests/test_build_attack_path.py -v   # Advanced tools
+uv run pytest tests/test_web_interface*.py -v      # Web interface
+
+# Fast failure mode (stop on first failure)
+uv run pytest tests/ -x --tb=short
+```
+
+### Test Requirements for New Code
+- **All new features**: Must include comprehensive tests
+- **Bug fixes**: Must include regression tests  
+- **MCP tools**: Must test both success and error cases
+- **Web interface**: Must test HTTP proxy integration
+- **Advanced tools**: Must test complex analysis logic
+
+### Code Quality Commands
+```bash
+# Format code (required)
+uv run black .
+
+# Lint code (must pass)
+uv run flake8 src/ --count --statistics
+
+# Type checking (recommended)
+uv run mypy src/ --ignore-missing-imports
+
+# Security scanning
+uv run bandit -r src/ -f json
+```
+
+## 🚀 Deployment Workflow
+
+### Feature Development Pattern
+```bash
+# 1. Setup
+git checkout staging && git pull origin staging
+git checkout -b feature/your-change
+
+# 2. Development cycle
+# Make changes
+uv run pytest tests/ -x --tb=short  # Test locally
+uv run black . && uv run flake8 .  # Format and lint
+
+# 3. Commit and push
+git add . && git commit -m "feat: description"
+git push origin feature/your-change
+
+# 4. Create PR to staging
+gh pr create --base staging --title "Feature" --body "Description"
+```
+
+### Production Release Pattern
+```bash
+# After feature is merged to staging:
+gh pr create --base main --head staging \
+  --title "Release: Feature Name" \
+  --body "Production release with comprehensive testing"
+```
+
+### UV Package Manager Commands
+```bash
+# Install dependencies
+uv sync                    # Install all dependencies
+uv sync --dev             # Include development dependencies
+
+# Add new dependencies
+uv add requests           # Add runtime dependency
+uv add pytest --dev      # Add development dependency
+
+# Run commands
+uv run python script.py   # Run Python script
+uv run pytest tests/     # Run tests
+uv run black .           # Run formatter
+
+# Environment management
+uv venv                  # Create virtual environment
+uv pip list             # List installed packages
+```
+
+---
+
+# 👥 For Human Developers
+
+## Code of Conduct
+
+This project adheres to a code of conduct. By participating, you are expected to uphold this code. Please report unacceptable behavior to the project maintainers.
+
+## Getting Started (Human)
+
+### Prerequisites
+- Python 3.8 or higher
+- UV package manager (recommended) or pip
+- Git and GitHub CLI (optional but recommended)
+
+### Fork and Clone
+1. Fork the repository on GitHub
+2. Clone your fork locally:
+   ```bash
+   git clone https://github.com/YOUR_USERNAME/simple-mitre-mcp.git
+   cd simple-mitre-mcp
+   ```
+
+3. Add upstream remote:
+   ```bash
+   git remote add upstream https://github.com/gofastercloud/simple-mitre-mcp.git
+   ```
+
+## Development Workflow (Human)
+
+### Installation and Setup
+```bash
+# Install dependencies with UV (recommended)
+uv sync
+
+# Or with pip if UV not available
+pip install -e .
+
 # Copy environment template
 cp .env.example .env
 
@@ -273,16 +256,26 @@ cp .env.example .env
 # MCP_HTTP_PORT=8000
 # MCP_SERVER_PORT=3000
 
-# Create a new branch for your feature
+# Verify installation
+uv run pytest tests/ -v
+```
+
+### Branch Strategy
+> **Important**: Always follow the staging-to-main workflow. See [Branch Protection Rules](#-branch-protection-rules) for details.
+
+```bash
+# Start from staging branch
+git checkout staging
+git pull upstream staging
+
+# Create feature branch
 git checkout -b feature/your-feature-name
 
 # Or for bug fixes
 git checkout -b fix/issue-description
 ```
 
-## Making Changes
-
-> **⚠️ IMPORTANT**: All changes must follow the [Branch Protection & Workflow](#branch-protection--workflow) rules above. Feature branches must merge to staging first, then staging merges to main.
+## Adding New Features
 
 ### Branch Naming Convention
 - Features: `feature/description-of-feature`
@@ -292,13 +285,13 @@ git checkout -b fix/issue-description
 - Web interface: `web/description-of-change`
 - Advanced tools: `advanced/description-of-change`
 
-### Required Workflow Steps
-1. **Start from staging**: `git checkout staging && git pull origin staging`
-2. **Create feature branch**: `git checkout -b feature/your-change`
-3. **Make changes and test**: Ensure all 202+ tests pass
-4. **Push to feature branch**: `git push origin feature/your-change`
-5. **Create PR to staging**: `gh pr create --base staging`
-6. **After staging merge**: Create PR from staging to main
+### Development Process
+1. **Plan your changes**: Review existing code and tests
+2. **Create feature branch**: From staging (never from main)
+3. **Implement changes**: Follow existing patterns and conventions
+4. **Write tests**: Comprehensive coverage for new functionality
+5. **Test locally**: All 202+ tests must pass
+6. **Submit PR to staging**: Follow the protected workflow
 
 ### Commit Message Format
 ```
@@ -313,108 +306,35 @@ Detailed description of the change (if needed)
 
 Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`, `web`, `advanced`
 
-## Testing
-
-### Running Tests
+### Testing Your Changes
 ```bash
-# Run all tests (167+ comprehensive tests)
-uv run pytest tests/
+# Run all tests locally
+uv run pytest tests/ -v
 
 # Run with coverage
 uv run pytest tests/ --cov=src --cov-report=term-missing
 
-# Run specific test categories
-uv run pytest tests/test_mcp_server.py -v                    # Core MCP server tests
-uv run pytest tests/test_build_attack_path.py -v            # Attack path construction tests
-uv run pytest tests/test_analyze_coverage_gaps.py -v        # Coverage gap analysis tests
-uv run pytest tests/test_detect_technique_relationships.py -v # Relationship discovery tests
-uv run pytest tests/test_web_interface_advanced.py -v       # Web interface integration tests
+# Format and lint code
+uv run black . && uv run flake8 .
 
-# Run tests for specific tool types
-uv run pytest tests/ -k "basic" -v                          # Basic analysis tools
-uv run pytest tests/ -k "advanced" -v                       # Advanced threat modeling tools
+# Test web interface if applicable
+uv run start_explorer.py
 ```
-
-### Test Requirements
-- All new features must include comprehensive tests
-- Bug fixes must include regression tests
-- Tests should cover both success and error cases
-- Integration tests for new MCP tools
-- Web interface tests for UI changes
-- Advanced tool tests for complex analysis logic
-- Maintain or improve code coverage (currently 167+ tests)
-
-### Test Categories
-1. **Unit Tests**: Test individual functions and methods
-2. **Integration Tests**: Test tool interactions with real data
-3. **Advanced Tool Tests**: Test complex threat modeling algorithms
-4. **Web Interface Tests**: Test HTTP proxy and web UI functionality
-5. **End-to-End Tests**: Test complete workflows including web interface
-6. **Configuration Tests**: Test environment variable and config file handling
-
-## Submitting Changes
-
-> **🔒 CRITICAL**: All PRs must comply with [Branch Protection Rules](#branch-protection--workflow). PRs to main are only allowed from staging branch.
 
 ### Pull Request Process
-1. **Follow branch protection workflow** (feature → staging → main)
-2. **Ensure all tests pass locally** (202+ tests across Python 3.8-3.12)
+1. **Create PR to staging** (never directly to main)
+2. **Ensure all tests pass** (202+ tests across Python 3.8-3.12)
 3. **Update documentation** if needed
-4. **Add/update tests** for your changes
-5. **Run linting and type checking** (must pass flake8, mypy)
-6. **Test web interface** if UI changes made
-7. **Create PR to staging first** (never directly to main from feature branch)
-8. **Wait for all 9 status checks** to pass
-9. **Get required review approval** (for main branch PRs)
-10. **Address feedback** and resolve conversations
+4. **Wait for automated checks** to pass
+5. **Address review feedback**
+6. **For main branch**: Requires 1 approving review
 
-### Automated Validation
-Every PR triggers these **mandatory checks**:
-- ✅ Python 3.8, 3.9, 3.10, 3.11, 3.12 test suites
-- ✅ Security vulnerability scanning
-- ✅ Integration testing with real data
-- ✅ Package build verification
-- ✅ Branch source validation (staging-only for main)
-
-**All checks must pass before merge is allowed.**
-
-### Pull Request Checklist
-- [ ] Tests added/updated and passing (all 167+ tests)
-- [ ] Documentation updated (README, docstrings, etc.)
-- [ ] Code follows style guidelines
-- [ ] No new linting errors
-- [ ] Web interface tested if applicable
-- [ ] Advanced tools tested if applicable
-- [ ] Environment configuration tested
-- [ ] Commit messages are clear
-- [ ] PR description explains the changes
-
-## Code Style
-
-### Python Style Guidelines
-- Follow PEP 8 with line length of 88 characters (Black formatter default)
-- Use type hints for all function parameters and return values
-- Write clear, descriptive docstrings with Args, Returns, and Raises sections
-- Use meaningful variable and function names
-
-### Linting and Formatting
-```bash
-# Format code
-uv run black .
-
-# Run linting
-uv run flake8 .
-
-# Run type checking
-uv run mypy src/
-```
-
-### Code Organization
+### Code Style Guidelines
+- Follow PEP 8 with 88-character line length (Black formatter)
+- Use type hints for function parameters and return values
+- Write clear docstrings with Args, Returns, and Raises sections
 - Keep functions focused and small
-- Use clear separation of concerns
 - Follow existing patterns in the codebase
-- Add comprehensive error handling
-- Use configuration constants instead of hardcoded values
 
 ## Adding New MCP Tools
 

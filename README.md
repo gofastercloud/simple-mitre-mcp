@@ -147,24 +147,104 @@ MCP_HTTP_PORT=3000 uv run start_explorer.py
 
 ## 🌐 Web Interface
 
-The web interface provides an intuitive way to interact with all MCP tools without programming knowledge:
+The web interface provides a comprehensive interactive tool for testing and exploring all MITRE ATT&CK MCP server functionality through an HTTP proxy interface. Perfect for both development and production use.
 
-### Basic Tools Section
-- Simple forms for fundamental MITRE ATT&CK queries
-- Real-time search and technique lookup
-- Group analysis and mitigation mapping
+### 🚀 Quick Start
 
-### Advanced Tools Section
-- **🧠 Advanced Threat Modeling** with complex multi-parameter forms
-- Attack path visualization and analysis
-- Coverage gap assessment with quantitative results
-- Relationship discovery with attribution chains
+**Automatic Startup (Recommended):**
+```bash
+uv run start_explorer.py
+```
+This automatically:
+- Checks and syncs dependencies
+- Starts the HTTP proxy server
+- Loads MITRE ATT&CK data with relationship analysis
+- Opens the web explorer in your browser
 
-### Features
+**Manual Setup:**
+```bash
+# Install dependencies
+uv sync
+
+# Start HTTP proxy server
+uv run http_proxy.py
+
+# Open web_explorer.html in your browser
+```
+
+### 🛠️ Available Tools
+
+#### 🔍 Basic Analysis Tools (5 Core Tools)
+- **Search ATT&CK Framework**: Global search across all entities
+- **List All Tactics**: Get all MITRE ATT&CK tactics with descriptions
+- **Get Technique Details**: Detailed technique information with platforms and mitigations
+- **Get Group Techniques**: Techniques used by specific threat groups
+- **Get Technique Mitigations**: Mitigations for specific techniques
+
+#### 🧠 Advanced Threat Modeling Tools (3 Sophisticated Tools)
+- **🎯 Build Attack Path**: Construct multi-stage attack paths through the kill chain
+  - Start/end tactic specification
+  - Threat group filtering
+  - Platform-specific analysis
+- **📊 Analyze Coverage Gaps**: Analyze defensive coverage gaps against threat groups
+  - Multiple threat group analysis
+  - Coverage percentage calculations
+  - Prioritized recommendations
+- **🔗 Detect Technique Relationships**: Explore complex STIX relationships
+  - Multi-depth relationship traversal
+  - Attribution chain analysis
+  - Subtechnique hierarchy exploration
+
+### 🏗️ Architecture
+
+```
+Web Browser → HTTP Proxy Server → MCP Tools (8 Tools) → MITRE ATT&CK Data
+```
+
+**Components:**
+- **Web Explorer** (`web_explorer.html`): Frontend interface with basic and advanced tool sections
+- **HTTP Proxy** (`http_proxy.py`): Translates HTTP requests to MCP tool calls
+- **MCP Server** (`main.py`): FastMCP protocol server with comprehensive data processing
+
+### 📝 Example Queries
+
+**Basic Tool Examples:**
+- Search: `process injection`, `APT29`, `T1055`, `powershell`
+- Technique IDs: `T1055` (Process Injection), `T1059` (Command and Scripting)
+- Group IDs: `G0016` (APT29), `G0007` (APT1), `G0050` (APT32)
+
+**Advanced Tool Examples:**
+- **Attack Path**: Start `TA0001` → End `TA0040`, Group `G0016`, Platform `Windows`
+- **Coverage Gaps**: Groups `G0016,G0032,G0007`, Exclude `M1013,M1026`
+- **Relationships**: Technique `T1055`, Types `uses,detects,mitigates`, Depth `2`
+
+### 🔧 Troubleshooting
+
+**Connection Issues:**
+```bash
+# Check if HTTP proxy is running
+uv run http_proxy.py
+
+# Verify dependencies
+uv sync
+
+# Test direct connection
+curl -X POST http://127.0.0.1:8000/tools -H "Content-Type: application/json"
+```
+
+**Common Errors:**
+- **"Connection Error"**: Ensure HTTP proxy is running and port 8000 is available
+- **"Tool execution failed"**: Verify input format (e.g., technique IDs like "T1055")
+- **"No results found"**: Try broader search terms or check spelling
+- **"Address already in use"**: Kill existing processes or change port in `.env`
+
+### 🎯 Features
+- **Interactive Tool Testing**: Click buttons to execute all 8 MCP tools
+- **Real-time Connection Status**: Visual server connectivity indicator
+- **Formatted Output**: Clean, readable results with structured formatting
+- **Error Handling**: Clear error messages and troubleshooting guidance
 - **Responsive Design**: Works on desktop, tablet, and mobile devices
-- **Real-Time Results**: Immediate analysis results with formatted output
-- **No Programming Required**: Full functionality accessible through web forms
-- **Cross-Browser Compatible**: Works with modern web browsers
+- **No Programming Required**: Full functionality through web forms
 
 ## 🧪 Development
 
