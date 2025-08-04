@@ -131,7 +131,8 @@ jobs:
         import requests
         from src.data_loader import DataLoader
         from src.mcp_server import create_mcp_server
-        import http_proxy
+        from http_proxy import HTTPProxy
+        from aiohttp import web
         
         async def test_http_integration():
             print('Testing HTTP proxy integration...')
@@ -139,25 +140,28 @@ jobs:
             data = loader.load_data_source('mitre_attack')
             mcp_server = create_mcp_server(loader)
             
-            # Start HTTP server in background
+            # Create HTTP proxy
+            proxy = HTTPProxy(mcp_server)
+            
+            # Start aiohttp server in background
             def start_server():
-                from http.server import HTTPServer
-                handler_class = http_proxy.create_http_handler(mcp_server)
-                server = HTTPServer(('127.0.0.1', 8003), handler_class)
-                server.serve_forever()
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                runner = web.AppRunner(proxy.app)
+                loop.run_until_complete(runner.setup())
+                site = web.TCPSite(runner, '127.0.0.1', 8003)
+                loop.run_until_complete(site.start())
+                loop.run_forever()
             
             server_thread = threading.Thread(target=start_server, daemon=True)
             server_thread.start()
-            time.sleep(3)
+            time.sleep(5)
             
             # Test HTTP endpoint
-            response = requests.post('http://127.0.0.1:8003', 
-                json={'jsonrpc': '2.0', 'id': 1, 'method': 'tools/list'},
-                timeout=10)
+            response = requests.get('http://127.0.0.1:8003/tools', timeout=10)
             
             assert response.status_code == 200
-            result = response.json()
-            tools = result.get('result', {}).get('tools', [])
+            tools = response.json()
             assert len(tools) == 8
             print('✅ HTTP proxy integration verified')
             
