@@ -135,8 +135,8 @@ def create_mcp_server(data_loader=None):
     # Store data loader for use in tool handlers
     app.data_loader = data_loader
 
-    # Load tools configuration
-    config_loader = ConfigLoader()
+    # Load tools configuration (for future use)
+    # config_loader = ConfigLoader()
     logger.info("Registering MCP tools...")
 
     # Register search_attack tool
@@ -202,11 +202,11 @@ def create_mcp_server(data_loader=None):
                 text=result_text
             )]
 
-        except Exception:
+        except Exception as e:
             logger.error(f"Error in search_attack: {e}")
             return [TextContent(
                 type="text",
-                text="Error executing search: {str(e)}"
+                text=f"Error executing search: {str(e)}"
             )]
 
     # Register get_technique tool
@@ -319,11 +319,11 @@ def create_mcp_server(data_loader=None):
                 text=result_text
             )]
 
-        except Exception:
+        except Exception as e:
             logger.error(f"Error in get_technique: {e}")
             return [TextContent(
                 type="text",
-                text="Error retrieving technique: {str(e)}"
+                text=f"Error retrieving technique: {str(e)}"
             )]
 
     # Register list_tactics tool
@@ -384,7 +384,7 @@ def create_mcp_server(data_loader=None):
                 text=result_text
             )]
 
-        except Exception:
+        except Exception as e:
             logger.error(f"Error in list_tactics: {e}")
             return [TextContent(
                 type="text",
@@ -525,7 +525,7 @@ def create_mcp_server(data_loader=None):
                 text=result_text
             )]
 
-        except Exception:
+        except Exception as e:
             logger.error(f"Error in get_group_techniques: {e}")
             return [TextContent(
                 type="text",
@@ -642,7 +642,7 @@ def create_mcp_server(data_loader=None):
                 text=result_text
             )]
 
-        except Exception:
+        except Exception as e:
             logger.error(f"Error in get_technique_mitigations: {e}")
             return [TextContent(
                 type="text",
@@ -874,7 +874,7 @@ def create_mcp_server(data_loader=None):
                 text=result_text
             )]
 
-        except Exception:
+        except Exception as e:
             logger.error(f"Error in build_attack_path: {e}")
             return [TextContent(
                 type="text",
@@ -1128,7 +1128,7 @@ def create_mcp_server(data_loader=None):
                 text=result_text
             )]
 
-        except Exception:
+        except Exception as e:
             logger.error(f"Error in analyze_coverage_gaps: {e}")
             return [TextContent(
                 type="text",

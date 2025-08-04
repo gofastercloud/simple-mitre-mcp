@@ -125,7 +125,7 @@ class STIXParser:
 
             return entity_data
 
-        except Exception:
+        except Exception as e:
             logger.error(f"Error extracting {entity_type} entity: {e}")
             return None
 
