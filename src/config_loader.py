@@ -16,16 +16,16 @@ logger = logging.getLogger(__name__)
 def load_config() -> Dict[str, Any]:
     """
     Load all configuration files and merge them into a single configuration.
-    
+
     Returns:
         dict: Merged configuration from all config files
-        
+
     Raises:
         FileNotFoundError: If required config files are missing
         yaml.YAMLError: If config files contain invalid YAML
     """
     config = {}
-    
+
     # Load data sources configuration
     data_sources_path = 'config/data_sources.yaml'
     if os.path.exists(data_sources_path):
@@ -36,7 +36,7 @@ def load_config() -> Dict[str, Any]:
     else:
         logger.warning(f"Data sources config file not found: {data_sources_path}")
         config['data_sources'] = {}
-    
+
     # Load entity schemas configuration
     entity_schemas_path = 'config/entity_schemas.yaml'
     if os.path.exists(entity_schemas_path):
@@ -47,7 +47,7 @@ def load_config() -> Dict[str, Any]:
     else:
         logger.warning(f"Entity schemas config file not found: {entity_schemas_path}")
         config['entity_schemas'] = {}
-    
+
     # Load tools configuration if it exists
     tools_path = 'config/tools.yaml'
     if os.path.exists(tools_path):
@@ -58,27 +58,27 @@ def load_config() -> Dict[str, Any]:
     else:
         logger.info(f"Tools config file not found: {tools_path} (optional)")
         config['tools'] = {}
-    
+
     return config
 
 
 def validate_config(config: Dict[str, Any]) -> bool:
     """
     Validate the loaded configuration for required fields and structure.
-    
+
     Args:
         config: Configuration dictionary to validate
-        
+
     Returns:
         bool: True if configuration is valid
-        
+
     Raises:
         ValueError: If configuration is invalid
     """
     # Validate data sources
     if 'data_sources' not in config:
         raise ValueError("Missing 'data_sources' in configuration")
-    
+
     for source_name, source_config in config['data_sources'].items():
         if 'url' not in source_config:
             raise ValueError(f"Data source '{source_name}' missing required 'url' field")
@@ -86,11 +86,11 @@ def validate_config(config: Dict[str, Any]) -> bool:
             raise ValueError(f"Data source '{source_name}' missing required 'format' field")
         if 'entity_types' not in source_config:
             raise ValueError(f"Data source '{source_name}' missing required 'entity_types' field")
-    
+
     # Validate entity schemas
     if 'entity_schemas' not in config:
         raise ValueError("Missing 'entity_schemas' in configuration")
-    
+
     for schema_name, schema_config in config['entity_schemas'].items():
         if 'id_field' not in schema_config:
             raise ValueError(f"Entity schema '{schema_name}' missing required 'id_field'")
@@ -98,7 +98,7 @@ def validate_config(config: Dict[str, Any]) -> bool:
             raise ValueError(f"Entity schema '{schema_name}' missing required 'name_field'")
         if 'required_fields' not in schema_config:
             raise ValueError(f"Entity schema '{schema_name}' missing required 'required_fields'")
-    
+
     logger.info("Configuration validation passed")
     return True
 
@@ -107,49 +107,47 @@ class ConfigLoader:
     """
     Configuration loader class for handling different types of configuration files.
     """
-    
+
     def __init__(self):
         """Initialize the configuration loader."""
         self.config_dir = 'config'
-    
+
     def load_tools_config(self) -> Dict[str, Any]:
         """
         Load tools configuration from tools.yaml file.
-        
+
         Returns:
             dict: Tools configuration
         """
         tools_path = os.path.join(self.config_dir, 'tools.yaml')
-        
+
         if not os.path.exists(tools_path):
             logger.warning(f"Tools config file not found: {tools_path}")
             return {'tools': {}}
-        
+
         try:
             with open(tools_path, 'r') as f:
-                tools_config = yaml.safe_load(f)
-                logger.info(f"Loaded {len(tools_config.get('tools', {}))} tool configurations")
-                return tools_config
+                return yaml.safe_load(f) or {'tools': {}}
         except yaml.YAMLError as e:
             logger.error(f"Error parsing tools config file: {e}")
             return {'tools': {}}
         except Exception as e:
             logger.error(f"Error loading tools config file: {e}")
             return {'tools': {}}
-    
+
     def load_data_sources_config(self) -> Dict[str, Any]:
         """
         Load data sources configuration from data_sources.yaml file.
-        
+
         Returns:
             dict: Data sources configuration
         """
         data_sources_path = os.path.join(self.config_dir, 'data_sources.yaml')
-        
+
         if not os.path.exists(data_sources_path):
             logger.warning(f"Data sources config file not found: {data_sources_path}")
             return {'data_sources': {}}
-        
+
         try:
             with open(data_sources_path, 'r') as f:
                 data_sources_config = yaml.safe_load(f)
