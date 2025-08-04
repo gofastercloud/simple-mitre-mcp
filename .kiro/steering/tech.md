@@ -44,35 +44,53 @@ data_sources:
       - mitigations
 ```
 
-## Common Commands
+## Development Workflow (CRITICAL)
 
-### Project Setup
+> **MANDATORY**: Before making any changes, read `CONTRIBUTING.md` and follow the branch protection workflow defined in `.kiro/steering/workflow.md`.
+
+### Required Setup Pattern
 ```bash
-# Initialize UV project
-uv init
+# 1. Always start from staging
+git checkout staging && git pull origin staging
 
-# Add core dependencies (prefer official/established libraries)
-uv add mcp requests pyyaml pytest pydantic
-uv add stix2  # Official STIX parsing library
-
-# Install dependencies
+# 2. Install dependencies with UV
 uv sync
+
+# 3. Create feature branch
+git checkout -b feature/$(date +%s)-your-change
+
+# 4. Test before any changes
+uv run pytest tests/ -x --tb=short
 ```
 
-### Development
+### Development Commands (UV Required)
 ```bash
 # Run the MCP server
 uv run main.py
 
-# Run tests (all tests must be in tests/ directory)
-uv run pytest tests/
+# Run tests (REQUIRED before pushing)
+uv run pytest tests/ -x --tb=short
 
-# Run specific test file
-uv run pytest tests/test_data_loader.py
+# Run with coverage
+uv run pytest tests/ --cov=src --cov-report=term-missing
 
-# Check code formatting
+# Format code (REQUIRED)
 uv run black .
+
+# Lint code (REQUIRED)
 uv run flake8 .
+
+# Start web interface
+uv run start_explorer.py
+```
+
+### Branch Protection Compliance
+```bash
+# Create PR to staging (NOT main)
+gh pr create --base staging --title "Change" --body "Description"
+
+# Check status
+gh pr checks $PR_NUMBER
 ```
 
 ### MCP Server Testing

@@ -41,6 +41,17 @@
     └── steering/          # AI assistant guidance
 ```
 
+## Development Workflow Requirements
+
+> **CRITICAL**: This project has strict branch protection and workflow requirements. ALL changes must follow the patterns in `CONTRIBUTING.md` and `.kiro/steering/workflow.md`.
+
+### Mandatory Workflow
+- **Read CONTRIBUTING.md first** - Contains complete workflow guide
+- **Use UV package manager** - Required for all dependency management
+- **Follow staging-to-main flow** - feature → staging → main (strictly enforced)
+- **Test locally first** - All 202+ tests must pass before pushing
+- **Create PRs to staging** - Never directly to main from feature branches
+
 ## Code Organization Principles
 
 ### Library-First Development
