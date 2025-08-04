@@ -53,22 +53,35 @@ uv run pytest tests/ -x --tb=short
 
 **Daily Development Pattern:**
 ```bash
-# 1. Always start from staging
+# 0. CRITICAL: Check current branch status FIRST
+git status
+git branch --show-current
+
+# 1. Always start from staging (switch if needed)
 git checkout staging && git pull origin staging
 
-# 2. Create feature branch
+# 2. Create feature branch BEFORE any changes
 git checkout -b feature/$(date +%s)-your-change
 
-# 3. Make changes and test
+# 3. Verify you're on the feature branch
+git branch --show-current
+
+# 4. Make changes and test
 uv run pytest tests/ -x --tb=short
 
-# 4. Commit and push
+# 5. Commit and push
 git add . && git commit -m "feat: your change description"
 git push origin feature/$(date +%s)-your-change
 
-# 5. Create PR to staging (NOT main)
+# 6. Create PR to staging (NOT main)
 gh pr create --base staging --title "Your Change" --body "Description"
 ```
+
+### 🤖 AI Assistant Specific Notes:
+- **Always check `git status` and `git branch --show-current` before starting work**
+- **Never make changes directly on staging or main branches**
+- **Create feature branch immediately after checking out staging**
+- **If you find yourself on the wrong branch, stop and switch immediately**
 
 ## 🔒 Branch Protection Rules
 
@@ -89,14 +102,30 @@ git push --force origin main           # Force push to protected branch
 
 ### ✅ REQUIRED Actions
 ```bash
-# Correct workflow:
+# Correct workflow with verification:
+git status                             # Check current state
+git branch --show-current             # Verify current branch
 git checkout staging && git pull origin staging
 git checkout -b feature/your-change
+git branch --show-current             # Confirm on feature branch
 # Make changes
 uv run pytest tests/ -x --tb=short     # Tests must pass
 git add . && git commit -m "feat: change"
 git push origin feature/your-change
 gh pr create --base staging            # PR to staging first
+```
+
+### 🔍 Branch Verification Commands
+```bash
+# Before starting work:
+git status                    # Shows current branch and uncommitted changes
+git branch --show-current    # Shows only current branch name
+git branch -a                # Shows all branches (local and remote)
+
+# If on wrong branch:
+git stash                    # Save uncommitted changes
+git checkout staging         # Switch to staging
+git stash pop               # Restore changes (if needed)
 ```
 
 ### 🧪 Required Status Checks (All Must Pass)
@@ -107,6 +136,38 @@ gh pr create --base staging            # PR to staging first
 5. **Branch Source Validation** - Enforces staging-to-main flow
 
 ### 🔧 Troubleshooting Commands
+
+### Common Issues and Solutions
+
+**Made changes on wrong branch (staging/main):**
+```bash
+# Save your changes
+git stash push -m "WIP: work in progress"
+
+# Switch to staging and create proper feature branch
+git checkout staging && git pull origin staging
+git checkout -b feature/$(date +%s)-your-change
+
+# Restore your changes
+git stash pop
+```
+
+**Forgot to create feature branch:**
+```bash
+# If you have uncommitted changes on staging:
+git stash push -m "WIP: work in progress"
+git checkout -b feature/$(date +%s)-your-change
+git stash pop
+
+# If you already committed to staging:
+git reset --soft HEAD~1    # Undo last commit, keep changes
+git stash push -m "WIP: committed work"
+git checkout -b feature/$(date +%s)-your-change
+git stash pop
+git add . && git commit -m "feat: your description"
+```
+
+**General troubleshooting:**
 ```bash
 # Check test failures
 uv run pytest tests/ -v --tb=short

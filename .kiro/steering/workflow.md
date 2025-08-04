@@ -8,6 +8,18 @@
 - `CONTRIBUTING.md` - Complete workflow guide for both humans and AI assistants
 - Focus on the "🤖 For Agentic Code Assistants" section for AI-specific guidance
 
+## 🔍 Pre-Work Checklist for AI Assistants
+
+**BEFORE making ANY code changes, complete this checklist:**
+
+- [ ] Check current branch: `git branch --show-current`
+- [ ] Ensure on staging: `git checkout staging && git pull origin staging`
+- [ ] Create feature branch: `git checkout -b feature/$(date +%s)-task-name`
+- [ ] Verify branch created: `git branch --show-current`
+- [ ] Run initial tests: `uv run pytest tests/ -x --tb=short`
+
+**Only after completing this checklist should you begin making code changes.**
+
 ## Branch Protection Workflow (STRICTLY ENFORCED)
 
 ### Required Pattern
@@ -18,26 +30,36 @@ feature/branch → staging → main
 ```
 
 ### CRITICAL Commands for AI Assistants
+
+> **⚠️ MANDATORY FIRST STEP**: Always check current branch and create feature branch BEFORE making any code changes!
+
 ```bash
-# 1. ALWAYS start from staging (never from main)
+# 0. CHECK CURRENT BRANCH FIRST (CRITICAL!)
+git branch --show-current
+# If not on staging, switch immediately:
 git checkout staging && git pull origin staging
 
-# 2. Create feature branch with timestamp
+# 1. Create feature branch with timestamp BEFORE any changes
 git checkout -b feature/$(date +%s)-your-change
 
-# 3. Make changes and test locally (REQUIRED)
+# 2. Make changes and test locally (REQUIRED)
 uv run pytest tests/ -x --tb=short
 
-# 4. Format and lint code (REQUIRED)
+# 3. Format and lint code (REQUIRED)
 uv run black . && uv run flake8 .
 
-# 5. Commit and push to feature branch
+# 4. Commit and push to feature branch
 git add . && git commit -m "feat: description"
 git push origin feature/$(date +%s)-your-change
 
-# 6. Create PR to staging (NOT main)
+# 5. Create PR to staging (NOT main)
 gh pr create --base staging --title "Change" --body "Description"
 ```
+
+### 🚨 Common AI Assistant Mistakes to Avoid:
+- **Making changes on staging/main directly** - Always create feature branch first
+- **Forgetting to check current branch** - Use `git branch --show-current` before starting
+- **Starting work without proper branch setup** - Feature branch must exist before any code changes
 
 ## UV Package Manager (REQUIRED)
 

@@ -9,7 +9,7 @@ import logging
 from typing import Dict, List, Any, Optional, Union
 
 import stix2
-from stix2 import Bundle, parse
+from stix2 import Bundle, parse, CourseOfAction
 from stix2.base import _STIXBase
 from stix2.exceptions import STIXError, InvalidValueError, MissingPropertiesError
 
@@ -306,7 +306,45 @@ class STIXParser:
         return ''
 
     def _extract_technique_data(self, stix_obj: Dict[str, Any]) -> Dict[str, Any]:
-        """Extract technique-specific data from STIX object."""
+        """
+        Extract technique-specific data from STIX object using STIX2 library.
+        
+        This method now uses the official STIX2 library for parsing instead of
+        raw dictionary access, providing better validation and standards compliance.
+        
+        Args:
+            stix_obj: STIX object dictionary
+            
+        Returns:
+            dict: Technique-specific data
+        """
+        try:
+            # Convert dictionary to STIX2 library AttackPattern object
+            stix2_obj = stix2.parse(stix_obj, allow_custom=True)
+            
+            # Use the STIX2 library-based extraction method
+            return self._extract_technique_data_from_stix_object(stix2_obj)
+            
+        except (STIXError, InvalidValueError, MissingPropertiesError) as e:
+            logger.debug(f"STIX2 library parsing failed for technique, falling back to dictionary access: {e}")
+            # Fallback to original dictionary-based approach if STIX2 parsing fails
+            return self._extract_technique_data_legacy(stix_obj)
+        except Exception as e:
+            logger.debug(f"Unexpected error parsing technique with STIX2 library, falling back: {e}")
+            return self._extract_technique_data_legacy(stix_obj)
+
+    def _extract_technique_data_legacy(self, stix_obj: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Legacy technique data extraction using raw dictionary access.
+        
+        This method is kept as a fallback for cases where STIX2 library parsing fails.
+        
+        Args:
+            stix_obj: STIX object dictionary
+            
+        Returns:
+            dict: Technique-specific data
+        """
         data = {}
 
         # Extract platforms
@@ -333,17 +371,57 @@ class STIXParser:
         return data
 
     def _extract_group_data(self, stix_obj: Dict[str, Any]) -> Dict[str, Any]:
-        """Extract group-specific data from STIX object."""
+        """
+        Extract group-specific data from STIX object using STIX2 library.
+        
+        This method now uses the official STIX2 library for parsing instead of
+        raw dictionary access, providing better validation and standards compliance.
+        
+        Args:
+            stix_obj: STIX object dictionary
+            
+        Returns:
+            dict: Group-specific data
+        """
+        try:
+            # Convert dictionary to STIX2 library IntrusionSet object
+            stix2_obj = stix2.parse(stix_obj, allow_custom=True)
+            
+            # Use the STIX2 library-based extraction method
+            return self._extract_group_data_from_stix_object(stix2_obj)
+            
+        except (STIXError, InvalidValueError, MissingPropertiesError) as e:
+            logger.debug(f"STIX2 library parsing failed for group, falling back to dictionary access: {e}")
+            # Fallback to original dictionary-based approach if STIX2 parsing fails
+            return self._extract_group_data_legacy(stix_obj)
+        except Exception as e:
+            logger.debug(f"Unexpected error parsing group with STIX2 library, falling back: {e}")
+            return self._extract_group_data_legacy(stix_obj)
+
+    def _extract_group_data_legacy(self, stix_obj: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Legacy group data extraction using raw dictionary access.
+        
+        This method is kept as a fallback for cases where STIX2 library parsing fails.
+        
+        Args:
+            stix_obj: STIX object dictionary
+            
+        Returns:
+            dict: Group-specific data
+        """
         data = {}
 
         # Extract aliases (excluding the primary name)
         aliases = stix_obj.get('aliases', [])
         primary_name = stix_obj.get('name', '')
 
-        # Filter out the primary name from aliases
-        filtered_aliases = [alias for alias in aliases if alias != primary_name]
-        if filtered_aliases:
-            data['aliases'] = filtered_aliases
+        # Handle None aliases gracefully
+        if aliases is not None:
+            # Filter out the primary name from aliases
+            filtered_aliases = [alias for alias in aliases if alias != primary_name]
+            if filtered_aliases:
+                data['aliases'] = filtered_aliases
 
         # Initialize empty techniques list (will be populated by relationship analysis)
         data['techniques'] = []
@@ -351,12 +429,89 @@ class STIXParser:
         return data
 
     def _extract_tactic_data(self, stix_obj: Dict[str, Any]) -> Dict[str, Any]:
-        """Extract tactic-specific data from STIX object."""
+        """
+        Extract tactic-specific data from STIX object using STIX2 library.
+        
+        This method now uses the official STIX2 library for parsing instead of
+        raw dictionary access, providing better validation and standards compliance.
+        
+        Args:
+            stix_obj: STIX object dictionary
+            
+        Returns:
+            dict: Tactic-specific data
+        """
+        try:
+            # Convert dictionary to STIX2 library object
+            # For tactics (x-mitre-tactic), we use the generic parse function
+            stix2_obj = stix2.parse(stix_obj, allow_custom=True)
+            
+            # Use the STIX2 library-based extraction method
+            return self._extract_tactic_data_from_stix_object(stix2_obj)
+            
+        except (STIXError, InvalidValueError, MissingPropertiesError) as e:
+            logger.debug(f"STIX2 library parsing failed for tactic, falling back to dictionary access: {e}")
+            # Fallback to original dictionary-based approach if STIX2 parsing fails
+            return self._extract_tactic_data_legacy(stix_obj)
+        except Exception as e:
+            logger.debug(f"Unexpected error parsing tactic with STIX2 library, falling back: {e}")
+            return self._extract_tactic_data_legacy(stix_obj)
+
+    def _extract_tactic_data_legacy(self, stix_obj: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Legacy tactic data extraction using raw dictionary access.
+        
+        This method is kept as a fallback for cases where STIX2 library parsing fails.
+        
+        Args:
+            stix_obj: STIX object dictionary
+            
+        Returns:
+            dict: Tactic-specific data (empty for tactics)
+        """
         # Tactics only have basic fields (id, name, description)
         return {}
 
     def _extract_mitigation_data(self, stix_obj: Dict[str, Any]) -> Dict[str, Any]:
-        """Extract mitigation-specific data from STIX object."""
+        """
+        Extract mitigation-specific data from STIX object using STIX2 library.
+        
+        This method now uses the official STIX2 library for parsing instead of
+        raw dictionary access, providing better validation and standards compliance.
+        
+        Args:
+            stix_obj: STIX object dictionary
+            
+        Returns:
+            dict: Mitigation-specific data
+        """
+        try:
+            # Convert dictionary to STIX2 library CourseOfAction object
+            stix2_obj = stix2.parse(stix_obj, allow_custom=True)
+            
+            # Use the STIX2 library-based extraction method
+            return self._extract_mitigation_data_from_stix_object(stix2_obj)
+            
+        except (STIXError, InvalidValueError, MissingPropertiesError) as e:
+            logger.debug(f"STIX2 library parsing failed for mitigation, falling back to dictionary access: {e}")
+            # Fallback to original dictionary-based approach if STIX2 parsing fails
+            return self._extract_mitigation_data_legacy(stix_obj)
+        except Exception as e:
+            logger.debug(f"Unexpected error parsing mitigation with STIX2 library, falling back: {e}")
+            return self._extract_mitigation_data_legacy(stix_obj)
+
+    def _extract_mitigation_data_legacy(self, stix_obj: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Legacy mitigation data extraction using raw dictionary access.
+        
+        This method is kept as a fallback for cases where STIX2 library parsing fails.
+        
+        Args:
+            stix_obj: STIX object dictionary
+            
+        Returns:
+            dict: Mitigation-specific data
+        """
         data = {}
 
         # Initialize empty techniques list (will be populated by relationship analysis)
@@ -402,18 +557,22 @@ class STIXParser:
 
     def _extract_technique_data_from_stix_object(self, stix_obj: Union[_STIXBase, Dict[str, Any]]) -> Dict[str, Any]:
         """
-        Extract technique-specific data from STIX2 library object.
+        Extract technique-specific data from STIX2 library AttackPattern object.
+
+        This method leverages the official STIX2 library's AttackPattern object
+        properties for robust, standards-compliant data extraction.
 
         Args:
-            stix_obj: STIX2 library AttackPattern object or dictionary
+            stix_obj: STIX2 library AttackPattern object or dictionary (fallback)
 
         Returns:
-            dict: Technique-specific data
+            dict: Technique-specific data including platforms, tactics, and mitigations
         """
         data = {}
 
         try:
-            # Extract platforms using STIX2 library properties
+            # Extract platforms using STIX2 library's x_mitre_platforms property
+            # This leverages the library's built-in property validation
             if hasattr(stix_obj, 'x_mitre_platforms'):
                 platforms = stix_obj.x_mitre_platforms
             else:
@@ -422,7 +581,8 @@ class STIXParser:
             if platforms:
                 data['platforms'] = platforms
 
-            # Extract tactics from kill chain phases using STIX2 library properties
+            # Extract tactics from kill chain phases using STIX2 library's kill_chain_phases property
+            # This uses the library's KillChainPhase objects for better validation
             tactics = []
             if hasattr(stix_obj, 'kill_chain_phases'):
                 kill_chain_phases = stix_obj.kill_chain_phases
@@ -509,17 +669,30 @@ class STIXParser:
 
     def _extract_mitigation_data_from_stix_object(self, stix_obj: Union[_STIXBase, Dict[str, Any]]) -> Dict[str, Any]:
         """
-        Extract mitigation-specific data from STIX2 library object.
+        Extract mitigation-specific data from STIX2 library CourseOfAction object.
+
+        This method leverages the official STIX2 library's CourseOfAction object
+        properties for robust, standards-compliant data extraction.
 
         Args:
-            stix_obj: STIX2 library CourseOfAction object or dictionary
+            stix_obj: STIX2 library CourseOfAction object or dictionary (fallback)
 
         Returns:
-            dict: Mitigation-specific data
+            dict: Mitigation-specific data including techniques list
         """
         data = {}
 
-        # Initialize empty techniques list (will be populated by relationship analysis)
-        data['techniques'] = []
+        try:
+            # For mitigations (course-of-action), we primarily need the techniques list
+            # which will be populated by relationship analysis
+            # The STIX2 library CourseOfAction object provides validation but
+            # mitigations don't have additional custom properties like techniques do
 
-        return data
+            # Initialize empty techniques list (will be populated by relationship analysis)
+            data['techniques'] = []
+
+            return data
+
+        except (STIXError, InvalidValueError, AttributeError) as e:
+            logger.debug(f"Error extracting mitigation data from STIX object: {e}")
+            return {'techniques': []}
