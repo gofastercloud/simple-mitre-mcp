@@ -4,7 +4,7 @@
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![Tests](https://img.shields.io/badge/tests-202%20passing-brightgreen.svg)](https://github.com/gofastercloud/simple-mitre-mcp/actions)
+[![Tests](https://img.shields.io/badge/tests-348%20passing-brightgreen.svg)](https://github.com/gofastercloud/simple-mitre-mcp/actions)
 [![MCP Tools](https://img.shields.io/badge/MCP%20Tools-8-blue.svg)](https://github.com/gofastercloud/simple-mitre-mcp)
 
 A comprehensive Model Context Protocol (MCP) server that provides structured access to the MITRE ATT&CK framework for Large Language Models and interactive web-based analysis. This server enables security analysts, threat intelligence researchers, and cybersecurity professionals to perform both basic queries and advanced threat modeling through multiple access methods.

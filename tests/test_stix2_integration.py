@@ -280,8 +280,8 @@ class TestSTIX2LibraryIntegration:
         assert result is not None
         assert "mitigations" in result
 
-    def test_fallback_to_custom_parsing(self):
-        """Test fallback mechanism when STIX2 library parsing fails."""
+    def test_invalid_stix_data_handling(self):
+        """Test handling of invalid STIX data."""
         # Create invalid STIX data that will cause library parsing to fail
         invalid_stix_data = {
             "type": "bundle",
@@ -290,16 +290,9 @@ class TestSTIX2LibraryIntegration:
             "objects": [],
         }
 
-        # The parser should now handle invalid STIX data gracefully
-        # Since deprecated fallback was removed, it should raise an error or handle gracefully
-        try:
-            result = self.parser.parse(invalid_stix_data, ["techniques"])
-            # If it doesn't raise an error, verify it returns empty results
-            assert isinstance(result, dict)
-            assert "techniques" in result
-        except Exception as e:
-            # This is expected behavior for invalid STIX data
-            assert "STIX" in str(e) or "parsing" in str(e).lower() or "Invalid" in str(e)
+        # The parser should handle invalid STIX data by raising appropriate errors
+        with pytest.raises((STIXError, InvalidValueError)):
+            self.parser.parse(invalid_stix_data, ["techniques"])
 
     def test_stix2_library_error_handling(self):
         """Test that STIX2 library errors are properly handled."""
@@ -369,8 +362,8 @@ class TestSTIX2LibraryIntegration:
         assert "aliases" not in result
         assert result["techniques"] == []
 
-    def test_dictionary_fallback_in_stix_object_methods(self):
-        """Test that STIX object methods can handle dictionary inputs as fallback."""
+    def test_dictionary_input_handling_in_stix_object_methods(self):
+        """Test that STIX object methods can handle dictionary inputs."""
         # Test with dictionary instead of STIX object
         technique_dict = {
             "type": "attack-pattern",  # Required for STIX2 parsing

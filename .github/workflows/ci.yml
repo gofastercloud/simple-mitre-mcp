@@ -45,6 +45,31 @@ jobs:
       run: |
         uv run pytest tests/ --cov=src --cov-report=xml --cov-report=term-missing -v
         
+    - name: Update test count badge
+      if: github.ref == 'refs/heads/main' && matrix.python-version == '3.12'
+      run: |
+        # Get test count
+        TEST_COUNT=$(uv run pytest tests/ --collect-only -q | grep "collected" | tail -1 | sed 's/[^0-9]*\([0-9]\+\).*/\1/')
+        echo "Test count: $TEST_COUNT"
+        
+        # Update README badge (only if test count is a valid number)
+        if [[ "$TEST_COUNT" =~ ^[0-9]+$ ]]; then
+          sed -i "s/tests-[0-9]*%20passing/tests-${TEST_COUNT}%20passing/g" README.md
+          
+          # Check if there are changes
+          if ! git diff --quiet README.md; then
+            git config --local user.email "action@github.com"
+            git config --local user.name "GitHub Action"
+            git add README.md
+            git commit -m "chore: Update test count badge to $TEST_COUNT tests [skip ci]"
+            git push
+          else
+            echo "No badge update needed"
+          fi
+        else
+          echo "Could not parse test count: $TEST_COUNT"
+        fi
+        
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
       with:

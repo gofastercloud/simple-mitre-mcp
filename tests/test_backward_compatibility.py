@@ -125,79 +125,61 @@ class TestBackwardCompatibility:
 
         return json.loads(bundle.serialize())
 
-    def _create_legacy_parser_mock(self) -> Mock:
-        """Create a mock that simulates the old custom parsing behavior."""
-        mock_parser = Mock(spec=STIXParser)
+    def _get_expected_legacy_format(self, entity_types: List[str]) -> Dict[str, List[Dict[str, Any]]]:
+        """Get expected output format that matches legacy behavior."""
+        result = {entity_type: [] for entity_type in entity_types}
+        
+        if "techniques" in entity_types:
+            result["techniques"].append({
+                "id": "T1055",
+                "name": "Process Injection", 
+                "description": "Adversaries may inject code into processes in order to evade process-based defenses.",
+                "platforms": ["Windows", "macOS", "Linux"],
+                "tactics": ["TA0005", "TA0004"],
+                "mitigations": [],
+            })
+        if "groups" in entity_types:
+            result["groups"].append({
+                "id": "G0016",
+                "name": "APT29",
+                "description": "APT29 is a threat group that has been attributed to Russia's Foreign Intelligence Service.",
+                "aliases": ["Cozy Bear", "The Dukes", "YTTRIUM"],  # Primary name filtered out
+                "techniques": [],
+            })
+        if "tactics" in entity_types:
+            result["tactics"].append({
+                "id": "TA0005",
+                "name": "Defense Evasion",
+                "description": "The adversary is trying to avoid being detected.",
+            })
+        if "mitigations" in entity_types:
+            result["mitigations"].append({
+                "id": "M1048",
+                "name": "Application Isolation and Sandboxing",
+                "description": "Restrict execution of code to a virtual environment on or in transit to an endpoint system.",
+                "techniques": [],
+            })
+        
+        return result
 
-        # Mock the old custom parsing method to return expected legacy format
-        def mock_custom_parse(stix_data, entity_types):
-            result = {entity_type: [] for entity_type in entity_types}
-
-            for obj in stix_data.get("objects", []):
-                obj_type = obj.get("type", "")
-
-                if obj_type == "attack-pattern" and "techniques" in entity_types:
-                    result["techniques"].append(
-                        {
-                            "id": "T1055",
-                            "name": "Process Injection",
-                            "description": "Adversaries may inject code into processes in order to evade process-based defenses.",
-                            "platforms": ["Windows", "macOS", "Linux"],
-                            "tactics": ["TA0005", "TA0004"],
-                            "mitigations": [],
-                        }
-                    )
-                elif obj_type == "intrusion-set" and "groups" in entity_types:
-                    result["groups"].append(
-                        {
-                            "id": "G0016",
-                            "name": "APT29",
-                            "description": "APT29 is a threat group that has been attributed to Russia's Foreign Intelligence Service.",
-                            "aliases": [
-                                "Cozy Bear",
-                                "The Dukes",
-                                "YTTRIUM",
-                            ],  # Primary name filtered out
-                            "techniques": [],
-                        }
-                    )
-                elif obj_type == "x-mitre-tactic" and "tactics" in entity_types:
-                    result["tactics"].append(
-                        {
-                            "id": "TA0005",
-                            "name": "Defense Evasion",
-                            "description": "The adversary is trying to avoid being detected.",
-                        }
-                    )
-                elif obj_type == "course-of-action" and "mitigations" in entity_types:
-                    result["mitigations"].append(
-                        {
-                            "id": "M1048",
-                            "name": "Application Isolation and Sandboxing",
-                            "description": "Restrict execution of code to a virtual environment on or in transit to an endpoint system.",
-                            "techniques": [],
-                        }
-                    )
-
-            return result
-
-        mock_parser._parse_with_custom_logic.return_value = mock_custom_parse
-        return mock_parser
-
-    def test_technique_extraction_output_identical(self):
-        """Test that technique extraction produces identical output."""
-        # Parse with new STIX2 library method
-        new_result = self.parser._parse_with_stix2_library(
+    def test_technique_extraction_output_format(self):
+        """Test that technique extraction produces expected output format."""
+        # Parse with STIX2 library method
+        result = self.parser._parse_with_stix2_library(
             self.sample_stix_data, ["techniques"]
         )
 
         # Verify technique data structure and content
-        assert "techniques" in new_result
-        assert len(new_result["techniques"]) == 1
+        assert "techniques" in result
+        assert len(result["techniques"]) == 1
 
-        technique = new_result["techniques"][0]
+        technique = result["techniques"][0]
         assert technique["id"] == "T1055"
         assert technique["name"] == "Process Injection"
+        assert "description" in technique
+        assert isinstance(technique["platforms"], list)
+        assert isinstance(technique["tactics"], list)
+        assert isinstance(technique["mitigations"], list)
         assert "Adversaries may inject code into processes" in technique["description"]
         assert technique["platforms"] == ["Windows", "macOS", "Linux"]
         assert "TA0005" in technique["tactics"]  # defense-evasion

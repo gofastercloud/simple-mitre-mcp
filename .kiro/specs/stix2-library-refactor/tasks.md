@@ -113,7 +113,7 @@
   - Verify that advanced threat modeling tools work correctly with library-parsed data
   - _Requirements: 5.1, 5.5, 8.1, 8.3, 8.4_
 
-- [ ] 15. Final test cleanup and deprecated test removal
+- [x] 15. Final test cleanup and deprecated test removal
   - Review all test files to identify tests that are now redundant after STIX2 library integration
   - Remove deprecated test methods that test custom parsing logic no longer in use
   - Consolidate duplicate test cases that cover the same functionality

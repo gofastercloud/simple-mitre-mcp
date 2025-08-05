@@ -376,22 +376,22 @@ class TestDataLoader(unittest.TestCase):
         self.assertIn("mitigation_relationships", result["techniques"][0])
         self.assertIn("technique_relationships", result["mitigations"][0])
 
-    def test_process_relationships_fallback_to_legacy(self):
-        """Test relationship processing falls back to legacy method when STIX2 parsing fails."""
-        # Create test data with invalid STIX relationship that will cause parsing to fail
+    def test_process_relationships_error_handling(self):
+        """Test relationship processing handles malformed relationships gracefully."""
+        # Create test data with malformed STIX relationship
         raw_data = {
             "objects": [
                 {
                     "type": "intrusion-set",
-                    "id": "intrusion-set--valid-uuid",
+                    "id": f"intrusion-set--{uuid.uuid4()}",
                     "name": "Test Group",
                     "external_references": [
                         {"source_name": "mitre-attack", "external_id": "G0001"}
                     ],
                 },
                 {
-                    "type": "attack-pattern",
-                    "id": "attack-pattern--valid-uuid",
+                    "type": "attack-pattern", 
+                    "id": f"attack-pattern--{uuid.uuid4()}",
                     "name": "Test Technique",
                     "external_references": [
                         {"source_name": "mitre-attack", "external_id": "T1055"}
@@ -399,10 +399,12 @@ class TestDataLoader(unittest.TestCase):
                 },
                 {
                     "type": "relationship",
+                    "id": f"relationship--{uuid.uuid4()}",
                     "relationship_type": "uses",
-                    "source_ref": "intrusion-set--valid-uuid",
-                    "target_ref": "attack-pattern--valid-uuid",
-                    # Missing required fields like 'id', 'created', 'modified' to trigger STIX2 parsing failure
+                    "source_ref": "intrusion-set--nonexistent",  # Reference to non-existent object
+                    "target_ref": f"attack-pattern--{uuid.uuid4()}",
+                    "created": "2020-01-01T00:00:00.000Z",
+                    "modified": "2020-01-01T00:00:00.000Z",
                 },
             ]
         }
@@ -414,13 +416,14 @@ class TestDataLoader(unittest.TestCase):
             ],
         }
 
-        # This should not raise an exception and should fall back to legacy processing
+        # This should process successfully and handle invalid relationships gracefully
         result = self.loader._process_relationships(raw_data, parsed_data)
 
-        # Verify the relationship was still processed using legacy method
-        self.assertIn("T1055", result["groups"][0]["techniques"])
-        self.assertIn("relationships", result)
-        self.assertEqual(len(result["relationships"]), 1)
+        # Verify basic structure is maintained even with invalid relationships
+        self.assertIn("groups", result)
+        self.assertIn("techniques", result)
+        self.assertEqual(result["groups"][0]["id"], "G0001")
+        self.assertEqual(result["techniques"][0]["id"], "T1055")
 
 
 class TestConfigLoader(unittest.TestCase):
