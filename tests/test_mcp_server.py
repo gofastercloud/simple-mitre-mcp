@@ -37,18 +37,20 @@ class TestMCPServer:
 
         assert app is not None
         assert app.name == "mitre-attack-mcp-server"
-        assert hasattr(app, 'data_loader')
+        assert hasattr(app, "data_loader")
         assert app.data_loader == mock_data_loader
 
-    @patch('src.mcp_server.ConfigLoader')
+    @patch("src.mcp_server.ConfigLoader")
     def test_tools_registration(self, mock_config_loader):
         """Test that MCP tools are registered correctly."""
         # Mock configuration
         mock_config_loader.return_value.load_tools_config.return_value = {
-            'tools': {
-                'search_attack': {
-                    'description': 'Search test',
-                    'parameters': [{'name': 'query', 'type': 'string', 'required': True}]
+            "tools": {
+                "search_attack": {
+                    "description": "Search test",
+                    "parameters": [
+                        {"name": "query", "type": "string", "required": True}
+                    ],
                 }
             }
         }
@@ -65,7 +67,7 @@ class TestMCPServer:
         app = create_mcp_server(mock_data_loader)
 
         # Verify the data loader is stored
-        assert hasattr(app, 'data_loader')
+        assert hasattr(app, "data_loader")
         assert app.data_loader == mock_data_loader
 
     def test_server_name_and_instructions(self):
@@ -84,9 +86,9 @@ class TestMCPServer:
 
         # Verify server is properly configured
         assert app is not None
-        assert hasattr(app, 'name')
-        assert hasattr(app, 'instructions')
+        assert hasattr(app, "name")
+        assert hasattr(app, "instructions")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pytest.main([__file__])

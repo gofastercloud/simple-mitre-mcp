@@ -27,9 +27,10 @@ Thank you for your interest in contributing to the MITRE ATT&CK MCP Server! This
 > **CRITICAL**: This section provides essential information for AI code assistants. Follow these patterns exactly to ensure successful contributions.
 
 ### 📋 Project Overview
-- **Language**: Python 3.8+
+- **Language**: Python 3.12+
 - **Package Manager**: UV (modern Python package manager)
 - **Architecture**: MCP server with 8 tools (5 basic + 3 advanced)
+- **STIX Parsing**: Official STIX2 Python library for standards-compliant parsing
 - **Testing**: 202+ comprehensive tests with pytest
 - **Branch Strategy**: feature → staging → main (strictly enforced)
 
@@ -53,22 +54,35 @@ uv run pytest tests/ -x --tb=short
 
 **Daily Development Pattern:**
 ```bash
-# 1. Always start from staging
+# 0. CRITICAL: Check current branch status FIRST
+git status
+git branch --show-current
+
+# 1. Always start from staging (switch if needed)
 git checkout staging && git pull origin staging
 
-# 2. Create feature branch
+# 2. Create feature branch BEFORE any changes
 git checkout -b feature/$(date +%s)-your-change
 
-# 3. Make changes and test
+# 3. Verify you're on the feature branch
+git branch --show-current
+
+# 4. Make changes and test
 uv run pytest tests/ -x --tb=short
 
-# 4. Commit and push
+# 5. Commit and push
 git add . && git commit -m "feat: your change description"
 git push origin feature/$(date +%s)-your-change
 
-# 5. Create PR to staging (NOT main)
+# 6. Create PR to staging (NOT main)
 gh pr create --base staging --title "Your Change" --body "Description"
 ```
+
+### 🤖 AI Assistant Specific Notes:
+- **Always check `git status` and `git branch --show-current` before starting work**
+- **Never make changes directly on staging or main branches**
+- **Create feature branch immediately after checking out staging**
+- **If you find yourself on the wrong branch, stop and switch immediately**
 
 ## 🔒 Branch Protection Rules
 
@@ -89,9 +103,12 @@ git push --force origin main           # Force push to protected branch
 
 ### ✅ REQUIRED Actions
 ```bash
-# Correct workflow:
+# Correct workflow with verification:
+git status                             # Check current state
+git branch --show-current             # Verify current branch
 git checkout staging && git pull origin staging
 git checkout -b feature/your-change
+git branch --show-current             # Confirm on feature branch
 # Make changes
 uv run pytest tests/ -x --tb=short     # Tests must pass
 git add . && git commit -m "feat: change"
@@ -99,14 +116,59 @@ git push origin feature/your-change
 gh pr create --base staging            # PR to staging first
 ```
 
+### 🔍 Branch Verification Commands
+```bash
+# Before starting work:
+git status                    # Shows current branch and uncommitted changes
+git branch --show-current    # Shows only current branch name
+git branch -a                # Shows all branches (local and remote)
+
+# If on wrong branch:
+git stash                    # Save uncommitted changes
+git checkout staging         # Switch to staging
+git stash pop               # Restore changes (if needed)
+```
+
 ### 🧪 Required Status Checks (All Must Pass)
-1. **Python 3.8-3.12 Tests** - All 202+ tests across 5 Python versions
+1. **Python 3.12-3.13 Tests** - All 202+ tests across 2 Python versions
 2. **Security Scanning** - Bandit + Safety vulnerability checks
 3. **Integration Testing** - End-to-end functionality verification
 4. **Build Verification** - Package building and distribution
 5. **Branch Source Validation** - Enforces staging-to-main flow
 
 ### 🔧 Troubleshooting Commands
+
+### Common Issues and Solutions
+
+**Made changes on wrong branch (staging/main):**
+```bash
+# Save your changes
+git stash push -m "WIP: work in progress"
+
+# Switch to staging and create proper feature branch
+git checkout staging && git pull origin staging
+git checkout -b feature/$(date +%s)-your-change
+
+# Restore your changes
+git stash pop
+```
+
+**Forgot to create feature branch:**
+```bash
+# If you have uncommitted changes on staging:
+git stash push -m "WIP: work in progress"
+git checkout -b feature/$(date +%s)-your-change
+git stash pop
+
+# If you already committed to staging:
+git reset --soft HEAD~1    # Undo last commit, keep changes
+git stash push -m "WIP: committed work"
+git checkout -b feature/$(date +%s)-your-change
+git stash pop
+git add . && git commit -m "feat: your description"
+```
+
+**General troubleshooting:**
 ```bash
 # Check test failures
 uv run pytest tests/ -v --tb=short
@@ -222,7 +284,7 @@ This project adheres to a code of conduct. By participating, you are expected to
 ## Getting Started (Human)
 
 ### Prerequisites
-- Python 3.8 or higher
+- Python 3.12 or higher
 - UV package manager (recommended) or pip
 - Git and GitHub CLI (optional but recommended)
 
@@ -275,6 +337,97 @@ git checkout -b feature/your-feature-name
 git checkout -b fix/issue-description
 ```
 
+## STIX2 Library Development
+
+### Overview
+The project uses the official [STIX2 Python library](https://stix2.readthedocs.io/) for robust, standards-compliant STIX parsing. This provides:
+
+- **Type Safety**: STIX2 library objects (AttackPattern, IntrusionSet, CourseOfAction)
+- **Built-in Validation**: Comprehensive STIX format validation and error handling
+- **Standards Compliance**: Full STIX 2.1 specification compatibility
+- **Extensibility**: Easy addition of custom STIX object types
+
+### STIX2 Development Guidelines
+
+#### Working with STIX Objects
+```python
+# Preferred: Use STIX2 library objects
+from stix2 import AttackPattern, Bundle, parse
+
+# Parse with validation
+stix_obj = parse(raw_data, allow_custom=True)
+if isinstance(stix_obj, AttackPattern):
+    # Type-safe property access
+    platforms = stix_obj.x_mitre_platforms
+    tactics = [phase.phase_name for phase in stix_obj.kill_chain_phases]
+
+# Handle STIX errors properly
+from stix2.exceptions import STIXError, InvalidValueError
+try:
+    bundle = Bundle(allow_custom=True, **bundle_data)
+except STIXError as e:
+    logger.error(f"STIX validation failed: {e}")
+```
+
+#### Adding Custom STIX Objects
+```python
+from stix2 import CustomObject
+from stix2.properties import StringProperty, ListProperty
+
+@CustomObject('x-custom-entity', [
+    ('name', StringProperty(required=True)),
+    ('platforms', ListProperty(StringProperty)),
+])
+class CustomEntity:
+    pass
+
+# Use in parser
+custom_obj = parse(data, allow_custom=True)
+if isinstance(custom_obj, CustomEntity):
+    name = custom_obj.name  # Type-safe access
+```
+
+#### Error Handling Best Practices
+```python
+# Comprehensive error handling
+try:
+    stix_obj = parse(data, allow_custom=True)
+    result = process_stix_object(stix_obj)
+except STIXError as e:
+    logger.warning(f"STIX validation error: {e}")
+    # Handle specific STIX errors
+except InvalidValueError as e:
+    logger.warning(f"Invalid STIX property: {e}")
+    # Handle invalid values
+except Exception as e:
+    logger.error(f"Unexpected error: {e}")
+    # Handle other errors
+```
+
+#### Testing STIX Extensions
+```python
+class TestCustomSTIXObject:
+    def test_custom_object_creation(self):
+        """Test custom STIX object creation and validation."""
+        custom_obj = CustomEntity(
+            name="Test Entity",
+            platforms=["Windows", "Linux"]
+        )
+        assert custom_obj.name == "Test Entity"
+        assert "Windows" in custom_obj.platforms
+    
+    def test_stix_validation_errors(self):
+        """Test STIX validation error handling."""
+        with pytest.raises(MissingPropertiesError):
+            CustomEntity()  # Missing required 'name' property
+```
+
+### STIX2 Resources
+- **Documentation**: [STIX2 Library Docs](https://stix2.readthedocs.io/)
+- **Specification**: [STIX 2.1 Specification](https://docs.oasis-open.org/cti/stix/v2.1/)
+- **Examples**: See `docs/stix2_extensibility_guide.md`
+- **Parser Implementation**: `src/parsers/stix_parser.py`
+
 ## Adding New Features
 
 ### Branch Naming Convention
@@ -323,7 +476,7 @@ uv run start_explorer.py
 
 ### Pull Request Process
 1. **Create PR to staging** (never directly to main)
-2. **Ensure all tests pass** (202+ tests across Python 3.8-3.12)
+2. **Ensure all tests pass** (202+ tests across Python 3.12-3.13)
 3. **Update documentation** if needed
 4. **Wait for automated checks** to pass
 5. **Address review feedback**
@@ -335,6 +488,7 @@ uv run start_explorer.py
 - Write clear docstrings with Args, Returns, and Raises sections
 - Keep functions focused and small
 - Follow existing patterns in the codebase
+- **STIX2 Library**: Use official STIX2 library objects for type safety and validation
 
 ## Adding New MCP Tools
 
@@ -652,6 +806,7 @@ uv run pytest tests/test_port_config.py -v
 - Include usage examples for both MCP and web interface
 - Document any breaking changes
 - Update .kiro specifications if needed
+- **STIX2 Extensions**: Document custom STIX object types and validation patterns
 
 ### Documentation Style
 - Use clear, concise language

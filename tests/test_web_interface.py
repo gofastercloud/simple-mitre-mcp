@@ -22,8 +22,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Configuration with environment variable support
-MCP_HTTP_HOST = os.getenv('MCP_HTTP_HOST', 'localhost')
-MCP_HTTP_PORT = int(os.getenv('MCP_HTTP_PORT', '8000'))
+MCP_HTTP_HOST = os.getenv("MCP_HTTP_HOST", "localhost")
+MCP_HTTP_PORT = int(os.getenv("MCP_HTTP_PORT", "8000"))
 MCP_HTTP_URL = f"http://{MCP_HTTP_HOST}:{MCP_HTTP_PORT}"
 
 
@@ -37,39 +37,39 @@ class TestWebInterface:
 
         # Sample test data
         sample_data = {
-            'tactics': [
+            "tactics": [
                 {
-                    'id': 'TA0001',
-                    'name': 'Initial Access',
-                    'description': 'The adversary is trying to get into your network.'
+                    "id": "TA0001",
+                    "name": "Initial Access",
+                    "description": "The adversary is trying to get into your network.",
                 }
             ],
-            'techniques': [
+            "techniques": [
                 {
-                    'id': 'T1055',
-                    'name': 'Process Injection',
-                    'description': 'Adversaries may inject code into processes.',
-                    'tactics': ['TA0002'],
-                    'platforms': ['Windows', 'Linux'],
-                    'mitigations': ['M1040']
+                    "id": "T1055",
+                    "name": "Process Injection",
+                    "description": "Adversaries may inject code into processes.",
+                    "tactics": ["TA0002"],
+                    "platforms": ["Windows", "Linux"],
+                    "mitigations": ["M1040"],
                 }
             ],
-            'groups': [
+            "groups": [
                 {
-                    'id': 'G0016',
-                    'name': 'APT29',
-                    'aliases': ['Cozy Bear'],
-                    'description': 'APT29 is a threat group.',
-                    'techniques': ['T1055']
+                    "id": "G0016",
+                    "name": "APT29",
+                    "aliases": ["Cozy Bear"],
+                    "description": "APT29 is a threat group.",
+                    "techniques": ["T1055"],
                 }
             ],
-            'mitigations': [
+            "mitigations": [
                 {
-                    'id': 'M1040',
-                    'name': 'Behavior Prevention on Endpoint',
-                    'description': 'Use capabilities to prevent suspicious behavior patterns.'
+                    "id": "M1040",
+                    "name": "Behavior Prevention on Endpoint",
+                    "description": "Use capabilities to prevent suspicious behavior patterns.",
                 }
-            ]
+            ],
         }
 
         mock_loader.get_cached_data.return_value = sample_data
@@ -88,9 +88,9 @@ class TestWebInterface:
 
         # Verify tool structure matches what web interface expects
         for tool in tools:
-            assert hasattr(tool, 'name')
-            assert hasattr(tool, 'description')
-            assert hasattr(tool, 'inputSchema')
+            assert hasattr(tool, "name")
+            assert hasattr(tool, "description")
+            assert hasattr(tool, "inputSchema")
             assert isinstance(tool.inputSchema, dict)
 
     @pytest.mark.asyncio
@@ -99,7 +99,7 @@ class TestWebInterface:
         app = create_mcp_server(mock_data_loader)
 
         # Test list_tactics tool call
-        result, _ = await app.call_tool('list_tactics', {})
+        result, _ = await app.call_tool("list_tactics", {})
 
         assert result is not None
         assert len(result) > 0
@@ -113,12 +113,12 @@ class TestWebInterface:
         app = create_mcp_server(mock_data_loader)
 
         # Test search_attack tool call with query parameter
-        result, _ = await app.call_tool('search_attack', {'query': 'process'})
+        result, _ = await app.call_tool("search_attack", {"query": "process"})
 
         assert result is not None
         assert len(result) > 0
         assert result[0].type == "text"
-        assert 'process' in result[0].text.lower()
+        assert "process" in result[0].text.lower()
 
     @pytest.mark.asyncio
     async def test_technique_detail_tool(self, mock_data_loader):
@@ -126,13 +126,13 @@ class TestWebInterface:
         app = create_mcp_server(mock_data_loader)
 
         # Test get_technique tool call
-        result, _ = await app.call_tool('get_technique', {'technique_id': 'T1055'})
+        result, _ = await app.call_tool("get_technique", {"technique_id": "T1055"})
 
         assert result is not None
         assert len(result) > 0
         assert result[0].type == "text"
-        assert 'T1055' in result[0].text
-        assert 'Process Injection' in result[0].text
+        assert "T1055" in result[0].text
+        assert "Process Injection" in result[0].text
 
     @pytest.mark.asyncio
     async def test_error_handling_for_web_interface(self, mock_data_loader):
@@ -140,12 +140,12 @@ class TestWebInterface:
         app = create_mcp_server(mock_data_loader)
 
         # Test with invalid technique ID
-        result, _ = await app.call_tool('get_technique', {'technique_id': 'INVALID'})
+        result, _ = await app.call_tool("get_technique", {"technique_id": "INVALID"})
 
         assert result is not None
         assert len(result) > 0
         assert result[0].type == "text"
-        assert 'not found' in result[0].text.lower()
+        assert "not found" in result[0].text.lower()
 
     def test_web_interface_tool_parameters(self, mock_data_loader):
         """Test that tool parameters match web interface expectations."""
@@ -153,25 +153,28 @@ class TestWebInterface:
 
         # Get tools synchronously for parameter validation
         import asyncio
+
         tools = asyncio.run(app.list_tools())
         tool_dict = {tool.name: tool for tool in tools}
 
         # Verify search_attack parameters
-        search_tool = tool_dict['search_attack']
-        assert 'query' in search_tool.inputSchema['properties']
-        assert search_tool.inputSchema['properties']['query']['type'] == 'string'
-        assert 'query' in search_tool.inputSchema.get('required', [])
+        search_tool = tool_dict["search_attack"]
+        assert "query" in search_tool.inputSchema["properties"]
+        assert search_tool.inputSchema["properties"]["query"]["type"] == "string"
+        assert "query" in search_tool.inputSchema.get("required", [])
 
         # Verify get_technique parameters
-        technique_tool = tool_dict['get_technique']
-        assert 'technique_id' in technique_tool.inputSchema['properties']
-        assert technique_tool.inputSchema['properties']['technique_id']['type'] == 'string'
-        assert 'technique_id' in technique_tool.inputSchema.get('required', [])
+        technique_tool = tool_dict["get_technique"]
+        assert "technique_id" in technique_tool.inputSchema["properties"]
+        assert (
+            technique_tool.inputSchema["properties"]["technique_id"]["type"] == "string"
+        )
+        assert "technique_id" in technique_tool.inputSchema.get("required", [])
 
         # Verify list_tactics has no required parameters
-        tactics_tool = tool_dict['list_tactics']
-        assert len(tactics_tool.inputSchema['properties']) == 0
-        assert tactics_tool.inputSchema.get('required', []) == []
+        tactics_tool = tool_dict["list_tactics"]
+        assert len(tactics_tool.inputSchema["properties"]) == 0
+        assert tactics_tool.inputSchema.get("required", []) == []
 
 
 class TestWebInterfaceIntegration:
@@ -187,18 +190,14 @@ class TestWebInterfaceIntegration:
 
         async with aiohttp.ClientSession() as session:
             # Test tools/list request
-            payload = {
-                "jsonrpc": "2.0",
-                "id": 1,
-                "method": "tools/list"
-            }
+            payload = {"jsonrpc": "2.0", "id": 1, "method": "tools/list"}
 
             try:
                 async with session.post(MCP_HTTP_URL, json=payload) as response:
                     assert response.status == 200
                     result = await response.json()
-                    assert 'result' in result
-                    assert 'tools' in result['result']
+                    assert "result" in result
+                    assert "tools" in result["result"]
             except aiohttp.ClientError:
                 pytest.skip(f"MCP server not running on {MCP_HTTP_URL}")
 
@@ -214,21 +213,18 @@ class TestWebInterfaceIntegration:
                 "jsonrpc": "2.0",
                 "id": 2,
                 "method": "tools/call",
-                "params": {
-                    "name": "list_tactics",
-                    "arguments": {}
-                }
+                "params": {"name": "list_tactics", "arguments": {}},
             }
 
             try:
                 async with session.post(MCP_HTTP_URL, json=payload) as response:
                     assert response.status == 200
                     result = await response.json()
-                    assert 'result' in result
-                    assert 'content' in result['result']
+                    assert "result" in result
+                    assert "content" in result["result"]
             except aiohttp.ClientError:
                 pytest.skip(f"MCP server not running on {MCP_HTTP_URL}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pytest.main([__file__])

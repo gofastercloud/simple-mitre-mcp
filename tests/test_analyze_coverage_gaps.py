@@ -22,80 +22,83 @@ class TestAnalyzeCoverageGaps:
 
         # Sample test data with tactics, techniques, groups, and mitigations
         sample_data = {
-            'tactics': [
+            "tactics": [
                 {
-                    'id': 'TA0001',
-                    'name': 'Initial Access',
-                    'description': 'The adversary is trying to get into your network.'
+                    "id": "TA0001",
+                    "name": "Initial Access",
+                    "description": "The adversary is trying to get into your network.",
                 },
                 {
-                    'id': 'TA0002',
-                    'name': 'Execution',
-                    'description': 'The adversary is trying to run malicious code.'
-                }
+                    "id": "TA0002",
+                    "name": "Execution",
+                    "description": "The adversary is trying to run malicious code.",
+                },
             ],
-            'techniques': [
+            "techniques": [
                 {
-                    'id': 'T1566',
-                    'name': 'Phishing',
-                    'description': 'Adversaries may send phishing messages.',
-                    'tactics': ['TA0001'],
-                    'platforms': ['Windows', 'macOS', 'Linux'],
-                    'mitigations': ['M1031', 'M1017']  # Has mitigations
+                    "id": "T1566",
+                    "name": "Phishing",
+                    "description": "Adversaries may send phishing messages.",
+                    "tactics": ["TA0001"],
+                    "platforms": ["Windows", "macOS", "Linux"],
+                    "mitigations": ["M1031", "M1017"],  # Has mitigations
                 },
                 {
-                    'id': 'T1059',
-                    'name': 'Command and Scripting Interpreter',
-                    'description': 'Adversaries may abuse command interpreters.',
-                    'tactics': ['TA0002'],
-                    'platforms': ['Windows', 'Linux', 'macOS'],
-                    'mitigations': ['M1038']  # Has one mitigation
+                    "id": "T1059",
+                    "name": "Command and Scripting Interpreter",
+                    "description": "Adversaries may abuse command interpreters.",
+                    "tactics": ["TA0002"],
+                    "platforms": ["Windows", "Linux", "macOS"],
+                    "mitigations": ["M1038"],  # Has one mitigation
                 },
                 {
-                    'id': 'T1055',
-                    'name': 'Process Injection',
-                    'description': 'Adversaries may inject code into processes.',
-                    'tactics': ['TA0002'],
-                    'platforms': ['Windows', 'Linux'],
-                    'mitigations': []  # No mitigations - gap
-                }
+                    "id": "T1055",
+                    "name": "Process Injection",
+                    "description": "Adversaries may inject code into processes.",
+                    "tactics": ["TA0002"],
+                    "platforms": ["Windows", "Linux"],
+                    "mitigations": [],  # No mitigations - gap
+                },
             ],
-            'groups': [
+            "groups": [
                 {
-                    'id': 'G0016',
-                    'name': 'APT29',
-                    'description': 'APT29 is a threat group.',
-                    'aliases': ['Cozy Bear'],
-                    'techniques': ['T1566', 'T1059']  # Uses techniques with mitigations
+                    "id": "G0016",
+                    "name": "APT29",
+                    "description": "APT29 is a threat group.",
+                    "aliases": ["Cozy Bear"],
+                    "techniques": [
+                        "T1566",
+                        "T1059",
+                    ],  # Uses techniques with mitigations
                 },
                 {
-                    'id': 'G0032',
-                    'name': 'Lazarus Group',
-                    'description': 'Lazarus Group is a threat group.',
-                    'aliases': ['HIDDEN COBRA'],
-                    'techniques': ['T1055', 'T1059']  # Uses technique with gap
-                }
+                    "id": "G0032",
+                    "name": "Lazarus Group",
+                    "description": "Lazarus Group is a threat group.",
+                    "aliases": ["HIDDEN COBRA"],
+                    "techniques": ["T1055", "T1059"],  # Uses technique with gap
+                },
             ],
-            'mitigations': [
+            "mitigations": [
                 {
-                    'id': 'M1031',
-                    'name': 'Network Intrusion Prevention',
-                    'description': 'Use intrusion detection signatures.',
-                    'techniques': ['T1566']
+                    "id": "M1031",
+                    "name": "Network Intrusion Prevention",
+                    "description": "Use intrusion detection signatures.",
+                    "techniques": ["T1566"],
                 },
                 {
-                    'id': 'M1017',
-                    'name': 'User Training',
-                    'description': 'Train users to identify social engineering.',
-                    'techniques': ['T1566']
+                    "id": "M1017",
+                    "name": "User Training",
+                    "description": "Train users to identify social engineering.",
+                    "techniques": ["T1566"],
                 },
                 {
-                    'id': 'M1038',
-                    'name': 'Execution Prevention',
-                    'description': 'Block execution of code.',
-                    'techniques': ['T1059']
-                }
-            ]
+                    "id": "M1038",
+                    "name": "Execution Prevention",
+                    "description": "Block execution of code.",
+                    "techniques": ["T1059"],
+                },
+            ],
         }
 
         mock_loader.get_cached_data.return_value = sample_data
@@ -110,9 +113,9 @@ class TestAnalyzeCoverageGaps:
     async def test_analyze_coverage_gaps_by_threat_group(self, mcp_server):
         """Test coverage gap analysis for a specific threat group."""
         # Execute with threat group
-        result, _ = await mcp_server.call_tool('analyze_coverage_gaps', {
-            'threat_groups': ['G0016']
-        })
+        result, _ = await mcp_server.call_tool(
+            "analyze_coverage_gaps", {"threat_groups": ["G0016"]}
+        )
 
         assert result is not None
         assert len(result) > 0
@@ -130,9 +133,9 @@ class TestAnalyzeCoverageGaps:
     async def test_analyze_coverage_gaps_by_technique_list(self, mcp_server):
         """Test coverage gap analysis for specific techniques."""
         # Execute with technique list including one with no mitigations
-        result, _ = await mcp_server.call_tool('analyze_coverage_gaps', {
-            'technique_list': ['T1566', 'T1055']
-        })
+        result, _ = await mcp_server.call_tool(
+            "analyze_coverage_gaps", {"technique_list": ["T1566", "T1055"]}
+        )
 
         assert result is not None
         assert len(result) > 0
@@ -150,10 +153,10 @@ class TestAnalyzeCoverageGaps:
     async def test_analyze_coverage_gaps_with_exclusions(self, mcp_server):
         """Test coverage gap analysis with excluded mitigations."""
         # Execute excluding a mitigation that T1566 uses
-        result, _ = await mcp_server.call_tool('analyze_coverage_gaps', {
-            'technique_list': ['T1566'],
-            'exclude_mitigations': ['M1031']
-        })
+        result, _ = await mcp_server.call_tool(
+            "analyze_coverage_gaps",
+            {"technique_list": ["T1566"], "exclude_mitigations": ["M1031"]},
+        )
 
         assert result is not None
         assert len(result) > 0
@@ -169,10 +172,10 @@ class TestAnalyzeCoverageGaps:
     async def test_analyze_coverage_gaps_all_excluded(self, mcp_server):
         """Test coverage gap analysis when all mitigations are excluded."""
         # Execute excluding all mitigations for T1566
-        result, _ = await mcp_server.call_tool('analyze_coverage_gaps', {
-            'technique_list': ['T1566'],
-            'exclude_mitigations': ['M1031', 'M1017']
-        })
+        result, _ = await mcp_server.call_tool(
+            "analyze_coverage_gaps",
+            {"technique_list": ["T1566"], "exclude_mitigations": ["M1031", "M1017"]},
+        )
 
         assert result is not None
         assert len(result) > 0
@@ -182,15 +185,17 @@ class TestAnalyzeCoverageGaps:
         assert "0.0%" in content  # Should show 0% coverage
         assert "DETAILED GAP ANALYSIS" in content
         assert "T1566 - Phishing" in content
-        assert "All 2 mitigations are excluded" in content  # Implementation uses this phrasing
+        assert (
+            "All 2 mitigations are excluded" in content
+        )  # Implementation uses this phrasing
 
     @pytest.mark.asyncio
     async def test_analyze_coverage_gaps_mixed_groups(self, mcp_server):
         """Test coverage gap analysis for multiple threat groups."""
         # Execute with multiple groups
-        result, _ = await mcp_server.call_tool('analyze_coverage_gaps', {
-            'threat_groups': ['G0016', 'G0032']
-        })
+        result, _ = await mcp_server.call_tool(
+            "analyze_coverage_gaps", {"threat_groups": ["G0016", "G0032"]}
+        )
 
         assert result is not None
         assert len(result) > 0
@@ -207,7 +212,7 @@ class TestAnalyzeCoverageGaps:
     async def test_analyze_coverage_gaps_no_parameters(self, mcp_server):
         """Test error handling when no analysis parameters are provided."""
         # Execute without any parameters
-        result, _ = await mcp_server.call_tool('analyze_coverage_gaps', {})
+        result, _ = await mcp_server.call_tool("analyze_coverage_gaps", {})
 
         assert result is not None
         assert len(result) > 0
@@ -219,9 +224,9 @@ class TestAnalyzeCoverageGaps:
     async def test_analyze_coverage_gaps_invalid_group(self, mcp_server):
         """Test error handling for invalid group ID."""
         # Execute with invalid group
-        result, _ = await mcp_server.call_tool('analyze_coverage_gaps', {
-            'threat_groups': ['G9999']
-        })
+        result, _ = await mcp_server.call_tool(
+            "analyze_coverage_gaps", {"threat_groups": ["G9999"]}
+        )
 
         assert result is not None
         assert len(result) > 0
@@ -233,9 +238,9 @@ class TestAnalyzeCoverageGaps:
     async def test_analyze_coverage_gaps_invalid_technique(self, mcp_server):
         """Test error handling for invalid technique ID."""
         # Execute with invalid technique
-        result, _ = await mcp_server.call_tool('analyze_coverage_gaps', {
-            'technique_list': ['T9999']
-        })
+        result, _ = await mcp_server.call_tool(
+            "analyze_coverage_gaps", {"technique_list": ["T9999"]}
+        )
 
         assert result is not None
         assert len(result) > 0
@@ -247,9 +252,10 @@ class TestAnalyzeCoverageGaps:
     async def test_analyze_coverage_gaps_prioritization(self, mcp_server):
         """Test that prioritization recommendations are included."""
         # Execute with techniques that have gaps
-        result, _ = await mcp_server.call_tool('analyze_coverage_gaps', {
-            'technique_list': ['T1055', 'T1566']  # One gap, one covered
-        })
+        result, _ = await mcp_server.call_tool(
+            "analyze_coverage_gaps",
+            {"technique_list": ["T1055", "T1566"]},  # One gap, one covered
+        )
 
         assert result is not None
         assert len(result) > 0
@@ -257,7 +263,9 @@ class TestAnalyzeCoverageGaps:
         content = result[0].text
         assert "PRIORITIZATION RECOMMENDATIONS" in content
         assert "CRITICAL" in content  # 50% coverage shows as CRITICAL in implementation
-        assert "Top Mitigation Recommendations:" in content  # Implementation uses this section
+        assert (
+            "Top Mitigation Recommendations:" in content
+        )  # Implementation uses this section
         # T1055 has no mitigations, so no recommendations will be shown
         # Only GAP techniques (with excluded mitigations) generate recommendations
 
@@ -265,16 +273,21 @@ class TestAnalyzeCoverageGaps:
     async def test_analyze_coverage_gaps_tactic_breakdown(self, mcp_server):
         """Test that gaps are broken down by tactic."""
         # Execute with techniques from different tactics
-        result, _ = await mcp_server.call_tool('analyze_coverage_gaps', {
-            'technique_list': ['T1055']  # Execution tactic, no mitigations
-        })
+        result, _ = await mcp_server.call_tool(
+            "analyze_coverage_gaps",
+            {"technique_list": ["T1055"]},  # Execution tactic, no mitigations
+        )
 
         assert result is not None
         assert len(result) > 0
 
         content = result[0].text
-        assert "DETAILED GAP ANALYSIS" in content  # Implementation uses different section name
-        assert "Tactics: TA0002" in content  # Implementation shows tactics in technique details
+        assert (
+            "DETAILED GAP ANALYSIS" in content
+        )  # Implementation uses different section name
+        assert (
+            "Tactics: TA0002" in content
+        )  # Implementation shows tactics in technique details
 
     @pytest.mark.asyncio
     async def test_analyze_coverage_gaps_no_data_loader(self):
@@ -282,9 +295,9 @@ class TestAnalyzeCoverageGaps:
         # Create server without data loader
         server = create_mcp_server(None)
 
-        result, _ = await server.call_tool('analyze_coverage_gaps', {
-            'threat_groups': ['G0016']
-        })
+        result, _ = await server.call_tool(
+            "analyze_coverage_gaps", {"threat_groups": ["G0016"]}
+        )
 
         assert result is not None
         assert len(result) > 0
@@ -298,9 +311,9 @@ class TestAnalyzeCoverageGaps:
         # Mock data loader to return None for cached data
         mcp_server.data_loader.get_cached_data.return_value = None
 
-        result, _ = await mcp_server.call_tool('analyze_coverage_gaps', {
-            'threat_groups': ['G0016']
-        })
+        result, _ = await mcp_server.call_tool(
+            "analyze_coverage_gaps", {"threat_groups": ["G0016"]}
+        )
 
         assert result is not None
         assert len(result) > 0
@@ -312,11 +325,14 @@ class TestAnalyzeCoverageGaps:
     async def test_analyze_coverage_gaps_case_insensitive(self, mcp_server):
         """Test that input parameters are case insensitive."""
         # Execute with lowercase group ID
-        result, _ = await mcp_server.call_tool('analyze_coverage_gaps', {
-            'threat_groups': ['g0016'],
-            'technique_list': ['t1566'],
-            'exclude_mitigations': ['m1031']
-        })
+        result, _ = await mcp_server.call_tool(
+            "analyze_coverage_gaps",
+            {
+                "threat_groups": ["g0016"],
+                "technique_list": ["t1566"],
+                "exclude_mitigations": ["m1031"],
+            },
+        )
 
         assert result is not None
         assert len(result) > 0
@@ -333,24 +349,24 @@ class TestAnalyzeCoverageGaps:
         # Create mock data with group that has no techniques
         mock_loader = Mock(spec=DataLoader)
         sample_data = {
-            'tactics': [],
-            'techniques': [],
-            'groups': [
+            "tactics": [],
+            "techniques": [],
+            "groups": [
                 {
-                    'id': 'G0001',
-                    'name': 'Empty Group',
-                    'description': 'Group with no techniques.',
-                    'techniques': []  # No techniques
+                    "id": "G0001",
+                    "name": "Empty Group",
+                    "description": "Group with no techniques.",
+                    "techniques": [],  # No techniques
                 }
             ],
-            'mitigations': []
+            "mitigations": [],
         }
         mock_loader.get_cached_data.return_value = sample_data
         server = create_mcp_server(mock_loader)
 
-        result, _ = await server.call_tool('analyze_coverage_gaps', {
-            'threat_groups': ['G0001']
-        })
+        result, _ = await server.call_tool(
+            "analyze_coverage_gaps", {"threat_groups": ["G0001"]}
+        )
 
         assert result is not None
         assert len(result) > 0
@@ -362,16 +378,27 @@ class TestAnalyzeCoverageGaps:
     async def test_analyze_coverage_gaps_mitigation_impact_ranking(self, mcp_server):
         """Test that mitigations are ranked by impact (number of techniques covered)."""
         # Execute with multiple techniques that share mitigations
-        result, _ = await mcp_server.call_tool('analyze_coverage_gaps', {
-            'technique_list': ['T1566', 'T1055'],  # T1566 has mitigations, T1055 doesn't
-            'exclude_mitigations': ['M1031', 'M1017']  # Exclude T1566's mitigations to create gap
-        })
+        result, _ = await mcp_server.call_tool(
+            "analyze_coverage_gaps",
+            {
+                "technique_list": [
+                    "T1566",
+                    "T1055",
+                ],  # T1566 has mitigations, T1055 doesn't
+                "exclude_mitigations": [
+                    "M1031",
+                    "M1017",
+                ],  # Exclude T1566's mitigations to create gap
+            },
+        )
 
         assert result is not None
         assert len(result) > 0
 
         content = result[0].text
         assert "PRIORITIZATION RECOMMENDATIONS" in content
-        assert "PRIORITIZATION RECOMMENDATIONS" in content  # Implementation uses different section name
+        assert (
+            "PRIORITIZATION RECOMMENDATIONS" in content
+        )  # Implementation uses different section name
         # Should show mitigations that could address the gaps
         assert "M1031" in content or "M1017" in content

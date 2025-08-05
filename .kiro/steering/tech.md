@@ -50,18 +50,31 @@ data_sources:
 
 ### Required Setup Pattern
 ```bash
+# 0. CRITICAL: Verify current branch status
+git status && git branch --show-current
+
 # 1. Always start from staging
 git checkout staging && git pull origin staging
 
 # 2. Install dependencies with UV
 uv sync
 
-# 3. Create feature branch
+# 3. Create feature branch IMMEDIATELY
 git checkout -b feature/$(date +%s)-your-change
 
-# 4. Test before any changes
+# 4. Verify you're on the feature branch
+git branch --show-current
+
+# 5. Test before any changes
 uv run pytest tests/ -x --tb=short
 ```
+
+### 🚨 Workflow Validation Checklist
+Before making any code changes, verify:
+- [ ] Current branch is a feature branch (not staging/main)
+- [ ] Feature branch name includes timestamp
+- [ ] All tests pass on clean branch
+- [ ] Dependencies are installed with `uv sync`
 
 ### Development Commands (UV Required)
 ```bash

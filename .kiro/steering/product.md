@@ -89,7 +89,7 @@ This MCP server is designed to be **extensible and reusable**:
 ### Key Requirements for Contributors
 - **Follow branch protection workflow** - feature → staging → main
 - **Use UV package manager** - Required for all dependency management  
-- **Maintain 202+ test coverage** - All tests must pass across Python 3.8-3.12
+- **Maintain 202+ test coverage** - All tests must pass across Python 3.12-3.13
 - **Use official libraries** - MCP, STIX2, FastMCP for standards compliance
 - **Test locally before pushing** - Prevents CI/CD failures
 
