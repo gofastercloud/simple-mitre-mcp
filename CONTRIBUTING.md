@@ -27,7 +27,7 @@ Thank you for your interest in contributing to the MITRE ATT&CK MCP Server! This
 > **CRITICAL**: This section provides essential information for AI code assistants. Follow these patterns exactly to ensure successful contributions.
 
 ### 📋 Project Overview
-- **Language**: Python 3.8+
+- **Language**: Python 3.12+
 - **Package Manager**: UV (modern Python package manager)
 - **Architecture**: MCP server with 8 tools (5 basic + 3 advanced)
 - **Testing**: 202+ comprehensive tests with pytest
@@ -129,7 +129,7 @@ git stash pop               # Restore changes (if needed)
 ```
 
 ### 🧪 Required Status Checks (All Must Pass)
-1. **Python 3.8-3.12 Tests** - All 202+ tests across 5 Python versions
+1. **Python 3.12-3.13 Tests** - All 202+ tests across 2 Python versions
 2. **Security Scanning** - Bandit + Safety vulnerability checks
 3. **Integration Testing** - End-to-end functionality verification
 4. **Build Verification** - Package building and distribution
@@ -283,7 +283,7 @@ This project adheres to a code of conduct. By participating, you are expected to
 ## Getting Started (Human)
 
 ### Prerequisites
-- Python 3.8 or higher
+- Python 3.12 or higher
 - UV package manager (recommended) or pip
 - Git and GitHub CLI (optional but recommended)
 
@@ -384,7 +384,7 @@ uv run start_explorer.py
 
 ### Pull Request Process
 1. **Create PR to staging** (never directly to main)
-2. **Ensure all tests pass** (202+ tests across Python 3.8-3.12)
+2. **Ensure all tests pass** (202+ tests across Python 3.12-3.13)
 3. **Update documentation** if needed
 4. **Wait for automated checks** to pass
 5. **Address review feedback**

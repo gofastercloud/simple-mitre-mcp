@@ -8,7 +8,11 @@ data from various sources in a configuration-driven manner.
 import json
 import logging
 import requests
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Union
+import stix2
+from stix2 import Relationship, parse
+from stix2.base import _STIXBase
+from stix2.exceptions import STIXError, InvalidValueError, MissingPropertiesError
 from src.config_loader import load_config
 from src.parsers.stix_parser import STIXParser
 
@@ -106,7 +110,7 @@ class DataLoader:
 
     def _process_relationships(self, raw_data: Dict[str, Any], parsed_data: Dict[str, List[Dict[str, Any]]]) -> Dict[str, List[Dict[str, Any]]]:
         """
-        Process STIX relationships to populate entity connections.
+        Process STIX relationships to populate entity connections using STIX2 library.
 
         Args:
             raw_data: Original STIX data containing relationship objects
@@ -115,7 +119,7 @@ class DataLoader:
         Returns:
             dict: Enhanced parsed data with relationships populated
         """
-        logger.info("Processing entity relationships")
+        logger.info("Processing entity relationships using STIX2 library")
 
         # Create lookup maps for entities by their STIX IDs
         entity_lookup = {}
@@ -133,15 +137,74 @@ class DataLoader:
                 stix_id_to_mitre_id[stix_id] = mitre_id
                 entity_lookup[stix_id] = obj
 
-        # Process relationship objects
+        # Process relationship objects using STIX2 library
         relationships_processed = 0
+        parsing_errors = 0
+        
         for obj in raw_data.get('objects', []):
             if obj.get('type') == 'relationship':
-                self._process_single_relationship(obj, parsed_data, stix_id_to_mitre_id)
-                relationships_processed += 1
+                try:
+                    # Parse relationship using STIX2 library
+                    stix_relationship = self._parse_stix_relationship(obj)
+                    if stix_relationship:
+                        self._process_single_relationship_with_stix2(stix_relationship, parsed_data, stix_id_to_mitre_id)
+                        relationships_processed += 1
+                except (STIXError, InvalidValueError, MissingPropertiesError) as e:
+                    parsing_errors += 1
+                    logger.debug(f"STIX library error parsing relationship: {e}")
+                    # Fallback to dictionary-based processing
+                    try:
+                        self._process_single_relationship_legacy(obj, parsed_data, stix_id_to_mitre_id)
+                        relationships_processed += 1
+                    except Exception as fallback_error:
+                        logger.warning(f"Failed to process relationship with both STIX2 library and fallback: {fallback_error}")
+                except Exception as e:
+                    parsing_errors += 1
+                    logger.debug(f"Unexpected error parsing relationship with STIX2 library: {e}")
+                    # Fallback to dictionary-based processing
+                    try:
+                        self._process_single_relationship_legacy(obj, parsed_data, stix_id_to_mitre_id)
+                        relationships_processed += 1
+                    except Exception as fallback_error:
+                        logger.warning(f"Failed to process relationship with both STIX2 library and fallback: {fallback_error}")
 
-        logger.info(f"Processed {relationships_processed} relationship objects")
+        logger.info(f"Processed {relationships_processed} relationship objects using STIX2 library")
+        if parsing_errors > 0:
+            logger.info(f"Encountered {parsing_errors} parsing errors, used fallback processing where possible")
         return parsed_data
+
+    def _parse_stix_relationship(self, rel_obj: Dict[str, Any]) -> Optional[Union[Relationship, _STIXBase]]:
+        """
+        Parse a STIX relationship object using the official STIX2 library.
+
+        Args:
+            rel_obj: Raw STIX relationship object dictionary
+
+        Returns:
+            Union[Relationship, _STIXBase]: STIX2 library Relationship object, or None if parsing fails
+
+        Raises:
+            STIXError: When STIX relationship data is malformed
+            InvalidValueError: When relationship properties are invalid
+            MissingPropertiesError: When required relationship properties are missing
+        """
+        try:
+            # Use STIX2 library to parse the relationship object
+            stix_relationship = parse(rel_obj, allow_custom=True)
+            
+            # Verify it's actually a Relationship object (check for relationship type)
+            if hasattr(stix_relationship, 'type') and stix_relationship.type == 'relationship':
+                return stix_relationship
+            else:
+                logger.debug(f"Parsed object is not a relationship: {type(stix_relationship)}, type: {getattr(stix_relationship, 'type', 'unknown')}")
+                return None
+                
+        except (STIXError, InvalidValueError, MissingPropertiesError) as e:
+            logger.debug(f"STIX2 library failed to parse relationship: {e}")
+            raise
+        except Exception as e:
+            logger.debug(f"Unexpected error parsing relationship with STIX2 library: {e}")
+            raise
 
     def _extract_mitre_id_from_stix(self, stix_obj: Dict[str, Any]) -> str:
         """Extract MITRE ID from STIX object external references."""
@@ -151,8 +214,57 @@ class DataLoader:
                 return ref.get('external_id', '')
         return ''
 
-    def _process_single_relationship(self, rel_obj: Dict[str, Any], parsed_data: Dict[str, List[Dict[str, Any]]], stix_id_to_mitre_id: Dict[str, str]):
-        """Process a single STIX relationship object."""
+    def _process_single_relationship_with_stix2(self, stix_relationship: Union[Relationship, _STIXBase], parsed_data: Dict[str, List[Dict[str, Any]]], stix_id_to_mitre_id: Dict[str, str]):
+        """
+        Process a single STIX relationship using STIX2 library object properties.
+
+        Args:
+            stix_relationship: STIX2 library Relationship object
+            parsed_data: Parsed entities to enhance with relationships
+            stix_id_to_mitre_id: Mapping from STIX IDs to MITRE IDs
+        """
+        # Use STIX2 library's validated property access
+        source_ref = stix_relationship.source_ref
+        target_ref = stix_relationship.target_ref
+        relationship_type = stix_relationship.relationship_type
+
+        source_mitre_id = stix_id_to_mitre_id.get(source_ref, '')
+        target_mitre_id = stix_id_to_mitre_id.get(target_ref, '')
+
+        if not source_mitre_id or not target_mitre_id:
+            logger.debug(f"Skipping relationship {relationship_type}: missing MITRE IDs for {source_ref} -> {target_ref}")
+            return
+
+        # Store the relationship for later analysis using STIX2 library properties
+        if 'relationships' not in parsed_data:
+            parsed_data['relationships'] = []
+        
+        # Create relationship record with additional STIX2 library properties
+        relationship_record = {
+            'type': relationship_type,
+            'source_ref': source_ref,
+            'target_ref': target_ref,
+            'source_id': source_mitre_id,
+            'target_id': target_mitre_id,
+            'created': stix_relationship.created.isoformat() if hasattr(stix_relationship, 'created') else None,
+            'modified': stix_relationship.modified.isoformat() if hasattr(stix_relationship, 'modified') else None,
+            'id': stix_relationship.id if hasattr(stix_relationship, 'id') else None
+        }
+        
+        parsed_data['relationships'].append(relationship_record)
+
+        # Handle different relationship types using STIX2 library validated data
+        if relationship_type == 'uses':
+            self._handle_uses_relationship_with_stix2(source_mitre_id, target_mitre_id, parsed_data, stix_relationship)
+        elif relationship_type == 'mitigates':
+            self._handle_mitigates_relationship_with_stix2(source_mitre_id, target_mitre_id, parsed_data, stix_relationship)
+
+    def _process_single_relationship_legacy(self, rel_obj: Dict[str, Any], parsed_data: Dict[str, List[Dict[str, Any]]], stix_id_to_mitre_id: Dict[str, str]):
+        """
+        Process a single STIX relationship object using legacy dictionary access.
+        
+        This method is kept as a fallback for cases where STIX2 library parsing fails.
+        """
         source_ref = rel_obj.get('source_ref', '')
         target_ref = rel_obj.get('target_ref', '')
         relationship_type = rel_obj.get('relationship_type', '')
@@ -181,8 +293,92 @@ class DataLoader:
         elif relationship_type == 'mitigates':
             self._handle_mitigates_relationship(source_mitre_id, target_mitre_id, parsed_data)
 
+    def _handle_uses_relationship_with_stix2(self, source_id: str, target_id: str, parsed_data: Dict[str, List[Dict[str, Any]]], stix_relationship: Union[Relationship, _STIXBase]):
+        """
+        Handle 'uses' relationships using STIX2 library object properties.
+        
+        Args:
+            source_id: MITRE ID of the source entity
+            target_id: MITRE ID of the target entity
+            parsed_data: Parsed entities to enhance with relationships
+            stix_relationship: STIX2 library Relationship object with additional metadata
+        """
+        # Find the source entity (likely a group) and add relationship metadata
+        for group in parsed_data.get('groups', []):
+            if group['id'] == source_id:
+                if 'techniques' not in group:
+                    group['techniques'] = []
+                if target_id not in group['techniques']:
+                    group['techniques'].append(target_id)
+                
+                # Add relationship metadata using STIX2 library properties
+                if 'technique_relationships' not in group:
+                    group['technique_relationships'] = {}
+                
+                group['technique_relationships'][target_id] = {
+                    'relationship_type': stix_relationship.relationship_type,
+                    'created': stix_relationship.created.isoformat() if hasattr(stix_relationship, 'created') else None,
+                    'modified': stix_relationship.modified.isoformat() if hasattr(stix_relationship, 'modified') else None,
+                    'confidence': getattr(stix_relationship, 'confidence', None)
+                }
+                break
+
+    def _handle_mitigates_relationship_with_stix2(self, source_id: str, target_id: str, parsed_data: Dict[str, List[Dict[str, Any]]], stix_relationship: Union[Relationship, _STIXBase]):
+        """
+        Handle 'mitigates' relationships using STIX2 library object properties.
+        
+        Args:
+            source_id: MITRE ID of the source entity (mitigation)
+            target_id: MITRE ID of the target entity (technique)
+            parsed_data: Parsed entities to enhance with relationships
+            stix_relationship: STIX2 library Relationship object with additional metadata
+        """
+        # Add mitigation to technique's mitigations list with metadata
+        for technique in parsed_data.get('techniques', []):
+            if technique['id'] == target_id:
+                if 'mitigations' not in technique:
+                    technique['mitigations'] = []
+                if source_id not in technique['mitigations']:
+                    technique['mitigations'].append(source_id)
+                
+                # Add relationship metadata using STIX2 library properties
+                if 'mitigation_relationships' not in technique:
+                    technique['mitigation_relationships'] = {}
+                
+                technique['mitigation_relationships'][source_id] = {
+                    'relationship_type': stix_relationship.relationship_type,
+                    'created': stix_relationship.created.isoformat() if hasattr(stix_relationship, 'created') else None,
+                    'modified': stix_relationship.modified.isoformat() if hasattr(stix_relationship, 'modified') else None,
+                    'confidence': getattr(stix_relationship, 'confidence', None)
+                }
+                break
+
+        # Add technique to mitigation's techniques list with metadata
+        for mitigation in parsed_data.get('mitigations', []):
+            if mitigation['id'] == source_id:
+                if 'techniques' not in mitigation:
+                    mitigation['techniques'] = []
+                if target_id not in mitigation['techniques']:
+                    mitigation['techniques'].append(target_id)
+                
+                # Add relationship metadata using STIX2 library properties
+                if 'technique_relationships' not in mitigation:
+                    mitigation['technique_relationships'] = {}
+                
+                mitigation['technique_relationships'][target_id] = {
+                    'relationship_type': stix_relationship.relationship_type,
+                    'created': stix_relationship.created.isoformat() if hasattr(stix_relationship, 'created') else None,
+                    'modified': stix_relationship.modified.isoformat() if hasattr(stix_relationship, 'modified') else None,
+                    'confidence': getattr(stix_relationship, 'confidence', None)
+                }
+                break
+
     def _handle_uses_relationship(self, source_id: str, target_id: str, parsed_data: Dict[str, List[Dict[str, Any]]]):
-        """Handle 'uses' relationships (e.g., group uses technique)."""
+        """
+        Handle 'uses' relationships using legacy dictionary access.
+        
+        This method is kept as a fallback for cases where STIX2 library processing fails.
+        """
         # Find the source entity (likely a group)
         for group in parsed_data.get('groups', []):
             if group['id'] == source_id:
@@ -193,7 +389,11 @@ class DataLoader:
                 break
 
     def _handle_mitigates_relationship(self, source_id: str, target_id: str, parsed_data: Dict[str, List[Dict[str, Any]]]):
-        """Handle 'mitigates' relationships (mitigation mitigates technique)."""
+        """
+        Handle 'mitigates' relationships using legacy dictionary access.
+        
+        This method is kept as a fallback for cases where STIX2 library processing fails.
+        """
         # Add mitigation to technique's mitigations list
         for technique in parsed_data.get('techniques', []):
             if technique['id'] == target_id:

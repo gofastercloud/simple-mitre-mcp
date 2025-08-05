@@ -85,7 +85,7 @@ uv run start_explorer.py
 ## Testing Requirements (MANDATORY)
 
 ### All Changes Must Pass
-- **202+ tests** across Python 3.8-3.12
+- **202+ tests** across Python 3.12-3.13
 - **Security scanning** (Bandit + Safety)
 - **Integration testing** with real data
 - **Code formatting** (Black)
@@ -137,7 +137,7 @@ git push --force origin staging
 ## Success Criteria
 
 Your changes are ready when:
-- ✅ All 202+ tests pass across Python 3.8-3.12
+- ✅ All 202+ tests pass across Python 3.12-3.13
 - ✅ Security scans show no new vulnerabilities
 - ✅ Integration tests verify functionality
 - ✅ Code is formatted with Black
