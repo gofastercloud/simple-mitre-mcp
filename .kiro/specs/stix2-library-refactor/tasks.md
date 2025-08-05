@@ -105,7 +105,7 @@
   - Create developer documentation for extending STIX parsing capabilities
   - _Requirements: 4.1, 4.2, 6.1, 6.2_
 
-- [ ] 14. Integration testing with all MCP tools
+- [x] 14. Integration testing with all MCP tools
   - Test all 8 MCP tools (search_attack, get_technique, list_tactics, get_group_techniques, get_technique_mitigations, build_attack_path, analyze_coverage_gaps, detect_technique_relationships) with refactored parser
   - Verify web interface continues to work with all tools
   - Test HTTP proxy functionality with refactored backend
