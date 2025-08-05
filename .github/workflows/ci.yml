@@ -80,22 +80,39 @@ jobs:
         token: ${{ secrets.CODECOV_TOKEN }}
         
     - name: Test MCP server functionality
+      timeout-minutes: 3
       run: |
         uv run python -c "
         import asyncio
+        import signal
         from src.data_loader import DataLoader
         from src.mcp_server import create_mcp_server
         
+        # Set timeout handler
+        def timeout_handler(signum, frame):
+            raise TimeoutError('MCP server test timed out')
+        signal.signal(signal.SIGALRM, timeout_handler)
+        signal.alarm(180)  # 3 minute timeout
+        
         async def test_functionality():
-            print('Testing MCP server with real data...')
-            loader = DataLoader()
-            data = loader.load_data_source('mitre_attack')
-            server = create_mcp_server(loader)
-            
-            # Test basic functionality
-            result, _ = await server.call_tool('search_attack', {'query': 'process injection'})
-            assert result and len(result) > 0
-            print('✅ MCP server functionality verified')
+            try:
+                print('Testing MCP server with real data...')
+                loader = DataLoader()
+                data = loader.load_data_source('mitre_attack')
+                server = create_mcp_server(loader)
+                
+                # Test basic functionality with timeout
+                result, _ = await asyncio.wait_for(
+                    server.call_tool('search_attack', {'query': 'process injection'}), 
+                    timeout=60
+                )
+                assert result and len(result) > 0
+                print('✅ MCP server functionality verified')
+            except Exception as e:
+                print(f'❌ MCP server test failed: {e}')
+                raise
+            finally:
+                signal.alarm(0)  # Cancel alarm
             
         asyncio.run(test_functionality())
         "
@@ -149,39 +166,54 @@ jobs:
       run: uv sync --dev
       
     - name: Test HTTP proxy integration
+      timeout-minutes: 5
       run: |
         uv run python -c "
         import sys
+        import signal
         from pathlib import Path
         sys.path.insert(0, str(Path('.').resolve() / 'src'))
         
-        from src.data_loader import DataLoader
-        from src.mcp_server import create_mcp_server
-        from http_proxy import HTTPProxy
+        # Set timeout handler
+        def timeout_handler(signum, frame):
+            raise TimeoutError('Integration test timed out')
+        signal.signal(signal.SIGALRM, timeout_handler)
+        signal.alarm(300)  # 5 minute timeout
         
-        print('Testing HTTP proxy integration...')
-        
-        # Test data loading
-        loader = DataLoader()
-        data = loader.load_data_source('mitre_attack')
-        print(f'✅ Data loaded: {len(data.get(\"techniques\", []))} techniques')
-        
-        # Test MCP server creation
-        mcp_server = create_mcp_server(loader)
-        print('✅ MCP server created')
-        
-        # Test HTTP proxy creation
-        proxy = HTTPProxy(mcp_server)
-        print('✅ HTTP proxy created')
-        
-        # Test that proxy has the expected routes
-        routes = [route.resource.canonical for route in proxy.app.router.routes()]
-        expected_routes = ['/', '/tools', '/call_tool']
-        for route in expected_routes:
-            assert route in routes, f'Missing route: {route}'
-        print('✅ HTTP proxy routes verified')
-        
-        print('✅ HTTP proxy integration test passed')
+        try:
+            from src.data_loader import DataLoader
+            from src.mcp_server import create_mcp_server
+            from http_proxy import HTTPProxy
+            
+            print('Testing HTTP proxy integration...')
+            
+            # Test data loading with timeout
+            loader = DataLoader()
+            data = loader.load_data_source('mitre_attack')
+            print(f'✅ Data loaded: {len(data.get(\"techniques\", []))} techniques')
+            
+            # Test MCP server creation
+            mcp_server = create_mcp_server(loader)
+            print('✅ MCP server created')
+            
+            # Test HTTP proxy creation
+            proxy = HTTPProxy(mcp_server)
+            print('✅ HTTP proxy created')
+            
+            # Test that proxy has the expected routes
+            routes = [route.resource.canonical for route in proxy.app.router.routes()]
+            expected_routes = ['/', '/tools', '/call_tool']
+            for route in expected_routes:
+                assert route in routes, f'Missing route: {route}'
+            print('✅ HTTP proxy routes verified')
+            
+            print('✅ HTTP proxy integration test passed')
+            
+        except Exception as e:
+            print(f'❌ Integration test failed: {e}')
+            sys.exit(1)
+        finally:
+            signal.alarm(0)  # Cancel alarm
         "
         
   build:
