@@ -289,24 +289,81 @@ The project maintains comprehensive test coverage with 167+ automated tests cove
 
 - **FastMCP Server**: Official MCP protocol implementation
 - **HTTP Proxy Server**: Web interface and API access layer
-- **STIX Data Parser**: Official STIX 2.x library for secure data parsing
+- **STIX Data Parser**: Official STIX2 Python library for secure, standards-compliant parsing
 - **Configuration System**: YAML-based configuration with environment overrides
 - **Web Explorer**: Interactive HTML interface with JavaScript
 
 ### Data Processing
 
 1. **Download**: Fetch MITRE ATT&CK STIX data from official repository
-2. **Parse**: Use official `stix2` library for secure parsing
-3. **Extract**: Process attack-pattern, course-of-action, intrusion-set, and relationship objects
+2. **Parse**: Use official `stix2` library for robust, standards-compliant parsing with built-in validation
+3. **Extract**: Process STIX2 library objects (AttackPattern, CourseOfAction, IntrusionSet) with type safety
 4. **Analyze**: Build relationship graphs for advanced analysis
 5. **Cache**: Store processed data in memory for fast access
 
 ## 🔧 Extensibility
 
+### STIX2 Library Integration
+
+The parser leverages the official [STIX2 Python library](https://stix2.readthedocs.io/) for robust, standards-compliant parsing:
+
+- **Type Safety**: Uses STIX2 library objects (AttackPattern, IntrusionSet, CourseOfAction)
+- **Validation**: Built-in STIX format validation and error handling
+- **Standards Compliance**: Ensures compatibility with STIX 2.1 specification
+- **Extensibility**: Easy to add new STIX object types using library's extensible architecture
+
+#### Adding New STIX Object Types
+
+```python
+# Example: Adding custom STIX object type
+from stix2 import CustomObject
+from stix2.properties import StringProperty, ListProperty
+
+@CustomObject('x-custom-technique', [
+    ('name', StringProperty(required=True)),
+    ('platforms', ListProperty(StringProperty)),
+    ('references', ListProperty(StringProperty)),
+])
+class CustomTechnique():
+    pass
+
+# Use in parser
+custom_obj = stix2.parse(data, allow_custom=True)
+if isinstance(custom_obj, CustomTechnique):
+    # Process custom object with type safety
+    platforms = custom_obj.platforms
+```
+
+#### Leveraging Advanced STIX2 Features
+
+```python
+# Relationship processing with STIX2 library
+from stix2 import Relationship, Bundle
+
+# Parse relationships with validation
+relationship = stix2.Relationship(
+    relationship_type="uses",
+    source_ref="intrusion-set--uuid",
+    target_ref="attack-pattern--uuid"
+)
+
+# Bundle processing with error handling
+try:
+    bundle = stix2.Bundle(allow_custom=True, **stix_data)
+    for obj in bundle.objects:
+        # Type-safe object processing
+        if obj.type == "attack-pattern":
+            technique = AttackPattern(**obj)
+except stix2.exceptions.STIXError as e:
+    # Handle STIX validation errors
+    logger.error(f"STIX validation failed: {e}")
+```
+
 ### Adding New Data Sources
 1. Define data source in `config/data_sources.yaml`
-2. Create parser in `src/parsers/` if needed
+2. Create parser extending STIXParser in `src/parsers/`
 3. Update entity schemas in `config/entity_schemas.yaml`
+4. Add STIX2 library object types for new entities
 
 ### Adding New MCP Tools
 1. Define tool in `config/tools.yaml`
@@ -315,10 +372,10 @@ The project maintains comprehensive test coverage with 167+ automated tests cove
 4. Update web interface if needed
 
 ### Framework Support
-The architecture supports any structured security framework through configuration:
-- MITRE ATT&CK (implemented)
-- NIST Cybersecurity Framework (configurable)
-- Custom threat intelligence frameworks (extensible)
+The architecture supports any STIX-compatible security framework through configuration:
+- MITRE ATT&CK (implemented with STIX2 library)
+- NIST Cybersecurity Framework (configurable with STIX extensions)
+- Custom threat intelligence frameworks (extensible using STIX2 CustomObject)
 
 ## 📚 Documentation
 

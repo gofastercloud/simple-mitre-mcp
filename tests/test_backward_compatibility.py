@@ -279,50 +279,85 @@ class TestBackwardCompatibility:
         assert new_result["tactics"][0]["id"] == "TA0005"
         assert new_result["mitigations"][0]["id"] == "M1048"
 
-    def test_fallback_mechanism_maintains_compatibility(self):
-        """Test that fallback to custom parsing maintains compatibility."""
-        # Create invalid STIX data that will trigger fallback
-        invalid_stix_data = {
+    def test_stix2_library_maintains_compatibility(self):
+        """Test that STIX2 library parsing maintains backward compatibility."""
+        # Create valid STIX data that uses STIX2 library features
+        test_stix_data = {
             "type": "bundle",
-            "spec_version": "2.1",
-            "id": "invalid-bundle-id",  # Invalid format
+            "id": f"bundle--{uuid.uuid4()}",
             "objects": [
+                # Valid technique with all required properties
                 {
                     "type": "attack-pattern",
-                    "spec_version": "2.1",
                     "id": f"attack-pattern--{uuid.uuid4()}",
                     "name": "Test Technique",
-                    "description": "Test description",
+                    "description": "Test description for STIX2 compatibility",
                     "external_references": [
                         {"source_name": "mitre-attack", "external_id": "T9999"}
                     ],
+                    "x_mitre_platforms": ["Windows", "Linux"],
+                    "kill_chain_phases": [
+                        {"kill_chain_name": "mitre-attack", "phase_name": "execution"},
+                        {"kill_chain_name": "mitre-attack", "phase_name": "defense-evasion"}
+                    ]
+                },
+                # Valid group
+                {
+                    "type": "intrusion-set",
+                    "id": f"intrusion-set--{uuid.uuid4()}",
+                    "name": "Test Group",
+                    "description": "Test threat group",
+                    "aliases": ["TestGroup", "TG-Test"],
+                    "external_references": [
+                        {"source_name": "mitre-attack", "external_id": "G9999"}
+                    ]
+                },
+                # Valid mitigation
+                {
+                    "type": "course-of-action",
+                    "id": f"course-of-action--{uuid.uuid4()}",
+                    "name": "Test Mitigation",
+                    "description": "Test mitigation strategy",
+                    "external_references": [
+                        {"source_name": "mitre-attack", "external_id": "M9999"}
+                    ]
                 }
             ],
         }
 
-        # Mock the custom parsing fallback
-        with patch.object(self.parser, "_parse_with_custom_logic") as mock_custom:
-            mock_custom.return_value = {
-                "techniques": [
-                    {
-                        "id": "T9999",
-                        "name": "Test Technique",
-                        "description": "Test description",
-                        "platforms": [],
-                        "tactics": [],
-                        "mitigations": [],
-                    }
-                ]
-            }
+        # Parse with STIX2 library
+        result = self.parser.parse(test_stix_data, ["techniques", "groups", "mitigations"])
 
-            # Parse should fallback to custom logic
-            result = self.parser.parse(invalid_stix_data, ["techniques"])
-
-            # Verify fallback was used and output format is maintained
-            mock_custom.assert_called_once()
-            assert "techniques" in result
-            assert len(result["techniques"]) == 1
-            assert result["techniques"][0]["id"] == "T9999"
+        # Verify output format is maintained and all objects are parsed
+        assert "techniques" in result
+        assert "groups" in result
+        assert "mitigations" in result
+        assert isinstance(result["techniques"], list)
+        assert isinstance(result["groups"], list)
+        assert isinstance(result["mitigations"], list)
+        
+        # Verify technique parsing
+        assert len(result["techniques"]) == 1
+        technique = result["techniques"][0]
+        assert technique["id"] == "T9999"
+        assert technique["name"] == "Test Technique"
+        assert "Windows" in technique.get("platforms", [])
+        assert "Linux" in technique.get("platforms", [])
+        assert "TA0002" in technique.get("tactics", [])  # execution
+        assert "TA0005" in technique.get("tactics", [])  # defense-evasion
+        
+        # Verify group parsing
+        assert len(result["groups"]) == 1
+        group = result["groups"][0]
+        assert group["id"] == "G9999"
+        assert group["name"] == "Test Group"
+        assert "TestGroup" in group.get("aliases", [])
+        
+        # Verify mitigation parsing
+        assert len(result["mitigations"]) == 1
+        mitigation = result["mitigations"][0]
+        assert mitigation["id"] == "M9999"
+        assert mitigation["name"] == "Test Mitigation"
 
     @pytest.mark.asyncio
     async def test_all_mcp_tools_work_with_refactored_parser(self):

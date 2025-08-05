@@ -30,6 +30,7 @@ Thank you for your interest in contributing to the MITRE ATT&CK MCP Server! This
 - **Language**: Python 3.12+
 - **Package Manager**: UV (modern Python package manager)
 - **Architecture**: MCP server with 8 tools (5 basic + 3 advanced)
+- **STIX Parsing**: Official STIX2 Python library for standards-compliant parsing
 - **Testing**: 202+ comprehensive tests with pytest
 - **Branch Strategy**: feature → staging → main (strictly enforced)
 
@@ -336,6 +337,97 @@ git checkout -b feature/your-feature-name
 git checkout -b fix/issue-description
 ```
 
+## STIX2 Library Development
+
+### Overview
+The project uses the official [STIX2 Python library](https://stix2.readthedocs.io/) for robust, standards-compliant STIX parsing. This provides:
+
+- **Type Safety**: STIX2 library objects (AttackPattern, IntrusionSet, CourseOfAction)
+- **Built-in Validation**: Comprehensive STIX format validation and error handling
+- **Standards Compliance**: Full STIX 2.1 specification compatibility
+- **Extensibility**: Easy addition of custom STIX object types
+
+### STIX2 Development Guidelines
+
+#### Working with STIX Objects
+```python
+# Preferred: Use STIX2 library objects
+from stix2 import AttackPattern, Bundle, parse
+
+# Parse with validation
+stix_obj = parse(raw_data, allow_custom=True)
+if isinstance(stix_obj, AttackPattern):
+    # Type-safe property access
+    platforms = stix_obj.x_mitre_platforms
+    tactics = [phase.phase_name for phase in stix_obj.kill_chain_phases]
+
+# Handle STIX errors properly
+from stix2.exceptions import STIXError, InvalidValueError
+try:
+    bundle = Bundle(allow_custom=True, **bundle_data)
+except STIXError as e:
+    logger.error(f"STIX validation failed: {e}")
+```
+
+#### Adding Custom STIX Objects
+```python
+from stix2 import CustomObject
+from stix2.properties import StringProperty, ListProperty
+
+@CustomObject('x-custom-entity', [
+    ('name', StringProperty(required=True)),
+    ('platforms', ListProperty(StringProperty)),
+])
+class CustomEntity:
+    pass
+
+# Use in parser
+custom_obj = parse(data, allow_custom=True)
+if isinstance(custom_obj, CustomEntity):
+    name = custom_obj.name  # Type-safe access
+```
+
+#### Error Handling Best Practices
+```python
+# Comprehensive error handling
+try:
+    stix_obj = parse(data, allow_custom=True)
+    result = process_stix_object(stix_obj)
+except STIXError as e:
+    logger.warning(f"STIX validation error: {e}")
+    # Handle specific STIX errors
+except InvalidValueError as e:
+    logger.warning(f"Invalid STIX property: {e}")
+    # Handle invalid values
+except Exception as e:
+    logger.error(f"Unexpected error: {e}")
+    # Handle other errors
+```
+
+#### Testing STIX Extensions
+```python
+class TestCustomSTIXObject:
+    def test_custom_object_creation(self):
+        """Test custom STIX object creation and validation."""
+        custom_obj = CustomEntity(
+            name="Test Entity",
+            platforms=["Windows", "Linux"]
+        )
+        assert custom_obj.name == "Test Entity"
+        assert "Windows" in custom_obj.platforms
+    
+    def test_stix_validation_errors(self):
+        """Test STIX validation error handling."""
+        with pytest.raises(MissingPropertiesError):
+            CustomEntity()  # Missing required 'name' property
+```
+
+### STIX2 Resources
+- **Documentation**: [STIX2 Library Docs](https://stix2.readthedocs.io/)
+- **Specification**: [STIX 2.1 Specification](https://docs.oasis-open.org/cti/stix/v2.1/)
+- **Examples**: See `docs/stix2_extensibility_guide.md`
+- **Parser Implementation**: `src/parsers/stix_parser.py`
+
 ## Adding New Features
 
 ### Branch Naming Convention
@@ -396,6 +488,7 @@ uv run start_explorer.py
 - Write clear docstrings with Args, Returns, and Raises sections
 - Keep functions focused and small
 - Follow existing patterns in the codebase
+- **STIX2 Library**: Use official STIX2 library objects for type safety and validation
 
 ## Adding New MCP Tools
 
@@ -713,6 +806,7 @@ uv run pytest tests/test_port_config.py -v
 - Include usage examples for both MCP and web interface
 - Document any breaking changes
 - Update .kiro specifications if needed
+- **STIX2 Extensions**: Document custom STIX object types and validation patterns
 
 ### Documentation Style
 - Use clear, concise language

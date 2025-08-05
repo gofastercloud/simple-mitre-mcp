@@ -89,7 +89,7 @@
   - Update code to follow library's best practices and patterns
   - _Requirements: 4.1, 7.2, 7.3_
 
-- [ ] 12. Remove deprecated custom parsing logic
+- [x] 12. Remove deprecated custom parsing logic
   - Remove old custom parsing methods once library integration is complete
   - Clean up unused imports and helper functions
   - Update class documentation to reflect library usage
@@ -97,7 +97,7 @@
   - Ensure no dead code remains in the parser implementation
   - _Requirements: 7.1, 7.2_
 
-- [ ] 13. Add future extensibility examples and documentation
+- [x] 13. Add future extensibility examples and documentation
   - Create example code showing how to add new STIX object types using the library
   - Document how to leverage library's advanced features for relationship processing
   - Add examples of using library's validation and error handling

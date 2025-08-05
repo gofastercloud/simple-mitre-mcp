@@ -44,12 +44,11 @@ class STIXParser:
 
     This parser leverages the official STIX2 Python library for robust, standards-compliant
     parsing with built-in validation and error handling. It handles extraction and
-    normalization of MITRE ATT&CK entities from STIX JSON format while maintaining
-    backward compatibility with existing data structures.
+    normalization of MITRE ATT&CK entities from STIX JSON format.
 
     The parser uses STIX2 library objects (AttackPattern, IntrusionSet, CourseOfAction)
-    for type-safe data extraction and validation, with fallback to dictionary-based
-    parsing for compatibility.
+    for type-safe data extraction and validation, providing superior error handling
+    and standards compliance compared to custom parsing approaches.
     """
 
     def __init__(self):
@@ -84,8 +83,7 @@ class STIXParser:
         Parse STIX data and extract specified entity types using the official STIX2 library.
 
         This method uses the official STIX2 library for robust, standards-compliant parsing
-        with built-in validation and error handling. It falls back to custom parsing logic
-        if the STIX2 library encounters issues.
+        with built-in validation and error handling.
 
         Args:
             stix_data: Raw STIX JSON data containing STIX 2.1 objects
@@ -96,18 +94,16 @@ class STIXParser:
                                standardized fields (id, name, description) plus type-specific data
 
         Raises:
-            Exception: If both STIX2 library parsing and fallback parsing fail
+            Exception: If STIX2 library parsing fails
         """
         logger.info("Starting STIX data parsing")
 
-        # Try to use STIX2 library first, fall back to custom parsing if needed
+        # Use STIX2 library for robust, standards-compliant parsing
         try:
             return self._parse_with_stix2_library(stix_data, entity_types)
         except Exception as e:
-            logger.warning(
-                f"STIX2 library parsing failed, falling back to custom parsing: {e}"
-            )
-            return self._parse_with_custom_logic(stix_data, entity_types)
+            logger.error(f"STIX2 library parsing failed: {e}")
+            raise
 
     def _parse_with_stix2_library(
         self, stix_data: Dict[str, Any], entity_types: List[str]
@@ -266,52 +262,6 @@ class STIXParser:
             logger.error(f"Data type: {type(stix_data)}, Entity types: {entity_types}")
             raise
 
-    def _parse_with_custom_logic(
-        self, stix_data: Dict[str, Any], entity_types: List[str]
-    ) -> ParsedEntitiesDict:
-        """
-        Fallback method using custom parsing logic.
-
-        Args:
-            stix_data: Raw STIX JSON data
-            entity_types: List of entity types to extract
-
-        Returns:
-            dict: Parsed entities organized by type
-        """
-        logger.info("Using fallback custom parsing logic")
-
-        parsed_entities: ParsedEntitiesDict = {
-            entity_type: [] for entity_type in entity_types
-        }
-
-        if "objects" not in stix_data:
-            logger.warning("No 'objects' field found in STIX data")
-            return parsed_entities
-
-        objects_processed = 0
-        entities_extracted = 0
-
-        for obj in stix_data["objects"]:
-            objects_processed += 1
-
-            # Determine entity type from STIX object
-            obj_type = obj.get("type", "")
-            entity_type = self._map_stix_type(obj_type)
-
-            if entity_type and entity_type in entity_types:
-                parsed_entity = self._extract_entity(obj, entity_type)
-                if parsed_entity:
-                    parsed_entities[entity_type].append(parsed_entity)
-                    entities_extracted += 1
-
-        logger.info(
-            f"Custom parsing completed: {objects_processed} objects processed, {entities_extracted} entities extracted"
-        )
-        for entity_type, entities in parsed_entities.items():
-            logger.info(f"  {entity_type}: {len(entities)} entities")
-
-        return parsed_entities
 
     def _parse_stix_bundle_with_validation(
         self, stix_data: Dict[str, Any]
@@ -620,104 +570,7 @@ class STIXParser:
         """Map STIX object type to entity type."""
         return self.stix_type_mapping.get(stix_type, "")
 
-    def _extract_entity_from_stix_object(
-        self, stix_obj: STIXObjectOrDict, entity_type: str
-    ) -> Optional[ParsedEntityData]:
-        """
-        Extract entity data from STIX2 library object.
 
-        Args:
-            stix_obj: STIX2 library object or dictionary
-            entity_type: Type of entity to extract
-
-        Returns:
-            dict: Extracted entity data, or None if extraction fails
-        """
-        try:
-            # Handle both STIX2 library objects and raw dictionaries
-            if hasattr(stix_obj, "name"):
-                # STIX2 library object
-                name = stix_obj.name
-                description = getattr(stix_obj, "description", "").strip()
-                mitre_id = self._extract_mitre_id_from_stix_object(stix_obj)
-            else:
-                # Raw dictionary (fallback)
-                name = stix_obj.get("name", "")
-                description = stix_obj.get("description", "").strip()
-                mitre_id = self._extract_mitre_id(stix_obj)
-
-            # Extract basic fields common to all entities
-            entity_data = {"id": mitre_id, "name": name, "description": description}
-
-            # Validate basic required fields
-            if not entity_data["id"] or not entity_data["name"]:
-                logger.debug(f"Skipping {entity_type} entity with missing ID or name")
-                return None
-
-            # Extract entity-specific fields using STIX2 library objects
-            if entity_type == "techniques":
-                entity_data.update(
-                    self._extract_technique_data_from_stix_object(stix_obj)
-                )
-            elif entity_type == "groups":
-                entity_data.update(self._extract_group_data_from_stix_object(stix_obj))
-            elif entity_type == "tactics":
-                entity_data.update(self._extract_tactic_data_from_stix_object(stix_obj))
-            elif entity_type == "mitigations":
-                entity_data.update(
-                    self._extract_mitigation_data_from_stix_object(stix_obj)
-                )
-
-            return entity_data
-
-        except (STIXError, InvalidValueError, MissingPropertiesError) as e:
-            logger.debug(f"STIX library error extracting {entity_type} entity: {e}")
-            return None
-        except Exception as e:
-            logger.error(f"Error extracting {entity_type} entity from STIX object: {e}")
-            return None
-
-    def _extract_entity(
-        self, stix_obj: Dict[str, Any], entity_type: str
-    ) -> Optional[ParsedEntityData]:
-        """
-        Extract entity data from STIX object (legacy method for custom parsing).
-
-        Args:
-            stix_obj: STIX object dictionary
-            entity_type: Type of entity to extract
-
-        Returns:
-            dict: Extracted entity data, or None if extraction fails
-        """
-        try:
-            # Extract basic fields common to all entities
-            entity_data = {
-                "id": self._extract_mitre_id(stix_obj),
-                "name": stix_obj.get("name", ""),
-                "description": stix_obj.get("description", "").strip(),
-            }
-
-            # Validate basic required fields
-            if not entity_data["id"] or not entity_data["name"]:
-                logger.debug(f"Skipping {entity_type} entity with missing ID or name")
-                return None
-
-            # Extract entity-specific fields
-            if entity_type == "techniques":
-                entity_data.update(self._extract_technique_data(stix_obj))
-            elif entity_type == "groups":
-                entity_data.update(self._extract_group_data(stix_obj))
-            elif entity_type == "tactics":
-                entity_data.update(self._extract_tactic_data(stix_obj))
-            elif entity_type == "mitigations":
-                entity_data.update(self._extract_mitigation_data(stix_obj))
-
-            return entity_data
-
-        except Exception as e:
-            logger.error(f"Error extracting {entity_type} entity: {e}")
-            return None
 
     def _extract_mitre_id(self, stix_obj: Dict[str, Any]) -> str:
         """
@@ -808,55 +661,16 @@ class STIXParser:
             return self._extract_technique_data_from_stix_object(stix2_obj)
 
         except (STIXError, InvalidValueError, MissingPropertiesError) as e:
-            logger.debug(
-                f"STIX2 library parsing failed for technique, falling back to dictionary access: {e}"
+            logger.warning(
+                f"STIX2 library parsing failed for technique: {e}"
             )
-            # Fallback to original dictionary-based approach if STIX2 parsing fails
-            return self._extract_technique_data_legacy(stix_obj)
+            return {"mitigations": []}
         except Exception as e:
-            logger.debug(
-                f"Unexpected error parsing technique with STIX2 library, falling back: {e}"
+            logger.warning(
+                f"Unexpected error parsing technique with STIX2 library: {e}"
             )
-            return self._extract_technique_data_legacy(stix_obj)
+            return {"mitigations": []}
 
-    def _extract_technique_data_legacy(
-        self, stix_obj: Dict[str, Any]
-    ) -> ParsedEntityData:
-        """
-        Legacy technique data extraction using raw dictionary access.
-
-        This method is kept as a fallback for cases where STIX2 library parsing fails.
-
-        Args:
-            stix_obj: STIX object dictionary
-
-        Returns:
-            dict: Technique-specific data
-        """
-        data: ParsedEntityData = {}
-
-        # Extract platforms
-        platforms = stix_obj.get("x_mitre_platforms", [])
-        if platforms:
-            data["platforms"] = platforms
-
-        # Extract tactics from kill chain phases
-        tactics = []
-        kill_chain_phases = stix_obj.get("kill_chain_phases", [])
-        for phase in kill_chain_phases:
-            if phase.get("kill_chain_name") == "mitre-attack":
-                phase_name = phase.get("phase_name", "")
-                tactic_id = self.phase_to_tactic_id.get(phase_name)
-                if tactic_id:
-                    tactics.append(tactic_id)
-
-        if tactics:
-            data["tactics"] = tactics
-
-        # Initialize empty mitigations list (will be populated by relationship analysis)
-        data["mitigations"] = []
-
-        return data
 
     def _extract_group_data(self, stix_obj: Dict[str, Any]) -> ParsedEntityData:
         """
@@ -879,46 +693,16 @@ class STIXParser:
             return self._extract_group_data_from_stix_object(stix2_obj)
 
         except (STIXError, InvalidValueError, MissingPropertiesError) as e:
-            logger.debug(
-                f"STIX2 library parsing failed for group, falling back to dictionary access: {e}"
+            logger.warning(
+                f"STIX2 library parsing failed for group: {e}"
             )
-            # Fallback to original dictionary-based approach if STIX2 parsing fails
-            return self._extract_group_data_legacy(stix_obj)
+            return {"techniques": []}
         except Exception as e:
-            logger.debug(
-                f"Unexpected error parsing group with STIX2 library, falling back: {e}"
+            logger.warning(
+                f"Unexpected error parsing group with STIX2 library: {e}"
             )
-            return self._extract_group_data_legacy(stix_obj)
+            return {"techniques": []}
 
-    def _extract_group_data_legacy(self, stix_obj: Dict[str, Any]) -> ParsedEntityData:
-        """
-        Legacy group data extraction using raw dictionary access.
-
-        This method is kept as a fallback for cases where STIX2 library parsing fails.
-
-        Args:
-            stix_obj: STIX object dictionary
-
-        Returns:
-            dict: Group-specific data
-        """
-        data = {}
-
-        # Extract aliases (excluding the primary name)
-        aliases = stix_obj.get("aliases", [])
-        primary_name = stix_obj.get("name", "")
-
-        # Handle None aliases gracefully
-        if aliases is not None:
-            # Filter out the primary name from aliases
-            filtered_aliases = [alias for alias in aliases if alias != primary_name]
-            if filtered_aliases:
-                data["aliases"] = filtered_aliases
-
-        # Initialize empty techniques list (will be populated by relationship analysis)
-        data["techniques"] = []
-
-        return data
 
     def _extract_tactic_data(self, stix_obj: Dict[str, Any]) -> ParsedEntityData:
         """
@@ -942,31 +726,16 @@ class STIXParser:
             return self._extract_tactic_data_from_stix_object(stix2_obj)
 
         except (STIXError, InvalidValueError, MissingPropertiesError) as e:
-            logger.debug(
-                f"STIX2 library parsing failed for tactic, falling back to dictionary access: {e}"
+            logger.warning(
+                f"STIX2 library parsing failed for tactic: {e}"
             )
-            # Fallback to original dictionary-based approach if STIX2 parsing fails
-            return self._extract_tactic_data_legacy(stix_obj)
+            return {}
         except Exception as e:
-            logger.debug(
-                f"Unexpected error parsing tactic with STIX2 library, falling back: {e}"
+            logger.warning(
+                f"Unexpected error parsing tactic with STIX2 library: {e}"
             )
-            return self._extract_tactic_data_legacy(stix_obj)
+            return {}
 
-    def _extract_tactic_data_legacy(self, stix_obj: Dict[str, Any]) -> ParsedEntityData:
-        """
-        Legacy tactic data extraction using raw dictionary access.
-
-        This method is kept as a fallback for cases where STIX2 library parsing fails.
-
-        Args:
-            stix_obj: STIX object dictionary
-
-        Returns:
-            dict: Tactic-specific data (empty for tactics)
-        """
-        # Tactics only have basic fields (id, name, description)
-        return {}
 
     def _extract_mitigation_data(self, stix_obj: Dict[str, Any]) -> ParsedEntityData:
         """
@@ -989,37 +758,16 @@ class STIXParser:
             return self._extract_mitigation_data_from_stix_object(stix2_obj)
 
         except (STIXError, InvalidValueError, MissingPropertiesError) as e:
-            logger.debug(
-                f"STIX2 library parsing failed for mitigation, falling back to dictionary access: {e}"
+            logger.warning(
+                f"STIX2 library parsing failed for mitigation: {e}"
             )
-            # Fallback to original dictionary-based approach if STIX2 parsing fails
-            return self._extract_mitigation_data_legacy(stix_obj)
+            return {"techniques": []}
         except Exception as e:
-            logger.debug(
-                f"Unexpected error parsing mitigation with STIX2 library, falling back: {e}"
+            logger.warning(
+                f"Unexpected error parsing mitigation with STIX2 library: {e}"
             )
-            return self._extract_mitigation_data_legacy(stix_obj)
+            return {"techniques": []}
 
-    def _extract_mitigation_data_legacy(
-        self, stix_obj: Dict[str, Any]
-    ) -> ParsedEntityData:
-        """
-        Legacy mitigation data extraction using raw dictionary access.
-
-        This method is kept as a fallback for cases where STIX2 library parsing fails.
-
-        Args:
-            stix_obj: STIX object dictionary
-
-        Returns:
-            dict: Mitigation-specific data
-        """
-        data: ParsedEntityData = {}
-
-        # Initialize empty techniques list (will be populated by relationship analysis)
-        data["techniques"] = []
-
-        return data
 
     def _extract_mitre_id_from_stix_object_with_validation(
         self, stix_obj: STIXObjectOrDict

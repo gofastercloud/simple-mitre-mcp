@@ -226,7 +226,7 @@ class PerformanceBenchmark:
 
         results = {
             "stix2_library_results": [],
-            "custom_fallback_results": [],
+            "main_parser_results": [],  # Test main parser method too
             "data_size_mb": len(json.dumps(stix_data).encode("utf-8")) / 1024 / 1024,
             "total_objects": len(stix_data.get("objects", [])),
             "entity_types": entity_types,
@@ -265,13 +265,13 @@ class PerformanceBenchmark:
                 }
                 results["stix2_library_results"].append(iteration_result)
 
-        # Benchmark custom fallback parsing
+        # Benchmark main parser method (uses STIX2 library internally)
         for i in range(iterations):
-            logger.info(f"Custom fallback parsing iteration {i+1}/{iterations}")
+            logger.info(f"Main parser method iteration {i+1}/{iterations}")
 
             try:
                 parsed_data, memory_stats = self.measure_memory_usage(
-                    self.parser._parse_with_custom_logic, stix_data, entity_types
+                    self.parser.parse, stix_data, entity_types
                 )
 
                 # Count extracted entities
@@ -285,10 +285,10 @@ class PerformanceBenchmark:
                     **memory_stats,
                 }
 
-                results["custom_fallback_results"].append(iteration_result)
+                results["main_parser_results"].append(iteration_result)
 
             except Exception as e:
-                logger.error(f"Custom fallback parsing failed in iteration {i+1}: {e}")
+                logger.error(f"Main parser method failed in iteration {i+1}: {e}")
                 iteration_result = {
                     "iteration": i + 1,
                     "success": False,
@@ -296,7 +296,7 @@ class PerformanceBenchmark:
                     "execution_time": 0,
                     "memory_delta_mb": 0,
                 }
-                results["custom_fallback_results"].append(iteration_result)
+                results["main_parser_results"].append(iteration_result)
 
         return results
 
@@ -350,20 +350,20 @@ class PerformanceBenchmark:
                 "error": "All iterations failed",
             }
 
-        # Calculate custom fallback statistics
-        custom_successful = [
-            r for r in results["custom_fallback_results"] if r["success"]
+        # Calculate main parser statistics
+        main_successful = [
+            r for r in results["main_parser_results"] if r["success"]
         ]
-        if custom_successful:
-            execution_times = [r["execution_time"] for r in custom_successful]
-            memory_deltas = [r["memory_delta_mb"] for r in custom_successful]
+        if main_successful:
+            execution_times = [r["execution_time"] for r in main_successful]
+            memory_deltas = [r["memory_delta_mb"] for r in main_successful]
             entities_extracted = [
-                r["total_entities_extracted"] for r in custom_successful
+                r["total_entities_extracted"] for r in main_successful
             ]
 
-            stats["custom_fallback_performance"] = {
-                "success_rate": len(custom_successful)
-                / len(results["custom_fallback_results"]),
+            stats["main_parser_performance"] = {
+                "success_rate": len(main_successful)
+                / len(results["main_parser_results"]),
                 "avg_execution_time": sum(execution_times) / len(execution_times),
                 "min_execution_time": min(execution_times),
                 "max_execution_time": max(execution_times),
@@ -377,7 +377,7 @@ class PerformanceBenchmark:
                 ),
             }
         else:
-            stats["custom_fallback_performance"] = {
+            stats["main_parser_performance"] = {
                 "success_rate": 0,
                 "error": "All iterations failed",
             }
@@ -385,28 +385,28 @@ class PerformanceBenchmark:
         # Calculate performance comparison
         if (
             "stix2_library_performance" in stats
-            and "custom_fallback_performance" in stats
+            and "main_parser_performance" in stats
         ):
             stix2_perf = stats["stix2_library_performance"]
-            custom_perf = stats["custom_fallback_performance"]
+            main_perf = stats["main_parser_performance"]
 
             if (
                 stix2_perf.get("avg_execution_time", 0) > 0
-                and custom_perf.get("avg_execution_time", 0) > 0
+                and main_perf.get("avg_execution_time", 0) > 0
             ):
                 stats["performance_comparison"] = {
-                    "speed_ratio": custom_perf["avg_execution_time"]
+                    "speed_ratio": main_perf["avg_execution_time"]
                     / stix2_perf["avg_execution_time"],
                     "memory_ratio": (
-                        custom_perf["avg_memory_delta_mb"]
+                        main_perf["avg_memory_delta_mb"]
                         / stix2_perf["avg_memory_delta_mb"]
                         if stix2_perf["avg_memory_delta_mb"] != 0
                         else "N/A"
                     ),
                     "throughput_ratio": (
                         stix2_perf["entities_per_second"]
-                        / custom_perf["entities_per_second"]
-                        if custom_perf["entities_per_second"] > 0
+                        / main_perf["entities_per_second"]
+                        if main_perf["entities_per_second"] > 0
                         else "N/A"
                     ),
                 }
@@ -482,16 +482,16 @@ class TestParsingPerformance:
                 f"STIX2 library - Entities per second: {stix2_perf.get('entities_per_second', 0):.1f}"
             )
 
-        if "custom_fallback_performance" in stats:
-            custom_perf = stats["custom_fallback_performance"]
+        if "main_parser_performance" in stats:
+            main_perf = stats["main_parser_performance"]
             logger.info(
-                f"Custom fallback - Success rate: {custom_perf.get('success_rate', 0):.2%}"
+                f"Main parser - Success rate: {main_perf.get('success_rate', 0):.2%}"
             )
             logger.info(
-                f"Custom fallback - Avg execution time: {custom_perf.get('avg_execution_time', 0):.3f}s"
+                f"Main parser - Avg execution time: {main_perf.get('avg_execution_time', 0):.3f}s"
             )
             logger.info(
-                f"Custom fallback - Entities per second: {custom_perf.get('entities_per_second', 0):.1f}"
+                f"Main parser - Entities per second: {main_perf.get('entities_per_second', 0):.1f}"
             )
 
         # Assertions
@@ -500,9 +500,9 @@ class TestParsingPerformance:
 
         # At least one parsing method should succeed
         stix2_success = any(r["success"] for r in results["stix2_library_results"])
-        custom_success = any(r["success"] for r in results["custom_fallback_results"])
+        main_success = any(r["success"] for r in results["main_parser_results"])
         assert (
-            stix2_success or custom_success
+            stix2_success or main_success
         ), "At least one parsing method should succeed"
 
     def test_medium_dataset_performance(
@@ -674,9 +674,9 @@ class TestMemoryUsageOptimization:
             entity_types,
         )
 
-        # Test custom fallback memory usage
-        _, custom_memory_stats = performance_benchmark.measure_memory_usage(
-            performance_benchmark.parser._parse_with_custom_logic,
+        # Test main parser method (which uses STIX2 library)
+        _, parser_memory_stats = performance_benchmark.measure_memory_usage(
+            performance_benchmark.parser.parse,
             medium_stix_dataset,
             entity_types,
         )
@@ -685,26 +685,26 @@ class TestMemoryUsageOptimization:
         logger.info(f"  - Memory delta: {stix2_memory_stats['memory_delta_mb']:.2f} MB")
         logger.info(f"  - Peak traced: {stix2_memory_stats['peak_traced_mb']:.2f} MB")
 
-        logger.info(f"Custom fallback memory usage:")
+        logger.info(f"Main parser memory usage:")
         logger.info(
-            f"  - Memory delta: {custom_memory_stats['memory_delta_mb']:.2f} MB"
+            f"  - Memory delta: {parser_memory_stats['memory_delta_mb']:.2f} MB"
         )
-        logger.info(f"  - Peak traced: {custom_memory_stats['peak_traced_mb']:.2f} MB")
+        logger.info(f"  - Peak traced: {parser_memory_stats['peak_traced_mb']:.2f} MB")
 
         # Memory usage should be reasonable
         assert (
             stix2_memory_stats["memory_delta_mb"] < 200
         ), "STIX2 library memory usage should be reasonable"
         assert (
-            custom_memory_stats["memory_delta_mb"] < 200
-        ), "Custom fallback memory usage should be reasonable"
+            parser_memory_stats["memory_delta_mb"] < 200
+        ), "Main parser memory usage should be reasonable"
 
         # Peak memory should not be excessive
         assert (
             stix2_memory_stats["peak_traced_mb"] < 300
         ), "Peak memory usage should not be excessive"
         assert (
-            custom_memory_stats["peak_traced_mb"] < 300
+            parser_memory_stats["peak_traced_mb"] < 300
         ), "Peak memory usage should not be excessive"
 
     def test_memory_leak_detection(self, performance_benchmark, small_stix_dataset):
@@ -833,9 +833,9 @@ if __name__ == "__main__":
         print(
             f"  STIX2 library: {small_stats['stix2_library_performance']['avg_execution_time']:.3f}s"
         )
-    if "custom_fallback_performance" in small_stats:
+    if "main_parser_performance" in small_stats:
         print(
-            f"  Custom fallback: {small_stats['custom_fallback_performance']['avg_execution_time']:.3f}s"
+            f"  Main parser: {small_stats['main_parser_performance']['avg_execution_time']:.3f}s"
         )
 
     print(
@@ -845,7 +845,7 @@ if __name__ == "__main__":
         print(
             f"  STIX2 library: {medium_stats['stix2_library_performance']['avg_execution_time']:.3f}s"
         )
-    if "custom_fallback_performance" in medium_stats:
+    if "main_parser_performance" in medium_stats:
         print(
-            f"  Custom fallback: {medium_stats['custom_fallback_performance']['avg_execution_time']:.3f}s"
+            f"  Main parser: {medium_stats['main_parser_performance']['avg_execution_time']:.3f}s"
         )
