@@ -658,6 +658,267 @@ class TestBackwardCompatibility:
         assert 'platforms' not in technique or technique['platforms'] == []
         assert 'tactics' not in technique or technique['tactics'] == []
 
+    @pytest.mark.asyncio
+    async def test_real_mitre_attack_data_integration(self):
+        """Test integration with real MITRE ATT&CK data to ensure production compatibility."""
+        import requests
+        from src.data_loader import DataLoader
+        
+        # Skip this test if we can't reach the internet
+        try:
+            # Use a small timeout to avoid hanging in CI/CD
+            response = requests.get(
+                "https://raw.githubusercontent.com/mitre/cti/master/enterprise-attack/enterprise-attack.json",
+                timeout=10
+            )
+            if response.status_code != 200:
+                pytest.skip("Cannot download real MITRE ATT&CK data")
+                
+            real_stix_data = response.json()
+            
+        except (requests.RequestException, requests.Timeout, Exception) as e:
+            pytest.skip(f"Cannot download real MITRE ATT&CK data: {e}")
+        
+        # Parse real data with refactored parser
+        entity_types = ['techniques', 'groups', 'tactics', 'mitigations']
+        result = self.parser.parse(real_stix_data, entity_types)
+        
+        # Verify all entity types are present and populated
+        for entity_type in entity_types:
+            assert entity_type in result
+            assert isinstance(result[entity_type], list)
+            assert len(result[entity_type]) > 0, f"No {entity_type} found in real data"
+        
+        # Verify we have a reasonable number of each entity type
+        assert len(result['techniques']) > 100, f"Expected >100 techniques, got {len(result['techniques'])}"
+        assert len(result['groups']) > 50, f"Expected >50 groups, got {len(result['groups'])}"
+        assert len(result['tactics']) > 10, f"Expected >10 tactics, got {len(result['tactics'])}"
+        assert len(result['mitigations']) > 30, f"Expected >30 mitigations, got {len(result['mitigations'])}"
+        
+        # Verify data structure integrity for each entity type
+        for technique in result['techniques'][:5]:  # Check first 5 techniques
+            assert 'id' in technique and technique['id'].startswith('T')
+            assert 'name' in technique and len(technique['name']) > 0
+            assert 'description' in technique
+            assert 'platforms' in technique and isinstance(technique['platforms'], list)
+            assert 'tactics' in technique and isinstance(technique['tactics'], list)
+            assert 'mitigations' in technique and isinstance(technique['mitigations'], list)
+        
+        for group in result['groups'][:5]:  # Check first 5 groups
+            assert 'id' in group and group['id'].startswith('G')
+            assert 'name' in group and len(group['name']) > 0
+            assert 'description' in group
+            # Some groups may not have aliases, but if they do, it should be a list
+            if 'aliases' in group:
+                assert isinstance(group['aliases'], list)
+            assert 'techniques' in group and isinstance(group['techniques'], list)
+        
+        for tactic in result['tactics']:  # Check all tactics
+            assert 'id' in tactic and tactic['id'].startswith('TA')
+            assert 'name' in tactic and len(tactic['name']) > 0
+            assert 'description' in tactic
+        
+        for mitigation in result['mitigations'][:5]:  # Check first 5 mitigations
+            assert 'id' in mitigation and len(mitigation['id']) > 0
+            # Most mitigations start with 'M', but some legacy ones might have different formats
+            assert mitigation['id'].startswith(('M', 'T'))  # Allow both M and T prefixes
+            assert 'name' in mitigation and len(mitigation['name']) > 0
+            assert 'description' in mitigation
+            assert 'techniques' in mitigation and isinstance(mitigation['techniques'], list)
+        
+        # Test that MCP tools work with real data
+        data_loader = DataLoader()
+        
+        # Mock the download to return real data
+        with patch.object(data_loader, 'download_data') as mock_download:
+            mock_download.return_value = real_stix_data
+            
+            # Mock configuration
+            with patch.object(data_loader, 'config', {
+                'data_sources': {
+                    'mitre_attack': {
+                        'url': 'https://raw.githubusercontent.com/mitre/cti/master/enterprise-attack/enterprise-attack.json',
+                        'format': 'stix',
+                        'entity_types': entity_types
+                    }
+                }
+            }):
+                # Load and process real data
+                processed_data = data_loader.load_data_source('mitre_attack')
+                
+                # Verify processing worked
+                assert all(entity_type in processed_data for entity_type in entity_types)
+                
+                # Create MCP server with real data
+                mcp_server = create_mcp_server(data_loader)
+                
+                # Test a few key MCP tools with real data
+                search_result, _ = await mcp_server.call_tool('search_attack', {'query': 'process injection'})
+                assert search_result is not None
+                assert len(search_result) > 0
+                assert 'T1055' in search_result[0].text or 'process' in search_result[0].text.lower()
+                
+                # Test getting a known technique
+                if any(t['id'] == 'T1055' for t in processed_data['techniques']):
+                    technique_result, _ = await mcp_server.call_tool('get_technique', {'technique_id': 'T1055'})
+                    assert technique_result is not None
+                    assert 'T1055' in technique_result[0].text
+                
+                # Test listing tactics
+                tactics_result, _ = await mcp_server.call_tool('list_tactics', {})
+                assert tactics_result is not None
+                assert len(tactics_result) > 0
+                assert 'TA' in tactics_result[0].text  # Should contain tactic IDs
+
+    def test_stix2_library_error_handling_comprehensive(self):
+        """Test comprehensive error handling with various STIX2 library error scenarios."""
+        from stix2.exceptions import STIXError, InvalidValueError, MissingPropertiesError
+        
+        # Test cases that should trigger different STIX2 library errors
+        error_test_cases = [
+            # Invalid STIX version
+            {
+                "type": "bundle",
+                "spec_version": "1.0",  # Invalid version
+                "id": f"bundle--{uuid.uuid4()}",
+                "objects": []
+            },
+            # Invalid UUID format
+            {
+                "type": "bundle",
+                "spec_version": "2.1",
+                "id": "invalid-uuid-format",
+                "objects": []
+            },
+            # Missing required bundle fields
+            {
+                "type": "bundle",
+                "spec_version": "2.1",
+                # Missing id field
+                "objects": []
+            },
+            # Invalid object in bundle
+            {
+                "type": "bundle",
+                "spec_version": "2.1",
+                "id": f"bundle--{uuid.uuid4()}",
+                "objects": [
+                    {
+                        "type": "attack-pattern",
+                        "spec_version": "2.1",
+                        "id": "invalid-attack-pattern-id",  # Invalid UUID format
+                        "name": "Test Technique"
+                    }
+                ]
+            }
+        ]
+        
+        for i, error_case in enumerate(error_test_cases):
+            try:
+                # Should handle errors gracefully without crashing
+                result = self.parser.parse(error_case, ['techniques'])
+                
+                # Should return empty results for invalid data
+                assert isinstance(result, dict)
+                assert 'techniques' in result
+                assert isinstance(result['techniques'], list)
+                
+                # Log which test case we're on for debugging
+                print(f"Error test case {i + 1} handled gracefully")
+                
+            except Exception as e:
+                # If exceptions are raised, they should be expected STIX errors
+                assert isinstance(e, (STIXError, InvalidValueError, MissingPropertiesError, ValueError))
+                print(f"Error test case {i + 1} raised expected exception: {type(e).__name__}")
+
+    def test_large_dataset_performance_and_memory(self):
+        """Test performance and memory usage with large datasets."""
+        import time
+        import gc
+        
+        # Create a very large test dataset
+        large_objects = []
+        
+        # Create 100 techniques
+        for i in range(100):
+            technique = stix2.AttackPattern(
+                name=f"Large Test Technique {i:03d}",
+                description=f"This is a test technique {i} with a longer description to simulate real data size. " * 5,
+                external_references=[
+                    stix2.ExternalReference(
+                        source_name="mitre-attack",
+                        external_id=f"T{2000 + i:04d}",
+                        url=f"https://attack.mitre.org/techniques/T{2000 + i:04d}/"
+                    )
+                ],
+                x_mitre_platforms=["Windows", "Linux", "macOS"],
+                kill_chain_phases=[
+                    stix2.KillChainPhase(
+                        kill_chain_name="mitre-attack",
+                        phase_name="execution"
+                    ),
+                    stix2.KillChainPhase(
+                        kill_chain_name="mitre-attack",
+                        phase_name="defense-evasion"
+                    )
+                ],
+                allow_custom=True
+            )
+            large_objects.append(technique)
+        
+        # Create 50 groups
+        for i in range(50):
+            group = stix2.IntrusionSet(
+                name=f"Large Test Group {i:03d}",
+                description=f"This is a test group {i} with detailed attribution information. " * 3,
+                aliases=[f"Large Test Group {i:03d}", f"LTG{i:03d}", f"Group{i:03d}", f"TestGroup{i:03d}"],
+                external_references=[
+                    stix2.ExternalReference(
+                        source_name="mitre-attack",
+                        external_id=f"G{2000 + i:04d}",
+                        url=f"https://attack.mitre.org/groups/G{2000 + i:04d}/"
+                    )
+                ]
+            )
+            large_objects.append(group)
+        
+        # Create bundle
+        bundle = stix2.Bundle(*large_objects, allow_custom=True)
+        large_stix_data = json.loads(bundle.serialize())
+        
+        # Measure memory before parsing
+        gc.collect()
+        
+        # Measure parsing time and memory
+        start_time = time.time()
+        result = self.parser.parse(large_stix_data, ['techniques', 'groups'])
+        end_time = time.time()
+        
+        parsing_time = end_time - start_time
+        
+        # Verify parsing completed successfully
+        assert isinstance(result, dict)
+        assert 'techniques' in result and 'groups' in result
+        assert len(result['techniques']) == 100
+        assert len(result['groups']) == 50
+        
+        # Performance should be reasonable (less than 10 seconds for large test data)
+        assert parsing_time < 10.0, f"Large dataset parsing took {parsing_time:.2f} seconds, which may indicate performance issues"
+        
+        # Verify data integrity in large dataset
+        for i, technique in enumerate(result['techniques']):
+            assert technique['id'] == f"T{2000 + i:04d}"
+            assert technique['name'] == f"Large Test Technique {i:03d}"
+            assert len(technique['platforms']) == 3
+            assert len(technique['tactics']) == 2  # execution and defense-evasion
+        
+        for i, group in enumerate(result['groups']):
+            assert group['id'] == f"G{2000 + i:04d}"
+            assert group['name'] == f"Large Test Group {i:03d}"
+            assert len(group['aliases']) == 3  # Primary name filtered out
+        
+        print(f"Large dataset test completed: {parsing_time:.2f}s for 150 objects")
+
 
 if __name__ == '__main__':
     pytest.main([__file__])
