@@ -18,7 +18,9 @@ class BaseParser(ABC):
     """
 
     @abstractmethod
-    def parse(self, raw_data: Dict[str, Any], entity_types: List[str]) -> Dict[str, List[Dict[str, Any]]]:
+    def parse(
+        self, raw_data: Dict[str, Any], entity_types: List[str]
+    ) -> Dict[str, List[Dict[str, Any]]]:
         """
         Parse raw data and extract specified entity types.
 

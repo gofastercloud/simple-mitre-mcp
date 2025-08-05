@@ -8,7 +8,7 @@ import stix2
 from stix2 import Relationship
 from stix2.exceptions import STIXError, InvalidValueError, MissingPropertiesError
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 from src.data_loader import DataLoader
 from src.config_loader import load_config
 
@@ -21,7 +21,6 @@ functionality for downloading, parsing, and processing MITRE ATT&CK data.
 
 
 # Add src directory to path
-
 
 
 class TestDataLoader(unittest.TestCase):
@@ -37,7 +36,7 @@ class TestDataLoader(unittest.TestCase):
         self.assertIsInstance(self.loader.data_cache, dict)
         self.assertIsNotNone(self.loader.stix_parser)
 
-    @patch('requests.get')
+    @patch("requests.get")
     def test_download_data_success(self, mock_get):
         """Test successful data download."""
         # Mock successful response
@@ -51,7 +50,7 @@ class TestDataLoader(unittest.TestCase):
         self.assertEqual(result, {"test": "data"})
         mock_get.assert_called_once_with("http://example.com/data.json", timeout=30)
 
-    @patch('requests.get')
+    @patch("requests.get")
     def test_download_data_failure(self, mock_get):
         """Test data download failure."""
         # Mock failed response
@@ -64,14 +63,8 @@ class TestDataLoader(unittest.TestCase):
         """Test MITRE ID extraction from STIX object."""
         stix_obj = {
             "external_references": [
-                {
-                    "source_name": "mitre-attack",
-                    "external_id": "T1055"
-                },
-                {
-                    "source_name": "other",
-                    "external_id": "OTHER123"
-                }
+                {"source_name": "mitre-attack", "external_id": "T1055"},
+                {"source_name": "other", "external_id": "OTHER123"},
             ]
         }
 
@@ -81,12 +74,7 @@ class TestDataLoader(unittest.TestCase):
     def test_extract_mitre_id_from_stix_missing(self):
         """Test MITRE ID extraction when not present."""
         stix_obj = {
-            "external_references": [
-                {
-                    "source_name": "other",
-                    "external_id": "OTHER123"
-                }
-            ]
+            "external_references": [{"source_name": "other", "external_id": "OTHER123"}]
         }
 
         result = self.loader._extract_mitre_id_from_stix(stix_obj)
@@ -95,12 +83,8 @@ class TestDataLoader(unittest.TestCase):
     def test_handle_uses_relationship(self):
         """Test handling of 'uses' relationships."""
         parsed_data = {
-            "groups": [
-                {"id": "G0001", "name": "Test Group", "techniques": []}
-            ],
-            "techniques": [
-                {"id": "T1055", "name": "Test Technique"}
-            ]
+            "groups": [{"id": "G0001", "name": "Test Group", "techniques": []}],
+            "techniques": [{"id": "T1055", "name": "Test Technique"}],
         }
 
         self.loader._handle_uses_relationship("G0001", "T1055", parsed_data)
@@ -115,7 +99,7 @@ class TestDataLoader(unittest.TestCase):
             ],
             "mitigations": [
                 {"id": "M1001", "name": "Test Mitigation", "techniques": []}
-            ]
+            ],
         }
 
         self.loader._handle_mitigates_relationship("M1001", "T1055", parsed_data)
@@ -161,7 +145,7 @@ class TestDataLoader(unittest.TestCase):
             "modified": "2023-01-01T00:00:00.000Z",
             "relationship_type": "uses",
             "source_ref": f"intrusion-set--{uuid.uuid4()}",
-            "target_ref": f"attack-pattern--{uuid.uuid4()}"
+            "target_ref": f"attack-pattern--{uuid.uuid4()}",
         }
 
         result = self.loader._parse_stix_relationship(rel_dict)
@@ -179,7 +163,7 @@ class TestDataLoader(unittest.TestCase):
             "type": "relationship",
             "relationship_type": "uses",
             "source_ref": "invalid-id",  # Invalid STIX ID format
-            "target_ref": f"attack-pattern--{uuid.uuid4()}"
+            "target_ref": f"attack-pattern--{uuid.uuid4()}",
         }
 
         with self.assertRaises((STIXError, InvalidValueError, MissingPropertiesError)):
@@ -193,7 +177,7 @@ class TestDataLoader(unittest.TestCase):
             "id": f"attack-pattern--{uuid.uuid4()}",
             "created": "2023-01-01T00:00:00.000Z",
             "modified": "2023-01-01T00:00:00.000Z",
-            "name": "Test Technique"
+            "name": "Test Technique",
         }
 
         result = self.loader._parse_stix_relationship(obj_dict)
@@ -204,36 +188,29 @@ class TestDataLoader(unittest.TestCase):
         # Create a STIX2 Relationship object
         source_id = f"intrusion-set--{uuid.uuid4()}"
         target_id = f"attack-pattern--{uuid.uuid4()}"
-        
+
         stix_relationship = Relationship(
-            relationship_type="uses",
-            source_ref=source_id,
-            target_ref=target_id
+            relationship_type="uses", source_ref=source_id, target_ref=target_id
         )
 
         # Set up test data
         parsed_data = {
-            "groups": [
-                {"id": "G0001", "name": "Test Group", "techniques": []}
-            ],
-            "techniques": [
-                {"id": "T1055", "name": "Test Technique"}
-            ]
+            "groups": [{"id": "G0001", "name": "Test Group", "techniques": []}],
+            "techniques": [{"id": "T1055", "name": "Test Technique"}],
         }
 
-        stix_id_to_mitre_id = {
-            source_id: "G0001",
-            target_id: "T1055"
-        }
+        stix_id_to_mitre_id = {source_id: "G0001", target_id: "T1055"}
 
         # Process the relationship
-        self.loader._process_single_relationship_with_stix2(stix_relationship, parsed_data, stix_id_to_mitre_id)
+        self.loader._process_single_relationship_with_stix2(
+            stix_relationship, parsed_data, stix_id_to_mitre_id
+        )
 
         # Verify the relationship was processed
         self.assertIn("T1055", parsed_data["groups"][0]["techniques"])
         self.assertIn("relationships", parsed_data)
         self.assertEqual(len(parsed_data["relationships"]), 1)
-        
+
         relationship_record = parsed_data["relationships"][0]
         self.assertEqual(relationship_record["type"], "uses")
         self.assertEqual(relationship_record["source_id"], "G0001")
@@ -244,7 +221,7 @@ class TestDataLoader(unittest.TestCase):
         # Verify relationship metadata was added
         self.assertIn("technique_relationships", parsed_data["groups"][0])
         self.assertIn("T1055", parsed_data["groups"][0]["technique_relationships"])
-        
+
         rel_metadata = parsed_data["groups"][0]["technique_relationships"]["T1055"]
         self.assertEqual(rel_metadata["relationship_type"], "uses")
         self.assertIsNotNone(rel_metadata["created"])
@@ -255,22 +232,22 @@ class TestDataLoader(unittest.TestCase):
         stix_relationship = Relationship(
             relationship_type="uses",
             source_ref=f"intrusion-set--{uuid.uuid4()}",
-            target_ref=f"attack-pattern--{uuid.uuid4()}"
+            target_ref=f"attack-pattern--{uuid.uuid4()}",
         )
 
         parsed_data = {
-            "groups": [
-                {"id": "G0001", "name": "Test Group", "techniques": []}
-            ]
+            "groups": [{"id": "G0001", "name": "Test Group", "techniques": []}]
         }
 
-        self.loader._handle_uses_relationship_with_stix2("G0001", "T1055", parsed_data, stix_relationship)
+        self.loader._handle_uses_relationship_with_stix2(
+            "G0001", "T1055", parsed_data, stix_relationship
+        )
 
         # Verify the relationship was handled
         self.assertIn("T1055", parsed_data["groups"][0]["techniques"])
         self.assertIn("technique_relationships", parsed_data["groups"][0])
         self.assertIn("T1055", parsed_data["groups"][0]["technique_relationships"])
-        
+
         rel_metadata = parsed_data["groups"][0]["technique_relationships"]["T1055"]
         self.assertEqual(rel_metadata["relationship_type"], "uses")
         self.assertIsNotNone(rel_metadata["created"])
@@ -281,7 +258,7 @@ class TestDataLoader(unittest.TestCase):
         stix_relationship = Relationship(
             relationship_type="mitigates",
             source_ref=f"course-of-action--{uuid.uuid4()}",
-            target_ref=f"attack-pattern--{uuid.uuid4()}"
+            target_ref=f"attack-pattern--{uuid.uuid4()}",
         )
 
         parsed_data = {
@@ -290,17 +267,21 @@ class TestDataLoader(unittest.TestCase):
             ],
             "mitigations": [
                 {"id": "M1001", "name": "Test Mitigation", "techniques": []}
-            ]
+            ],
         }
 
-        self.loader._handle_mitigates_relationship_with_stix2("M1001", "T1055", parsed_data, stix_relationship)
+        self.loader._handle_mitigates_relationship_with_stix2(
+            "M1001", "T1055", parsed_data, stix_relationship
+        )
 
         # Verify the relationship was handled for technique
         self.assertIn("M1001", parsed_data["techniques"][0]["mitigations"])
         self.assertIn("mitigation_relationships", parsed_data["techniques"][0])
         self.assertIn("M1001", parsed_data["techniques"][0]["mitigation_relationships"])
-        
-        technique_rel_metadata = parsed_data["techniques"][0]["mitigation_relationships"]["M1001"]
+
+        technique_rel_metadata = parsed_data["techniques"][0][
+            "mitigation_relationships"
+        ]["M1001"]
         self.assertEqual(technique_rel_metadata["relationship_type"], "mitigates")
         self.assertIsNotNone(technique_rel_metadata["created"])
 
@@ -308,8 +289,10 @@ class TestDataLoader(unittest.TestCase):
         self.assertIn("T1055", parsed_data["mitigations"][0]["techniques"])
         self.assertIn("technique_relationships", parsed_data["mitigations"][0])
         self.assertIn("T1055", parsed_data["mitigations"][0]["technique_relationships"])
-        
-        mitigation_rel_metadata = parsed_data["mitigations"][0]["technique_relationships"]["T1055"]
+
+        mitigation_rel_metadata = parsed_data["mitigations"][0][
+            "technique_relationships"
+        ]["T1055"]
         self.assertEqual(mitigation_rel_metadata["relationship_type"], "mitigates")
         self.assertIsNotNone(mitigation_rel_metadata["created"])
 
@@ -319,7 +302,7 @@ class TestDataLoader(unittest.TestCase):
         source_id = f"intrusion-set--{uuid.uuid4()}"
         target_id = f"attack-pattern--{uuid.uuid4()}"
         mitigation_id = f"course-of-action--{uuid.uuid4()}"
-        
+
         raw_data = {
             "objects": [
                 {
@@ -328,7 +311,7 @@ class TestDataLoader(unittest.TestCase):
                     "name": "Test Group",
                     "external_references": [
                         {"source_name": "mitre-attack", "external_id": "G0001"}
-                    ]
+                    ],
                 },
                 {
                     "type": "attack-pattern",
@@ -336,7 +319,7 @@ class TestDataLoader(unittest.TestCase):
                     "name": "Test Technique",
                     "external_references": [
                         {"source_name": "mitre-attack", "external_id": "T1055"}
-                    ]
+                    ],
                 },
                 {
                     "type": "course-of-action",
@@ -344,7 +327,7 @@ class TestDataLoader(unittest.TestCase):
                     "name": "Test Mitigation",
                     "external_references": [
                         {"source_name": "mitre-attack", "external_id": "M1001"}
-                    ]
+                    ],
                 },
                 {
                     "type": "relationship",
@@ -353,7 +336,7 @@ class TestDataLoader(unittest.TestCase):
                     "modified": "2023-01-01T00:00:00.000Z",
                     "relationship_type": "uses",
                     "source_ref": source_id,
-                    "target_ref": target_id
+                    "target_ref": target_id,
                 },
                 {
                     "type": "relationship",
@@ -362,15 +345,19 @@ class TestDataLoader(unittest.TestCase):
                     "modified": "2023-01-01T00:00:00.000Z",
                     "relationship_type": "mitigates",
                     "source_ref": mitigation_id,
-                    "target_ref": target_id
-                }
+                    "target_ref": target_id,
+                },
             ]
         }
 
         parsed_data = {
             "groups": [{"id": "G0001", "name": "Test Group", "techniques": []}],
-            "techniques": [{"id": "T1055", "name": "Test Technique", "mitigations": []}],
-            "mitigations": [{"id": "M1001", "name": "Test Mitigation", "techniques": []}]
+            "techniques": [
+                {"id": "T1055", "name": "Test Technique", "mitigations": []}
+            ],
+            "mitigations": [
+                {"id": "M1001", "name": "Test Mitigation", "techniques": []}
+            ],
         }
 
         result = self.loader._process_relationships(raw_data, parsed_data)
@@ -378,11 +365,11 @@ class TestDataLoader(unittest.TestCase):
         # Verify relationships were processed
         self.assertIn("relationships", result)
         self.assertEqual(len(result["relationships"]), 2)
-        
+
         # Verify uses relationship
         self.assertIn("T1055", result["groups"][0]["techniques"])
         self.assertIn("technique_relationships", result["groups"][0])
-        
+
         # Verify mitigates relationship
         self.assertIn("M1001", result["techniques"][0]["mitigations"])
         self.assertIn("T1055", result["mitigations"][0]["techniques"])
@@ -400,7 +387,7 @@ class TestDataLoader(unittest.TestCase):
                     "name": "Test Group",
                     "external_references": [
                         {"source_name": "mitre-attack", "external_id": "G0001"}
-                    ]
+                    ],
                 },
                 {
                     "type": "attack-pattern",
@@ -408,21 +395,23 @@ class TestDataLoader(unittest.TestCase):
                     "name": "Test Technique",
                     "external_references": [
                         {"source_name": "mitre-attack", "external_id": "T1055"}
-                    ]
+                    ],
                 },
                 {
                     "type": "relationship",
                     "relationship_type": "uses",
                     "source_ref": "intrusion-set--valid-uuid",
-                    "target_ref": "attack-pattern--valid-uuid"
+                    "target_ref": "attack-pattern--valid-uuid",
                     # Missing required fields like 'id', 'created', 'modified' to trigger STIX2 parsing failure
-                }
+                },
             ]
         }
 
         parsed_data = {
             "groups": [{"id": "G0001", "name": "Test Group", "techniques": []}],
-            "techniques": [{"id": "T1055", "name": "Test Technique", "mitigations": []}]
+            "techniques": [
+                {"id": "T1055", "name": "Test Technique", "mitigations": []}
+            ],
         }
 
         # This should not raise an exception and should fall back to legacy processing
@@ -442,21 +431,21 @@ class TestConfigLoader(unittest.TestCase):
         config = load_config()
 
         # Check required sections
-        self.assertIn('data_sources', config)
-        self.assertIn('entity_schemas', config)
+        self.assertIn("data_sources", config)
+        self.assertIn("entity_schemas", config)
 
         # Check MITRE ATT&CK data source
-        self.assertIn('mitre_attack', config['data_sources'])
-        mitre_config = config['data_sources']['mitre_attack']
-        self.assertIn('url', mitre_config)
-        self.assertIn('format', mitre_config)
-        self.assertIn('entity_types', mitre_config)
+        self.assertIn("mitre_attack", config["data_sources"])
+        mitre_config = config["data_sources"]["mitre_attack"]
+        self.assertIn("url", mitre_config)
+        self.assertIn("format", mitre_config)
+        self.assertIn("entity_types", mitre_config)
 
         # Check entity schemas
-        expected_schemas = ['tactic', 'technique', 'group', 'mitigation']
+        expected_schemas = ["tactic", "technique", "group", "mitigation"]
         for schema in expected_schemas:
-            self.assertIn(schema, config['entity_schemas'])
+            self.assertIn(schema, config["entity_schemas"])
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
