@@ -21,9 +21,9 @@ def _get_all_tactics(data: dict) -> list:
     Returns:
         list: List of all tactics sorted by ID
     """
-    tactics = data.get('tactics', [])
+    tactics = data.get("tactics", [])
     # Sort tactics by ID for consistent ordering
-    return sorted(tactics, key=lambda x: x.get('id', ''))
+    return sorted(tactics, key=lambda x: x.get("id", ""))
 
 
 def _format_tactics_response(tactics: list) -> str:
@@ -46,9 +46,9 @@ def _format_tactics_response(tactics: list) -> str:
     result_text += f"Total tactics: {len(tactics)}\n\n"
 
     for tactic in tactics:
-        tactic_id = tactic.get('id', 'N/A')
-        tactic_name = tactic.get('name', 'N/A')
-        tactic_description = tactic.get('description', 'No description available')
+        tactic_id = tactic.get("id", "N/A")
+        tactic_name = tactic.get("name", "N/A")
+        tactic_description = tactic.get("description", "No description available")
 
         result_text += f"ID: {tactic_id}\n"
         result_text += f"Name: {tactic_name}\n"
@@ -64,33 +64,33 @@ class TestListTactics:
     def setup_method(self):
         """Set up test data for each test method."""
         self.sample_tactics_data = {
-            'tactics': [
+            "tactics": [
                 {
-                    'id': 'TA0001',
-                    'name': 'Initial Access',
-                    'description': 'The adversary is trying to get into your network. Initial Access consists of techniques that use various entry vectors to gain their initial foothold within a network.'
+                    "id": "TA0001",
+                    "name": "Initial Access",
+                    "description": "The adversary is trying to get into your network. Initial Access consists of techniques that use various entry vectors to gain their initial foothold within a network.",
                 },
                 {
-                    'id': 'TA0002',
-                    'name': 'Execution',
-                    'description': 'The adversary is trying to run malicious code. Execution consists of techniques that result in adversary-controlled code running on a local or remote system.'
+                    "id": "TA0002",
+                    "name": "Execution",
+                    "description": "The adversary is trying to run malicious code. Execution consists of techniques that result in adversary-controlled code running on a local or remote system.",
                 },
                 {
-                    'id': 'TA0003',
-                    'name': 'Persistence',
-                    'description': 'The adversary is trying to maintain their foothold. Persistence consists of techniques that adversaries use to keep access to systems across restarts.'
-                }
+                    "id": "TA0003",
+                    "name": "Persistence",
+                    "description": "The adversary is trying to maintain their foothold. Persistence consists of techniques that adversaries use to keep access to systems across restarts.",
+                },
             ],
-            'techniques': [],
-            'groups': [],
-            'mitigations': []
+            "techniques": [],
+            "groups": [],
+            "mitigations": [],
         }
 
         self.empty_data = {
-            'tactics': [],
-            'techniques': [],
-            'groups': [],
-            'mitigations': []
+            "tactics": [],
+            "techniques": [],
+            "groups": [],
+            "mitigations": [],
         }
 
     def test_get_all_tactics_success(self):
@@ -98,12 +98,12 @@ class TestListTactics:
         tactics = _get_all_tactics(self.sample_tactics_data)
 
         assert len(tactics) == 3
-        assert tactics[0]['id'] == 'TA0001'
-        assert tactics[0]['name'] == 'Initial Access'
-        assert tactics[1]['id'] == 'TA0002'
-        assert tactics[1]['name'] == 'Execution'
-        assert tactics[2]['id'] == 'TA0003'
-        assert tactics[2]['name'] == 'Persistence'
+        assert tactics[0]["id"] == "TA0001"
+        assert tactics[0]["name"] == "Initial Access"
+        assert tactics[1]["id"] == "TA0002"
+        assert tactics[1]["name"] == "Execution"
+        assert tactics[2]["id"] == "TA0003"
+        assert tactics[2]["name"] == "Persistence"
 
     def test_get_all_tactics_empty_data(self):
         """Test tactics retrieval with no tactics in data."""
@@ -114,11 +114,7 @@ class TestListTactics:
 
     def test_get_all_tactics_missing_tactics_key(self):
         """Test tactics retrieval when tactics key is missing."""
-        data_no_tactics_key = {
-            'techniques': [],
-            'groups': [],
-            'mitigations': []
-        }
+        data_no_tactics_key = {"techniques": [], "groups": [], "mitigations": []}
 
         tactics = _get_all_tactics(data_no_tactics_key)
         assert len(tactics) == 0
@@ -128,59 +124,59 @@ class TestListTactics:
         """Test that tactics are sorted by ID."""
         # Create data with tactics in non-alphabetical order
         unsorted_data = {
-            'tactics': [
+            "tactics": [
                 {
-                    'id': 'TA0003',
-                    'name': 'Persistence',
-                    'description': 'Persistence description'
+                    "id": "TA0003",
+                    "name": "Persistence",
+                    "description": "Persistence description",
                 },
                 {
-                    'id': 'TA0001',
-                    'name': 'Initial Access',
-                    'description': 'Initial Access description'
+                    "id": "TA0001",
+                    "name": "Initial Access",
+                    "description": "Initial Access description",
                 },
                 {
-                    'id': 'TA0002',
-                    'name': 'Execution',
-                    'description': 'Execution description'
-                }
+                    "id": "TA0002",
+                    "name": "Execution",
+                    "description": "Execution description",
+                },
             ],
-            'techniques': [],
-            'groups': [],
-            'mitigations': []
+            "techniques": [],
+            "groups": [],
+            "mitigations": [],
         }
 
         tactics = _get_all_tactics(unsorted_data)
 
         # Verify sorting - should be TA0001, TA0002, TA0003
         assert len(tactics) == 3
-        assert tactics[0]['id'] == 'TA0001'
-        assert tactics[1]['id'] == 'TA0002'
-        assert tactics[2]['id'] == 'TA0003'
+        assert tactics[0]["id"] == "TA0001"
+        assert tactics[1]["id"] == "TA0002"
+        assert tactics[2]["id"] == "TA0003"
 
     def test_get_all_tactics_missing_fields(self):
         """Test tactics retrieval with missing optional fields."""
         incomplete_data = {
-            'tactics': [
+            "tactics": [
                 {
-                    'id': 'TA0001',
-                    'name': 'Initial Access'
+                    "id": "TA0001",
+                    "name": "Initial Access",
                     # Missing description
                 },
                 {
-                    'id': 'TA0002',
+                    "id": "TA0002",
                     # Missing name
-                    'description': 'Some description'
+                    "description": "Some description",
                 },
                 {
                     # Missing id
-                    'name': 'Some Tactic',
-                    'description': 'Some description'
-                }
+                    "name": "Some Tactic",
+                    "description": "Some description",
+                },
             ],
-            'techniques': [],
-            'groups': [],
-            'mitigations': []
+            "techniques": [],
+            "groups": [],
+            "mitigations": [],
         }
 
         tactics = _get_all_tactics(incomplete_data)
@@ -195,7 +191,7 @@ class TestListTactics:
 
     def test_format_tactics_response_success(self):
         """Test successful tactics response formatting."""
-        tactics = self.sample_tactics_data['tactics']
+        tactics = self.sample_tactics_data["tactics"]
         response = _format_tactics_response(tactics)
 
         # Check header format
@@ -208,7 +204,9 @@ class TestListTactics:
         # Check individual tactic format
         assert "ID: TA0001" in response
         assert "Name: Initial Access" in response
-        assert "Description: The adversary is trying to get into your network" in response
+        assert (
+            "Description: The adversary is trying to get into your network" in response
+        )
 
         assert "ID: TA0002" in response
         assert "Name: Execution" in response
@@ -229,20 +227,20 @@ class TestListTactics:
         """Test formatting with missing optional fields."""
         incomplete_tactics = [
             {
-                'id': 'TA0001',
-                'name': 'Initial Access'
+                "id": "TA0001",
+                "name": "Initial Access",
                 # Missing description
             },
             {
-                'id': 'TA0002',
+                "id": "TA0002",
                 # Missing name
-                'description': 'Some description'
+                "description": "Some description",
             },
             {
                 # Missing id
-                'name': 'Some Tactic',
-                'description': 'Some description'
-            }
+                "name": "Some Tactic",
+                "description": "Some description",
+            },
         ]
 
         response = _format_tactics_response(incomplete_tactics)
@@ -250,7 +248,9 @@ class TestListTactics:
         # Should handle missing fields gracefully
         assert "Total tactics: 3" in response
         assert "N/A" in response  # Should show N/A for missing fields
-        assert "No description available" in response  # Should show default for missing description
+        assert (
+            "No description available" in response
+        )  # Should show default for missing description
 
     def test_integration_list_tactics_logic(self):
         """Test the complete list_tactics logic integration."""
@@ -289,7 +289,7 @@ class TestListTactics:
     def test_edge_cases_malformed_data(self):
         """Test edge cases with malformed data structures."""
         malformed_data = {
-            'tactics': [
+            "tactics": [
                 {
                     # Missing all fields
                 }
@@ -303,5 +303,5 @@ class TestListTactics:
         assert "N/A" in response  # Should handle missing fields gracefully
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pytest.main([__file__])

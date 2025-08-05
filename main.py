@@ -13,8 +13,7 @@ from src.data_loader import DataLoader
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 
 logger = logging.getLogger(__name__)
@@ -27,7 +26,9 @@ def main():
     try:
         # Initialize data loader and load MITRE ATT&CK data
         logger.info("Loading MITRE ATT&CK data...")
-        data_loader = DataLoader()        logger.info("MITRE ATT&CK data loaded successfully")
+        data_loader = DataLoader()
+        data_loader.load_data_source("mitre_attack")
+        logger.info("MITRE ATT&CK data loaded successfully")
 
         # Create MCP server with loaded data
         mcp_server = MCPServer(data_loader)
@@ -39,5 +40,6 @@ def main():
         logger.error("Failed to start MCP server: {e}")
         raise
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

@@ -49,8 +49,11 @@ class TestMCPHTTPInterface:
 
         tool_names = [tool.name for tool in tools]
         expected_tools = [
-            'search_attack', 'get_technique', 'list_tactics',
-            'get_group_techniques', 'get_technique_mitigations'
+            "search_attack",
+            "get_technique",
+            "list_tactics",
+            "get_group_techniques",
+            "get_technique_mitigations",
         ]
 
         for expected_tool in expected_tools:
@@ -64,7 +67,7 @@ class TestMCPHTTPInterface:
         app = mcp_server_with_data
 
         # Test a simple tool call
-        result, _ = await app.call_tool('list_tactics', {})
+        result, _ = await app.call_tool("list_tactics", {})
         assert result is not None
         assert len(result) > 0
         assert result[0].type == "text"
@@ -96,14 +99,14 @@ class TestMCPHTTPInterface:
         tool_dict = {tool.name: tool for tool in tools}
 
         # search_attack should require query parameter
-        search_tool = tool_dict['search_attack']
-        assert 'query' in search_tool.inputSchema['properties']
-        assert 'query' in search_tool.inputSchema.get('required', [])
+        search_tool = tool_dict["search_attack"]
+        assert "query" in search_tool.inputSchema["properties"]
+        assert "query" in search_tool.inputSchema.get("required", [])
 
         # list_tactics should have no required parameters
-        tactics_tool = tool_dict['list_tactics']
-        assert len(tactics_tool.inputSchema['properties']) == 0
+        tactics_tool = tool_dict["list_tactics"]
+        assert len(tactics_tool.inputSchema["properties"]) == 0
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pytest.main([__file__])

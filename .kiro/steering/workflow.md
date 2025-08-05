@@ -8,6 +8,18 @@
 - `CONTRIBUTING.md` - Complete workflow guide for both humans and AI assistants
 - Focus on the "🤖 For Agentic Code Assistants" section for AI-specific guidance
 
+## 🔍 Pre-Work Checklist for AI Assistants
+
+**BEFORE making ANY code changes, complete this checklist:**
+
+- [ ] Check current branch: `git branch --show-current`
+- [ ] Ensure on staging: `git checkout staging && git pull origin staging`
+- [ ] Create feature branch: `git checkout -b feature/$(date +%s)-task-name`
+- [ ] Verify branch created: `git branch --show-current`
+- [ ] Run initial tests: `uv run pytest tests/ -x --tb=short`
+
+**Only after completing this checklist should you begin making code changes.**
+
 ## Branch Protection Workflow (STRICTLY ENFORCED)
 
 ### Required Pattern
@@ -18,26 +30,63 @@ feature/branch → staging → main
 ```
 
 ### CRITICAL Commands for AI Assistants
+
+> **⚠️ MANDATORY FIRST STEP**: Always check current branch and create feature branch BEFORE making any code changes!
+
 ```bash
-# 1. ALWAYS start from staging (never from main)
+# 0. CHECK CURRENT BRANCH FIRST (CRITICAL!)
+git branch --show-current
+# If not on staging, switch immediately:
 git checkout staging && git pull origin staging
 
-# 2. Create feature branch with timestamp
+# 1. Create feature branch with timestamp BEFORE any changes
 git checkout -b feature/$(date +%s)-your-change
 
-# 3. Make changes and test locally (REQUIRED)
+# 2. Make changes and test locally (REQUIRED)
 uv run pytest tests/ -x --tb=short
 
-# 4. Format and lint code (REQUIRED)
+# 3. Format and lint code (REQUIRED)
 uv run black . && uv run flake8 .
 
-# 5. Commit and push to feature branch
-git add . && git commit -m "feat: description"
+# 4. Commit and push to feature branch (REQUIRED AFTER EACH TASK)
+git add . && git -c core.pager=cat commit -m "feat: description"
 git push origin feature/$(date +%s)-your-change
 
-# 6. Create PR to staging (NOT main)
+# 5. Create PR to staging (NOT main)
 gh pr create --base staging --title "Change" --body "Description"
 ```
+
+### 🔄 Task Completion Workflow (MANDATORY)
+
+**AFTER completing each individual task from a spec:**
+
+1. **Update task status** to completed using taskStatus tool
+2. **Run full test suite** to ensure no regressions: `uv run pytest tests/ -x --tb=short`
+3. **Commit changes immediately** with detailed message describing what was implemented
+4. **Push to remote** to preserve work and enable collaboration
+5. **Do NOT proceed to next task** until current task is fully committed
+
+```bash
+# Required after each task completion
+git add .
+git -c core.pager=cat commit -m "feat: [task description]
+
+- Detailed bullet points of what was implemented
+- Reference to requirements satisfied
+- Any important technical details
+- Task completion confirmation"
+git push origin [current-feature-branch]
+```
+
+> **⚠️ CRITICAL**: Use `git -c core.pager=cat` to avoid terminal pager issues during commits!
+
+### 🚨 Common AI Assistant Mistakes to Avoid:
+- **Making changes on staging/main directly** - Always create feature branch first
+- **Forgetting to check current branch** - Use `git branch --show-current` before starting
+- **Starting work without proper branch setup** - Feature branch must exist before any code changes
+- **Not committing after each task** - Each completed task must be committed immediately
+- **Using git commit without pager config** - Always use `git -c core.pager=cat commit` to avoid terminal issues
+- **Proceeding to next task without committing current work** - Commit and push after each task completion
 
 ## UV Package Manager (REQUIRED)
 
@@ -63,7 +112,7 @@ uv run start_explorer.py
 ## Testing Requirements (MANDATORY)
 
 ### All Changes Must Pass
-- **202+ tests** across Python 3.8-3.12
+- **202+ tests** across Python 3.12-3.13
 - **Security scanning** (Bandit + Safety)
 - **Integration testing** with real data
 - **Code formatting** (Black)
@@ -115,7 +164,7 @@ git push --force origin staging
 ## Success Criteria
 
 Your changes are ready when:
-- ✅ All 202+ tests pass across Python 3.8-3.12
+- ✅ All 202+ tests pass across Python 3.12-3.13
 - ✅ Security scans show no new vulnerabilities
 - ✅ Integration tests verify functionality
 - ✅ Code is formatted with Black
