@@ -125,19 +125,21 @@ This is a MITRE ATT&CK MCP (Model Context Protocol) server that provides structu
 - **YAML Config Files**: `config/data_sources.yaml`, `config/entity_schemas.yaml`, `config/tools.yaml`
 - Uses UV package manager for dependency management
 
-## Current Project Status
+## Project Specifications and Tasks
 
-### Active Specifications
-**Web Explorer Improvements:**
-- Task 9: Create tools section with enhanced forms (PENDING)
-- Task 10: Implement enhanced results display system (PENDING)
+### Source of Truth for Project Management
+**IMPORTANT: All project specifications, requirements, designs, and task lists are maintained in the `.kiro/` directory.**
+- **Task Lists**: Check `.kiro/specs/[project-name]/tasks.md` for current task status
+- **Requirements**: Check `.kiro/specs/[project-name]/requirements.md` for detailed requirements
+- **Design Documents**: Check `.kiro/specs/[project-name]/design.md` for technical specifications
+- **DO NOT maintain duplicate task information in this CLAUDE.md file**
+- **Always reference .kiro as the authoritative source for project specifications**
 
-**STIX2 Library Refactor (Completed tasks 1-8, remaining):**
-- Task 11: Update type hints and improve code quality
-- Task 12: Remove deprecated custom parsing logic
-- Task 13: Add future extensibility examples and documentation
-- Task 14: Integration testing with all MCP tools
-- Task 15: Final test cleanup and deprecated test removal
+### Current Project Status
+This MITRE ATT&CK MCP Server project is feature-complete with all major specifications implemented:
+- ✅ **Web Explorer Improvements**: Modern web interface with dynamic forms and results display
+- ✅ **STIX2 Library Refactor**: Complete integration with official STIX2 library for secure data parsing
+- All 437+ tests passing with comprehensive coverage across Python 3.12-3.13
 
 ### Key Implementation Details
 - Uses official `stix2` library for secure STIX data parsing
