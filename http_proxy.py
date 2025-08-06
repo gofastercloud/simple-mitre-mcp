@@ -43,6 +43,10 @@ class HTTPProxy:
         self.app.router.add_get("/", self.serve_web_interface)
         self.app.router.add_get("/tools", self.handle_tools_list)
         self.app.router.add_post("/call_tool", self.handle_tool_call)
+        # Add static file serving for web interface assets
+        self.app.router.add_static("/css/", Path(__file__).parent / "web_interface" / "css")
+        self.app.router.add_static("/js/", Path(__file__).parent / "web_interface" / "js")
+        self.app.router.add_static("/assets/", Path(__file__).parent / "web_interface" / "assets")
 
     def setup_cors(self):
         """Set up CORS to allow browser requests."""
@@ -65,14 +69,14 @@ class HTTPProxy:
     async def serve_web_interface(self, request: web_request.Request) -> Response:
         """Serve the web explorer HTML interface."""
         try:
-            web_explorer_path = Path(__file__).parent / "web_explorer.html"
-            if web_explorer_path.exists():
-                with open(web_explorer_path, "r", encoding="utf-8") as f:
+            web_interface_path = Path(__file__).parent / "web_interface" / "index.html"
+            if web_interface_path.exists():
+                with open(web_interface_path, "r", encoding="utf-8") as f:
                     html_content = f.read()
                 return web.Response(text=html_content, content_type="text/html")
             else:
                 return web.Response(
-                    text="Web explorer interface not found. Please ensure web_explorer.html exists.",
+                    text="Web interface not found. Please ensure web_interface/index.html exists.",
                     status=404,
                 )
         except Exception as e:
