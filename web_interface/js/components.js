@@ -1777,23 +1777,26 @@ class ToolsSection {
      * Collect and process form parameters
      */
     collectFormParameters(form) {
-        const formData = new FormData(form);
         const parameters = {};
         
-        // Get all form fields to handle checkboxes and empty values properly
+        // Get all form fields 
         const allFields = form.querySelectorAll('input, select, textarea');
         
         allFields.forEach(field => {
             const key = field.name;
-            if (!key) return; // Skip fields without names
+            
+            if (!key) {
+                return; // Skip fields without names
+            }
             
             if (field.type === 'checkbox') {
                 // Always include checkbox values (true/false)
                 parameters[key] = field.checked;
             } else {
-                // Get value from FormData for other field types
-                const value = formData.get(key);
-                if (value !== null && value.trim() !== '') {
+                // Get field value and trim whitespace
+                let value = field.value;
+                
+                if (value !== null && value !== undefined && value.trim() !== '') {
                     const dataType = field.dataset?.type;
                     
                     if (dataType === 'array') {
