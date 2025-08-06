@@ -44,7 +44,7 @@
   - Write unit tests for data population endpoints
   - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5_
 
-- [x] 6. Implement JavaScript API communication layer
+- [ ] 6. Implement JavaScript API communication layer
   - Create `web_interface/js/api.js` with API class for all backend communication
   - Implement methods for `getSystemInfo()`, `getTools()`, `getGroups()`, `getTactics()`
   - Add `callTool()` method with proper error handling and response processing
