@@ -19,7 +19,7 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     handlers=[
         logging.FileHandler("mcp_server.log"),  # Log to file instead of stderr
-    ]
+    ],
 )
 
 logger = logging.getLogger(__name__)

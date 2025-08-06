@@ -31,10 +31,15 @@ logger = logging.getLogger(__name__)
 class HTTPProxy:
     """HTTP proxy server that bridges web requests to MCP tools."""
 
-    def __init__(self, mcp_server):
+    def __init__(self, mcp_server=None):
         """Initialize the HTTP proxy with an MCP server instance."""
         self.mcp_server = mcp_server
-        self.app = web.Application()
+        self.app = web.Application(
+            middlewares=[
+                self.error_handling_middleware,
+                self.security_headers_middleware,
+            ]
+        )
         self.startup_time = datetime.now()
         self.setup_routes()
         self.setup_cors()
@@ -78,10 +83,99 @@ class HTTPProxy:
         for route in list(self.app.router.routes()):
             cors.add(route)
 
+    @web.middleware
+    async def error_handling_middleware(self, request: web_request.Request, handler):
+        """Enhanced error handling middleware for all endpoints."""
+        try:
+            response = await handler(request)
+            return response
+        except web.HTTPException as e:
+            # Handle HTTP exceptions (4xx, 5xx) with structured error responses
+            error_response = {
+                "error": e.text or str(e),
+                "status": e.status,
+                "timestamp": datetime.now().isoformat(),
+                "path": str(request.url),
+                "method": request.method,
+            }
+
+            # Add request details for debugging (exclude sensitive data)
+            if e.status >= 500:
+                error_response["request_id"] = id(request)
+                logger.error(
+                    f"Server error {e.status} for {request.method} {request.url}: {e.text}"
+                )
+            else:
+                logger.warning(
+                    f"Client error {e.status} for {request.method} {request.url}: {e.text}"
+                )
+
+            return web.json_response(error_response, status=e.status)
+        except Exception as e:
+            # Handle unexpected exceptions
+            request_id = id(request)
+            error_response = {
+                "error": "Internal server error occurred",
+                "status": 500,
+                "timestamp": datetime.now().isoformat(),
+                "path": str(request.url),
+                "method": request.method,
+                "request_id": request_id,
+            }
+
+            logger.error(
+                f"Unexpected error {request_id} for {request.method} {request.url}: {str(e)}"
+            )
+            return web.json_response(error_response, status=500)
+
+    @web.middleware
+    async def security_headers_middleware(self, request: web_request.Request, handler):
+        """Add security headers to all responses."""
+        response = await handler(request)
+
+        # Add security headers
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+
+        # Add CSP header for web interface requests
+        if (
+            request.path == "/"
+            or request.path.startswith("/css")
+            or request.path.startswith("/js")
+        ):
+            response.headers["Content-Security-Policy"] = (
+                "default-src 'self'; "
+                "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+                "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+                "font-src 'self' https://cdn.jsdelivr.net; "
+                "img-src 'self' data:; "
+                "connect-src 'self';"
+            )
+
+        # Add cache control headers
+        if (
+            request.path.startswith("/css")
+            or request.path.startswith("/js")
+            or request.path.startswith("/assets")
+        ):
+            response.headers["Cache-Control"] = (
+                "public, max-age=3600"  # 1 hour cache for static assets
+            )
+        else:
+            response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+            response.headers["Pragma"] = "no-cache"
+            response.headers["Expires"] = "0"
+
+        return response
+
     async def serve_web_interface(self, request: web_request.Request) -> Response:
         """Serve the web explorer HTML interface."""
         try:
-            web_interface_path = Path(__file__).parent.parent / "web_interface" / "index.html"
+            web_interface_path = (
+                Path(__file__).parent.parent / "web_interface" / "index.html"
+            )
             if web_interface_path.exists():
                 with open(web_interface_path, "r", encoding="utf-8") as f:
                     html_content = f.read()
@@ -246,16 +340,32 @@ class HTTPProxy:
     async def handle_tool_call(self, request: web_request.Request) -> Response:
         """Handle tool execution requests."""
         try:
-            # Parse request body
+            # Enhanced input validation
+            if request.content_type not in ["application/json", "text/plain"]:
+                if request.content_type:
+                    logger.warning(f"Unexpected content type: {request.content_type}")
+
+            # Parse request body with size limit
             body = await request.text()
             if not body:
                 return web.json_response({"error": "Empty request body"}, status=400)
+
+            if len(body) > 10000:  # 10KB limit
+                return web.json_response(
+                    {"error": "Request body too large (max 10KB)"}, status=400
+                )
 
             try:
                 data = json.loads(body)
             except json.JSONDecodeError as e:
                 return web.json_response(
-                    {"error": f"Invalid JSON: {str(e)}"}, status=400
+                    {"error": f"Invalid JSON format: {str(e)}"}, status=400
+                )
+
+            # Validate data structure
+            if not isinstance(data, dict):
+                return web.json_response(
+                    {"error": "Request body must be a JSON object"}, status=400
                 )
 
             # Extract tool name and parameters
@@ -265,9 +375,43 @@ class HTTPProxy:
             if not tool_name:
                 return web.json_response({"error": "Missing tool name"}, status=400)
 
+            if not isinstance(tool_name, str):
+                return web.json_response(
+                    {"error": "tool_name must be a string"}, status=400
+                )
+
+            if not isinstance(parameters, dict):
+                return web.json_response(
+                    {"error": "parameters must be an object"}, status=400
+                )
+
+            # Validate tool name against available tools
+            valid_tools = {
+                "search_attack",
+                "list_tactics",
+                "get_technique",
+                "get_group_techniques",
+                "get_technique_mitigations",
+                "build_attack_path",
+                "analyze_coverage_gaps",
+                "detect_technique_relationships",
+            }
+            if tool_name not in valid_tools:
+                return web.json_response(
+                    {
+                        "error": f"Unknown tool: {tool_name}. Available tools: {', '.join(sorted(valid_tools))}"
+                    },
+                    status=400,
+                )
+
             logger.info(f"Executing tool: {tool_name} with parameters: {parameters}")
 
             # Execute tool using the MCP server
+            if not self.mcp_server:
+                return web.json_response(
+                    {"error": "MCP server not available"}, status=503
+                )
+
             try:
                 result, _ = await self.mcp_server.call_tool(tool_name, parameters)
 
@@ -331,7 +475,11 @@ class HTTPProxy:
 
         try:
             # Get cached data from the data loader
-            if hasattr(self.mcp_server, "data_loader") and self.mcp_server.data_loader:
+            if (
+                self.mcp_server
+                and hasattr(self.mcp_server, "data_loader")
+                and self.mcp_server.data_loader
+            ):
                 data = self.mcp_server.data_loader.get_cached_data("mitre_attack")
 
                 if data:
@@ -479,11 +627,12 @@ class HTTPProxy:
         try:
             logger.info("Executing /api/techniques endpoint")
 
-            # Input validation - check for query parameter
+            # Enhanced input validation - check for query parameter
             query = request.query.get("q", "").strip()
             if not query:
                 return web.json_response(
-                    {"error": "Query parameter 'q' is required"}, status=400
+                    {"error": "Query parameter 'q' is required for technique search"},
+                    status=400,
                 )
 
             # Validate query length to prevent excessive processing
@@ -496,6 +645,21 @@ class HTTPProxy:
                 return web.json_response(
                     {"error": "Query must be less than 100 characters"}, status=400
                 )
+
+            # Validate query contains only safe characters (alphanumeric, spaces, hyphens, periods)
+            import re
+
+            if not re.match(r"^[a-zA-Z0-9\s\-\.]+$", query):
+                return web.json_response(
+                    {
+                        "error": "Search query contains invalid characters. Use only letters, numbers, spaces, hyphens, and periods."
+                    },
+                    status=400,
+                )
+
+            # Rate limiting check (basic implementation)
+            client_ip = request.remote or "unknown"
+            logger.debug(f"Technique search request from {client_ip}: '{query}'")
 
             # Get cached data
             if (

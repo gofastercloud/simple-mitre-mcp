@@ -151,11 +151,14 @@ class ResultsSection {
     }
     
     /**
-     * Display an error result
+     * Display an error result with enhanced user feedback
      */
     displayError(error, toolName = null, timestamp = null) {
         const resultTimestamp = timestamp || new Date();
         const errorMessage = typeof error === 'string' ? error : error.message || 'Unknown error occurred';
+        
+        // Parse error for better user experience
+        const errorInfo = this.parseError(errorMessage, toolName);
         
         // Store in history
         this.addToHistory(errorMessage, toolName || 'Error', resultTimestamp, 'error');
@@ -165,12 +168,13 @@ class ResultsSection {
             data: errorMessage,
             toolName: toolName || 'Error',
             timestamp: resultTimestamp,
-            type: 'error'
+            type: 'error',
+            errorInfo
         };
         
-        // Render error
+        // Render enhanced error
         const outputArea = document.getElementById('output-area');
-        outputArea.innerHTML = this.getErrorTemplate(errorMessage, toolName, resultTimestamp);
+        outputArea.innerHTML = this.getEnhancedErrorTemplate(errorInfo, toolName, resultTimestamp);
         
         // Enable action buttons
         this.updateActionButtons(true);
@@ -178,8 +182,8 @@ class ResultsSection {
         // Scroll to results
         this.scrollToResults();
         
-        // Show error toast
-        this.showToast('Error', errorMessage, 'danger');
+        // Show contextual error toast
+        this.showToast('Error', errorInfo.userMessage, 'danger', 8000); // Longer duration for errors
     }
     
     /**
@@ -705,7 +709,163 @@ class ResultsSection {
     }
 
     /**
-     * Get error template
+     * Parse error message to provide better user guidance
+     */
+    parseError(errorMessage, toolName) {
+        const errorInfo = {
+            originalMessage: errorMessage,
+            userMessage: errorMessage,
+            category: 'general',
+            suggestions: [],
+            isRecoverable: true,
+            severity: 'error'
+        };
+
+        // Connection/Network errors
+        if (errorMessage.includes('Failed to fetch') || errorMessage.includes('Network Error') || errorMessage.includes('timeout')) {
+            errorInfo.category = 'connection';
+            errorInfo.userMessage = 'Unable to connect to the server';
+            errorInfo.suggestions = [
+                'Check your internet connection',
+                'Verify the server is running and accessible',
+                'Try refreshing the page',
+                'Wait a moment and try again'
+            ];
+        }
+        // Server errors (5xx)
+        else if (errorMessage.includes('HTTP 5') || errorMessage.includes('Internal server error')) {
+            errorInfo.category = 'server';
+            errorInfo.userMessage = 'The server encountered an error';
+            errorInfo.suggestions = [
+                'The server may be experiencing issues',
+                'Try again in a few moments',
+                'Contact support if the problem persists'
+            ];
+            errorInfo.isRecoverable = false;
+        }
+        // Validation errors (4xx)
+        else if (errorMessage.includes('HTTP 4') || errorMessage.includes('required') || errorMessage.includes('invalid')) {
+            errorInfo.category = 'validation';
+            errorInfo.userMessage = 'There was a problem with your request';
+            errorInfo.suggestions = [
+                'Check that all required fields are filled in',
+                'Verify your input format is correct',
+                'Make sure you\'ve selected valid options'
+            ];
+        }
+        // Tool-specific errors
+        else if (errorMessage.includes('technique') && errorMessage.includes('not found')) {
+            errorInfo.category = 'data';
+            errorInfo.userMessage = 'The requested technique was not found';
+            errorInfo.suggestions = [
+                'Check the technique ID format (e.g., T1055)',
+                'Verify the technique exists in the MITRE ATT&CK framework',
+                'Try searching for the technique first'
+            ];
+        }
+        else if (errorMessage.includes('group') && errorMessage.includes('not found')) {
+            errorInfo.category = 'data';
+            errorInfo.userMessage = 'The requested threat group was not found';
+            errorInfo.suggestions = [
+                'Check the group ID format (e.g., G0016)',
+                'Verify the group exists in the MITRE ATT&CK framework',
+                'Try browsing available groups first'
+            ];
+        }
+        // Data loading errors
+        else if (errorMessage.includes('data not loaded') || errorMessage.includes('Data loader')) {
+            errorInfo.category = 'data';
+            errorInfo.userMessage = 'MITRE ATT&CK data is not available';
+            errorInfo.suggestions = [
+                'The server may still be loading data',
+                'Wait a few moments and try again',
+                'Refresh the page to check data status'
+            ];
+            errorInfo.isRecoverable = false;
+        }
+
+        return errorInfo;
+    }
+
+    /**
+     * Get enhanced error template with user guidance
+     */
+    getEnhancedErrorTemplate(errorInfo, toolName, timestamp) {
+        const formattedTimestamp = this.formatTimestamp(timestamp);
+        const iconMap = {
+            connection: 'bi-wifi-off',
+            server: 'bi-server',
+            validation: 'bi-exclamation-triangle',
+            data: 'bi-database-exclamation',
+            general: 'bi-exclamation-circle'
+        };
+        
+        const icon = iconMap[errorInfo.category] || iconMap.general;
+        
+        return `
+            <div class="result-content">
+                <div class="result-header p-3 bg-danger text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="badge bg-light text-danger me-2">
+                                <i class="bi ${icon} me-1"></i>
+                                ${toolName || 'Error'}
+                            </span>
+                            <span class="small opacity-75">
+                                <i class="bi bi-clock me-1"></i>
+                                ${formattedTimestamp}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="result-body">
+                    <div class="alert alert-danger m-3">
+                        <h6 class="alert-heading d-flex align-items-center">
+                            <i class="bi ${icon} me-2"></i>
+                            ${errorInfo.userMessage}
+                        </h6>
+                        
+                        ${errorInfo.suggestions.length > 0 ? `
+                            <div class="mt-3">
+                                <strong>What you can try:</strong>
+                                <ul class="mt-2 mb-0">
+                                    ${errorInfo.suggestions.map(suggestion => `<li>${suggestion}</li>`).join('')}
+                                </ul>
+                            </div>
+                        ` : ''}
+                        
+                        <div class="mt-3">
+                            <button type="button" class="btn btn-outline-danger btn-sm me-2" onclick="location.reload()">
+                                <i class="bi bi-arrow-clockwise me-1"></i>
+                                Refresh Page
+                            </button>
+                            ${errorInfo.isRecoverable ? `
+                                <button type="button" class="btn btn-outline-secondary btn-sm me-2" onclick="window.resultsSection.retryLastAction()">
+                                    <i class="bi bi-arrow-repeat me-1"></i>
+                                    Try Again
+                                </button>
+                            ` : ''}
+                            <button type="button" class="btn btn-outline-info btn-sm" onclick="window.resultsSection.showTechnicalDetails()">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Technical Details
+                            </button>
+                        </div>
+                        
+                        <div id="technical-details" class="mt-3" style="display: none;">
+                            <hr>
+                            <small class="text-muted">
+                                <strong>Technical Error:</strong><br>
+                                <code>${this.escapeHtml(errorInfo.originalMessage)}</code>
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    /**
+     * Get error template (legacy method for compatibility)
      */
     getErrorTemplate(error, toolName, timestamp) {
         const formattedTimestamp = this.formatTimestamp(timestamp);
@@ -1119,6 +1279,70 @@ class ResultsSection {
         return this.currentResult !== null;
     }
     
+    /**
+     * Show technical details for errors
+     */
+    showTechnicalDetails() {
+        const detailsDiv = document.getElementById('technical-details');
+        if (detailsDiv) {
+            detailsDiv.style.display = detailsDiv.style.display === 'none' ? 'block' : 'none';
+        }
+    }
+
+    /**
+     * Retry the last failed action if possible
+     */
+    retryLastAction() {
+        if (this.lastAction) {
+            this.showToast('Info', 'Retrying last action...', 'info');
+            
+            // Simulate retry by calling the stored action
+            try {
+                if (typeof this.lastAction === 'function') {
+                    this.lastAction();
+                } else {
+                    // For now, just show a message
+                    this.showToast('Info', 'Manual retry required - please try your last action again', 'warning');
+                }
+            } catch (error) {
+                this.showToast('Error', 'Retry failed', 'danger');
+            }
+        } else {
+            this.showToast('Info', 'No previous action to retry', 'warning');
+        }
+    }
+
+    /**
+     * Store the last action for retry purposes
+     */
+    storeLastAction(action) {
+        this.lastAction = action;
+    }
+
+    /**
+     * Show connection status indicator
+     */
+    showConnectionStatus(connected, message = '') {
+        const statusIndicator = document.querySelector('#statusIndicator') || document.createElement('div');
+        statusIndicator.id = 'statusIndicator';
+        
+        if (connected) {
+            statusIndicator.className = 'badge bg-success position-fixed top-0 end-0 m-3';
+            statusIndicator.innerHTML = '<i class="bi bi-wifi me-1"></i>Connected';
+        } else {
+            statusIndicator.className = 'badge bg-danger position-fixed top-0 end-0 m-3';
+            statusIndicator.innerHTML = '<i class="bi bi-wifi-off me-1"></i>Disconnected';
+            
+            if (message) {
+                statusIndicator.title = message;
+            }
+        }
+        
+        if (!document.body.contains(statusIndicator)) {
+            document.body.appendChild(statusIndicator);
+        }
+    }
+
     /**
      * Destroy and cleanup
      */
