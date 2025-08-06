@@ -401,18 +401,18 @@ class DataLoader:
 
                     group["technique_relationships"][target_id] = {
                         "relationship_type": stix_relationship.relationship_type,
-                    "created": (
-                        stix_relationship.created.isoformat()
-                        if hasattr(stix_relationship, "created")
-                        else None
-                    ),
-                    "modified": (
-                        stix_relationship.modified.isoformat()
-                        if hasattr(stix_relationship, "modified")
-                        else None
-                    ),
-                    "confidence": getattr(stix_relationship, "confidence", None),
-                }
+                        "created": (
+                            stix_relationship.created.isoformat()
+                            if hasattr(stix_relationship, "created")
+                            else None
+                        ),
+                        "modified": (
+                            stix_relationship.modified.isoformat()
+                            if hasattr(stix_relationship, "modified")
+                            else None
+                        ),
+                        "confidence": getattr(stix_relationship, "confidence", None),
+                    }
                 break
 
     def _handle_mitigates_relationship_with_stix2(

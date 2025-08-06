@@ -1299,12 +1299,1355 @@ class SmartFormControls {
     }
 }
 
+/**
+ * Tools Section Component
+ * 
+ * Dynamically generates forms for all 8 MCP tools with separation between
+ * basic analysis tools and advanced threat modeling tools. Includes intelligent
+ * form generation based on tool schemas, parameter processing, and validation.
+ */
+class ToolsSection {
+    constructor(containerId) {
+        this.container = document.getElementById(containerId);
+        this.tools = [];
+        this.isLoading = false;
+        this.hasError = false;
+        this.errorMessage = '';
+        
+        // Tool categories for proper separation
+        this.basicToolNames = [
+            'search_attack',
+            'get_technique', 
+            'list_tactics',
+            'get_group_techniques',
+            'get_technique_mitigations'
+        ];
+        
+        this.advancedToolNames = [
+            'build_attack_path',
+            'analyze_coverage_gaps', 
+            'detect_technique_relationships'
+        ];
+        
+        if (!this.container) {
+            throw new Error(`Container element with ID '${containerId}' not found`);
+        }
+    }
+    
+    /**
+     * Render the tools section with all forms
+     */
+    async render() {
+        try {
+            this.isLoading = true;
+            this.hasError = false;
+            this.renderLoadingState();
+            
+            // Fetch tools information
+            this.tools = await api.getTools();
+            
+            this.isLoading = false;
+            this.renderToolsSection();
+            this.setupEventListeners();
+            
+        } catch (error) {
+            console.error('Failed to render tools section:', error);
+            this.isLoading = false;
+            this.hasError = true;
+            this.errorMessage = error.message || 'Failed to load tools';
+            this.renderError();
+        }
+    }
+    
+    /**
+     * Render loading state
+     */
+    renderLoadingState() {
+        this.container.innerHTML = `
+            <div class="tools-section-loading">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="loading-skeleton" style="height: 1.5rem; width: 180px;"></div>
+                            </div>
+                            <div class="card-body">
+                                <div class="loading-skeleton mb-3" style="height: 4rem;"></div>
+                                <div class="loading-skeleton mb-3" style="height: 4rem;"></div>
+                                <div class="loading-skeleton" style="height: 4rem;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="loading-skeleton" style="height: 1.5rem; width: 220px;"></div>
+                            </div>
+                            <div class="card-body">
+                                <div class="loading-skeleton mb-3" style="height: 4rem;"></div>
+                                <div class="loading-skeleton mb-3" style="height: 4rem;"></div>
+                                <div class="loading-skeleton" style="height: 4rem;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    /**
+     * Render error state
+     */
+    renderError() {
+        this.container.innerHTML = `
+            <div class="alert alert-danger" role="alert">
+                <div class="d-flex align-items-center mb-2">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <strong>Failed to Load Tools</strong>
+                </div>
+                <p class="mb-3">${this.errorMessage}</p>
+                <button type="button" class="btn btn-outline-danger" id="retry-tools">
+                    <i class="bi bi-arrow-clockwise me-1"></i>
+                    Retry
+                </button>
+            </div>
+        `;
+        
+        // Setup retry button
+        document.getElementById('retry-tools').addEventListener('click', () => {
+            this.render();
+        });
+    }
+    
+    /**
+     * Render the complete tools section
+     */
+    renderToolsSection() {
+        const basicTools = this.tools.filter(tool => this.basicToolNames.includes(tool.name));
+        const advancedTools = this.tools.filter(tool => this.advancedToolNames.includes(tool.name));
+        
+        this.container.innerHTML = `
+            <div class="tools-section">
+                <div class="row">
+                    <!-- Basic Analysis Tools -->
+                    <div class="col-lg-6 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="card-title mb-0">
+                                    <i class="bi bi-search me-2"></i>
+                                    Basic Analysis Tools
+                                </h5>
+                                <small class="opacity-75">Fundamental threat intelligence queries</small>
+                            </div>
+                            <div class="card-body">
+                                ${this.renderToolsGroup(basicTools)}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Advanced Threat Modeling Tools -->
+                    <div class="col-lg-6 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header bg-success text-white">
+                                <h5 class="card-title mb-0">
+                                    <i class="bi bi-diagram-3 me-2"></i>
+                                    Advanced Threat Modeling
+                                </h5>
+                                <small class="opacity-75">Complex analysis and relationship discovery</small>
+                            </div>
+                            <div class="card-body">
+                                ${this.renderToolsGroup(advancedTools)}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    /**
+     * Render a group of tools
+     */
+    renderToolsGroup(tools) {
+        if (!tools || tools.length === 0) {
+            return '<p class="text-muted">No tools available</p>';
+        }
+        
+        return tools.map(tool => this.renderToolForm(tool)).join('');
+    }
+    
+    /**
+     * Render a single tool form
+     */
+    renderToolForm(tool) {
+        const toolId = `tool-${tool.name}`;
+        const isAdvanced = this.advancedToolNames.includes(tool.name);
+        
+        return `
+            <div class="tool-form-container mb-4 pb-4 border-bottom">
+                <div class="tool-header mb-3">
+                    <h6 class="tool-title">
+                        ${this.getToolIcon(tool.name)} ${this.formatToolName(tool.name)}
+                        ${isAdvanced ? '<span class="badge bg-warning text-dark ms-2">Advanced</span>' : ''}
+                    </h6>
+                    <p class="tool-description text-muted small mb-2">
+                        ${tool.description || 'No description available'}
+                    </p>
+                </div>
+                
+                <form class="tool-form" data-tool="${tool.name}" id="${toolId}">
+                    ${this.generateFormFields(tool)}
+                    <div class="form-actions mt-3">
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            <i class="bi bi-play-fill me-1"></i>
+                            Execute
+                        </button>
+                        <button type="reset" class="btn btn-outline-secondary btn-sm ms-2">
+                            <i class="bi bi-arrow-clockwise me-1"></i>
+                            Reset
+                        </button>
+                    </div>
+                </form>
+            </div>
+        `;
+    }
+    
+    /**
+     * Generate form fields based on tool schema
+     */
+    generateFormFields(tool) {
+        if (!tool.inputSchema || !tool.inputSchema.properties) {
+            return '<p class="text-muted small">No parameters required</p>';
+        }
+        
+        const properties = tool.inputSchema.properties;
+        const required = tool.inputSchema.required || [];
+        
+        return Object.entries(properties).map(([key, prop]) => {
+            const isRequired = required.includes(key);
+            const fieldId = `${tool.name}-${key}`;
+            
+            return `
+                <div class="mb-3">
+                    <label for="${fieldId}" class="form-label">
+                        ${this.formatFieldLabel(key)}
+                        ${isRequired ? '<span class="text-danger">*</span>' : ''}
+                    </label>
+                    ${this.generateInputField(fieldId, key, prop, tool.name)}
+                    ${prop.description ? `<div class="form-text">${prop.description}</div>` : ''}
+                </div>
+            `;
+        }).join('');
+    }
+    
+    /**
+     * Generate appropriate input field based on property type
+     */
+    generateInputField(fieldId, key, prop, toolName) {
+        const baseClasses = 'form-control';
+        const smartControl = this.getSmartControlType(key);
+        const classes = smartControl ? `${baseClasses} ${smartControl}` : baseClasses;
+        
+        if (prop.type === 'array') {
+            return `
+                <textarea 
+                    class="${classes}" 
+                    id="${fieldId}" 
+                    name="${key}" 
+                    rows="3" 
+                    placeholder="Enter values separated by commas or new lines"
+                    data-type="array"
+                ></textarea>
+            `;
+        } else if (prop.enum && prop.enum.length > 0) {
+            const options = prop.enum.map(value => 
+                `<option value="${value}">${value}</option>`
+            ).join('');
+            return `
+                <select class="form-select ${smartControl || ''}" id="${fieldId}" name="${key}">
+                    <option value="">Select an option...</option>
+                    ${options}
+                </select>
+            `;
+        } else if (smartControl) {
+            return `
+                <select class="form-select ${smartControl}" id="${fieldId}" name="${key}" data-smart-control="${smartControl.replace('-select', '')}">
+                    <option value="">Select...</option>
+                </select>
+            `;
+        } else if (prop.type === 'boolean') {
+            return `
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="${fieldId}" name="${key}">
+                    <label class="form-check-label" for="${fieldId}">
+                        Enable
+                    </label>
+                </div>
+            `;
+        } else if (prop.type === 'number' || prop.type === 'integer') {
+            return `
+                <input 
+                    type="number" 
+                    class="${classes}" 
+                    id="${fieldId}" 
+                    name="${key}" 
+                    placeholder="${prop.description || 'Enter a number'}"
+                    ${prop.minimum ? `min="${prop.minimum}"` : ''}
+                    ${prop.maximum ? `max="${prop.maximum}"` : ''}
+                >
+            `;
+        } else {
+            return `
+                <input 
+                    type="text" 
+                    class="${classes}" 
+                    id="${fieldId}" 
+                    name="${key}" 
+                    placeholder="${prop.description || 'Enter value'}"
+                >
+            `;
+        }
+    }
+    
+    /**
+     * Get smart control type for field names
+     */
+    getSmartControlType(fieldName) {
+        const lowerField = fieldName.toLowerCase();
+        
+        if (lowerField.includes('group')) {
+            return 'group-select';
+        } else if (lowerField.includes('tactic')) {
+            return 'tactic-select';
+        } else if (lowerField.includes('technique')) {
+            return 'technique-autocomplete';
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Get appropriate icon for tool
+     */
+    getToolIcon(toolName) {
+        const icons = {
+            'search_attack': '<i class="bi bi-search"></i>',
+            'get_technique': '<i class="bi bi-bullseye"></i>',
+            'list_tactics': '<i class="bi bi-list-ul"></i>',
+            'get_group_techniques': '<i class="bi bi-people-fill"></i>',
+            'get_technique_mitigations': '<i class="bi bi-shield-check"></i>',
+            'build_attack_path': '<i class="bi bi-diagram-2"></i>',
+            'analyze_coverage_gaps': '<i class="bi bi-graph-up-arrow"></i>',
+            'detect_technique_relationships': '<i class="bi bi-bezier2"></i>'
+        };
+        
+        return icons[toolName] || '<i class="bi bi-gear"></i>';
+    }
+    
+    /**
+     * Format tool name for display
+     */
+    formatToolName(toolName) {
+        return toolName
+            .replace(/_/g, ' ')
+            .replace(/\b\w/g, l => l.toUpperCase());
+    }
+    
+    /**
+     * Format field label for display
+     */
+    formatFieldLabel(key) {
+        return key
+            .replace(/_/g, ' ')
+            .replace(/\b\w/g, l => l.toUpperCase());
+    }
+    
+    /**
+     * Setup event listeners for form interactions
+     */
+    setupEventListeners() {
+        const forms = this.container.querySelectorAll('.tool-form');
+        
+        forms.forEach(form => {
+            // Form submission
+            form.addEventListener('submit', this.handleFormSubmit.bind(this));
+            
+            // Form reset
+            form.addEventListener('reset', this.handleFormReset.bind(this));
+            
+            // Real-time validation
+            const inputs = form.querySelectorAll('input, select, textarea');
+            inputs.forEach(input => {
+                input.addEventListener('blur', () => this.validateField(input));
+                input.addEventListener('input', () => {
+                    if (input.classList.contains('is-invalid')) {
+                        this.validateField(input);
+                    }
+                });
+            });
+        });
+    }
+    
+    /**
+     * Handle form submission
+     */
+    async handleFormSubmit(event) {
+        event.preventDefault();
+        
+        const form = event.target;
+        const toolName = form.dataset.tool;
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const originalBtnContent = submitBtn.innerHTML;
+        
+        try {
+            // Validate form
+            if (!this.validateForm(form)) {
+                return;
+            }
+            
+            // Show loading state
+            this.setFormLoading(form, true);
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Executing...';
+            submitBtn.disabled = true;
+            
+            // Collect and process parameters
+            const parameters = this.collectFormParameters(form);
+            
+            // Call tool via API
+            const result = await api.callTool(toolName, parameters);
+            
+            // Display result
+            if (window.resultsSection) {
+                window.resultsSection.displayResult(result, toolName);
+            } else {
+                console.log('Tool result:', result);
+            }
+            
+            // Show success feedback
+            this.showToast('Success', `${this.formatToolName(toolName)} executed successfully`, 'success');
+            
+        } catch (error) {
+            console.error(`Tool execution failed:`, error);
+            
+            // Display error
+            if (window.resultsSection) {
+                window.resultsSection.displayError(`${this.formatToolName(toolName)}: ${error.message}`);
+            }
+            
+            this.showToast('Error', `Failed to execute ${this.formatToolName(toolName)}: ${error.message}`, 'danger');
+            
+        } finally {
+            // Reset loading state
+            this.setFormLoading(form, false);
+            submitBtn.innerHTML = originalBtnContent;
+            submitBtn.disabled = false;
+        }
+    }
+    
+    /**
+     * Handle form reset
+     */
+    handleFormReset(event) {
+        const form = event.target;
+        
+        setTimeout(() => {
+            // Clear validation states
+            const fields = form.querySelectorAll('.form-control, .form-select');
+            fields.forEach(field => {
+                field.classList.remove('is-valid', 'is-invalid');
+            });
+            
+            // Remove validation feedback
+            const feedbacks = form.querySelectorAll('.invalid-feedback, .valid-feedback');
+            feedbacks.forEach(feedback => feedback.remove());
+            
+            form.classList.remove('was-validated');
+        }, 10);
+    }
+    
+    /**
+     * Collect and process form parameters
+     */
+    collectFormParameters(form) {
+        const formData = new FormData(form);
+        const parameters = {};
+        
+        for (const [key, value] of formData.entries()) {
+            if (value.trim()) {
+                const field = form.querySelector(`[name="${key}"]`);
+                const dataType = field?.dataset?.type;
+                
+                if (dataType === 'array') {
+                    // Handle array fields (comma or newline separated)
+                    parameters[key] = value.split(/[,\n]/)
+                        .map(v => v.trim())
+                        .filter(v => v.length > 0);
+                } else if (field?.type === 'checkbox') {
+                    parameters[key] = field.checked;
+                } else if (field?.type === 'number') {
+                    parameters[key] = parseFloat(value);
+                } else {
+                    parameters[key] = value;
+                }
+            }
+        }
+        
+        return parameters;
+    }
+    
+    /**
+     * Validate form before submission
+     */
+    validateForm(form) {
+        let isValid = true;
+        const inputs = form.querySelectorAll('input, select, textarea');
+        
+        inputs.forEach(input => {
+            if (!this.validateField(input)) {
+                isValid = false;
+            }
+        });
+        
+        form.classList.add('was-validated');
+        return isValid;
+    }
+    
+    /**
+     * Validate individual field
+     */
+    validateField(field) {
+        const isRequired = field.hasAttribute('required') || 
+                          field.labels?.[0]?.textContent?.includes('*');
+        const value = field.type === 'checkbox' ? field.checked : field.value.trim();
+        
+        let isValid = true;
+        let errorMessage = '';
+        
+        // Required field validation
+        if (isRequired && !value) {
+            isValid = false;
+            errorMessage = 'This field is required';
+        }
+        
+        // Type-specific validation
+        if (value && field.dataset?.type === 'array') {
+            const arrayValues = value.split(/[,\n]/).map(v => v.trim()).filter(v => v);
+            if (arrayValues.length === 0) {
+                isValid = false;
+                errorMessage = 'Please provide at least one value';
+            }
+        }
+        
+        if (value && field.type === 'number') {
+            const numValue = parseFloat(value);
+            if (isNaN(numValue)) {
+                isValid = false;
+                errorMessage = 'Please enter a valid number';
+            } else if (field.min && numValue < parseFloat(field.min)) {
+                isValid = false;
+                errorMessage = `Value must be at least ${field.min}`;
+            } else if (field.max && numValue > parseFloat(field.max)) {
+                isValid = false;
+                errorMessage = `Value must be at most ${field.max}`;
+            }
+        }
+        
+        // Update field validation state
+        this.updateFieldValidation(field, isValid, errorMessage);
+        
+        return isValid;
+    }
+    
+    /**
+     * Update field validation visual state
+     */
+    updateFieldValidation(field, isValid, errorMessage) {
+        // Remove existing validation classes
+        field.classList.remove('is-valid', 'is-invalid');
+        
+        // Add appropriate class
+        if (field.value.trim() || field.type === 'checkbox') {
+            field.classList.add(isValid ? 'is-valid' : 'is-invalid');
+        }
+        
+        // Update feedback message
+        this.updateValidationFeedback(field, errorMessage, isValid);
+    }
+    
+    /**
+     * Update validation feedback message
+     */
+    updateValidationFeedback(field, message, isValid) {
+        // Remove existing feedback
+        const existingFeedback = field.parentElement.querySelector('.invalid-feedback, .valid-feedback');
+        if (existingFeedback) {
+            existingFeedback.remove();
+        }
+        
+        if (!isValid && message) {
+            const feedback = document.createElement('div');
+            feedback.className = 'invalid-feedback';
+            feedback.textContent = message;
+            field.parentElement.appendChild(feedback);
+        }
+    }
+    
+    /**
+     * Set form loading state
+     */
+    setFormLoading(form, isLoading) {
+        const fields = form.querySelectorAll('input, select, textarea, button');
+        
+        fields.forEach(field => {
+            if (isLoading) {
+                field.disabled = true;
+                if (field.type !== 'submit') {
+                    field.style.opacity = '0.6';
+                }
+            } else {
+                field.disabled = false;
+                field.style.opacity = '';
+            }
+        });
+        
+        if (isLoading) {
+            form.classList.add('loading');
+        } else {
+            form.classList.remove('loading');
+        }
+    }
+    
+    /**
+     * Show toast notification
+     */
+    showToast(title, message, type = 'info') {
+        // Create toast container if it doesn't exist
+        let container = document.querySelector('.toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.className = 'toast-container position-fixed top-0 end-0 p-3';
+            document.body.appendChild(container);
+        }
+        
+        // Create toast
+        const toast = document.createElement('div');
+        toast.className = `toast align-items-center text-white bg-${type} border-0`;
+        toast.setAttribute('role', 'alert');
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    <strong>${title}:</strong> ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        `;
+        
+        container.appendChild(toast);
+        
+        // Show toast
+        const bsToast = new bootstrap.Toast(toast, { delay: 4000 });
+        bsToast.show();
+        
+        // Remove from DOM after hiding
+        toast.addEventListener('hidden.bs.toast', () => {
+            toast.remove();
+        });
+    }
+    
+    /**
+     * Get tools data
+     */
+    getTools() {
+        return this.tools;
+    }
+    
+    /**
+     * Check if tools section is loading
+     */
+    isLoadingTools() {
+        return this.isLoading;
+    }
+    
+    /**
+     * Check if tools section has error
+     */
+    hasErrorState() {
+        return this.hasError;
+    }
+    
+    /**
+     * Refresh tools section
+     */
+    async refresh() {
+        await this.render();
+    }
+    
+    /**
+     * Destroy and cleanup
+     */
+    destroy() {
+        if (this.container) {
+            this.container.innerHTML = '';
+        }
+    }
+}
+
+/**
+ * Results Section Component
+ * 
+ * Professional results display system with responsive output area, syntax highlighting,
+ * copy/download functionality, timestamp display, error handling, and toast notifications.
+ */
+class ResultsSection {
+    constructor(containerId) {
+        this.container = document.getElementById(containerId);
+        this.currentResult = null;
+        this.resultHistory = [];
+        this.maxHistorySize = 10;
+        
+        if (!this.container) {
+            throw new Error(`Container element with ID '${containerId}' not found`);
+        }
+        
+        // Make instance globally available for tool forms
+        window.resultsSection = this;
+        
+        this.render();
+    }
+    
+    /**
+     * Initial render of results section
+     */
+    render() {
+        this.container.innerHTML = `
+            <div class="results-section">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-terminal me-2"></i>
+                            Analysis Results
+                        </h5>
+                        <div class="btn-toolbar" role="toolbar">
+                            <div class="btn-group me-2" role="group">
+                                <button type="button" class="btn btn-outline-secondary btn-sm" id="copy-result" title="Copy to clipboard">
+                                    <i class="bi bi-clipboard"></i>
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" id="download-result" title="Download as file">
+                                    <i class="bi bi-download"></i>
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" id="clear-result" title="Clear results">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-outline-info btn-sm" id="toggle-history" title="Show history">
+                                    <i class="bi bi-clock-history"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="output-area" id="output-area">
+                            ${this.getPlaceholderContent()}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- History Panel (Initially Hidden) -->
+                <div class="card mt-3" id="history-panel" style="display: none;">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">
+                            <i class="bi bi-clock-history me-2"></i>
+                            Result History
+                        </h6>
+                    </div>
+                    <div class="card-body" id="history-content">
+                        <p class="text-muted">No previous results</p>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        this.setupEventListeners();
+    }
+    
+    /**
+     * Get placeholder content for empty state
+     */
+    getPlaceholderContent() {
+        return `
+            <div class="output-placeholder d-flex flex-column align-items-center justify-content-center py-5">
+                <i class="bi bi-terminal display-1 text-muted mb-3"></i>
+                <h6 class="text-muted mb-2">Ready for Analysis</h6>
+                <p class="text-muted text-center">
+                    Execute any tool above to see results here.<br>
+                    Results will be formatted with syntax highlighting and timestamps.
+                </p>
+            </div>
+        `;
+    }
+    
+    /**
+     * Setup event listeners for result actions
+     */
+    setupEventListeners() {
+        // Copy button
+        document.getElementById('copy-result').addEventListener('click', () => {
+            this.copyToClipboard();
+        });
+        
+        // Download button  
+        document.getElementById('download-result').addEventListener('click', () => {
+            this.downloadResult();
+        });
+        
+        // Clear button
+        document.getElementById('clear-result').addEventListener('click', () => {
+            this.clearResults();
+        });
+        
+        // History toggle
+        document.getElementById('toggle-history').addEventListener('click', () => {
+            this.toggleHistory();
+        });
+    }
+    
+    /**
+     * Display a successful result
+     */
+    displayResult(result, toolName, timestamp = null) {
+        const resultTimestamp = timestamp || new Date();
+        
+        // Store in history
+        this.addToHistory(result, toolName, resultTimestamp);
+        
+        // Update current result
+        this.currentResult = {
+            data: result,
+            toolName: toolName,
+            timestamp: resultTimestamp,
+            type: 'success'
+        };
+        
+        // Render result
+        const outputArea = document.getElementById('output-area');
+        outputArea.innerHTML = this.getResultTemplate(result, toolName, resultTimestamp, 'success');
+        
+        // Enable action buttons
+        this.updateActionButtons(true);
+        
+        // Scroll to results
+        this.scrollToResults();
+        
+        // Show success toast
+        this.showToast('Success', `${toolName} completed successfully`, 'success');
+    }
+    
+    /**
+     * Display an error result
+     */
+    displayError(error, toolName = null, timestamp = null) {
+        const resultTimestamp = timestamp || new Date();
+        const errorMessage = typeof error === 'string' ? error : error.message || 'Unknown error occurred';
+        
+        // Store in history
+        this.addToHistory(errorMessage, toolName || 'Error', resultTimestamp, 'error');
+        
+        // Update current result
+        this.currentResult = {
+            data: errorMessage,
+            toolName: toolName || 'Error',
+            timestamp: resultTimestamp,
+            type: 'error'
+        };
+        
+        // Render error
+        const outputArea = document.getElementById('output-area');
+        outputArea.innerHTML = this.getErrorTemplate(errorMessage, toolName, resultTimestamp);
+        
+        // Enable action buttons
+        this.updateActionButtons(true);
+        
+        // Scroll to results
+        this.scrollToResults();
+        
+        // Show error toast
+        this.showToast('Error', errorMessage, 'danger');
+    }
+    
+    /**
+     * Get result template for successful results
+     */
+    getResultTemplate(result, toolName, timestamp, type) {
+        const formattedTimestamp = this.formatTimestamp(timestamp);
+        const formattedResult = this.formatResult(result);
+        const statusBadge = type === 'error' ? 'danger' : 'success';
+        const statusIcon = type === 'error' ? 'bi-exclamation-triangle' : 'bi-check-circle';
+        
+        return `
+            <div class="result-content">
+                <div class="result-header p-3 bg-light border-bottom">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center">
+                            <span class="badge bg-${statusBadge} me-2">
+                                <i class="bi ${statusIcon} me-1"></i>
+                                ${toolName}
+                            </span>
+                            <span class="text-muted small">
+                                <i class="bi bi-clock me-1"></i>
+                                ${formattedTimestamp}
+                            </span>
+                        </div>
+                        <div class="result-stats text-muted small">
+                            ${this.getResultStats(result)}
+                        </div>
+                    </div>
+                </div>
+                <div class="result-body">
+                    <pre class="result-output"><code>${formattedResult}</code></pre>
+                </div>
+            </div>
+        `;
+    }
+    
+    /**
+     * Get error template
+     */
+    getErrorTemplate(error, toolName, timestamp) {
+        const formattedTimestamp = this.formatTimestamp(timestamp);
+        
+        return `
+            <div class="result-content">
+                <div class="result-header p-3 bg-danger text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center">
+                            <span class="badge bg-light text-danger me-2">
+                                <i class="bi bi-exclamation-triangle me-1"></i>
+                                ${toolName || 'Error'}
+                            </span>
+                            <span class="small opacity-75">
+                                <i class="bi bi-clock me-1"></i>
+                                ${formattedTimestamp}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="result-body">
+                    <div class="alert alert-danger m-3 mb-0">
+                        <div class="d-flex align-items-start">
+                            <i class="bi bi-exclamation-triangle-fill text-danger me-2 mt-1"></i>
+                            <div>
+                                <strong>Execution Failed</strong>
+                                <div class="mt-2">${this.escapeHtml(error)}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    /**
+     * Format result data with syntax highlighting
+     */
+    formatResult(result) {
+        let formatted;
+        
+        try {
+            // Try to parse as JSON for pretty formatting
+            let data;
+            if (typeof result === 'string') {
+                try {
+                    data = JSON.parse(result);
+                } catch {
+                    data = result;
+                }
+            } else {
+                data = result;
+            }
+            
+            if (typeof data === 'object') {
+                formatted = JSON.stringify(data, null, 2);
+            } else {
+                formatted = String(data);
+            }
+            
+            // Apply basic syntax highlighting for JSON
+            if (formatted.includes('{') || formatted.includes('[')) {
+                formatted = this.applySyntaxHighlighting(formatted);
+            }
+            
+        } catch (e) {
+            formatted = String(result);
+        }
+        
+        return formatted;
+    }
+    
+    /**
+     * Apply basic syntax highlighting to JSON
+     */
+    applySyntaxHighlighting(json) {
+        return json
+            .replace(/(".*?")\s*:/g, '<span class="json-key">$1</span>:') // Keys
+            .replace(/:\s*(".*?")/g, ': <span class="json-string">$1</span>') // String values
+            .replace(/:\s*(\d+\.?\d*)/g, ': <span class="json-number">$1</span>') // Numbers
+            .replace(/:\s*(true|false|null)/g, ': <span class="json-boolean">$1</span>'); // Booleans/null
+    }
+    
+    /**
+     * Get statistics about the result
+     */
+    getResultStats(result) {
+        try {
+            const text = typeof result === 'string' ? result : JSON.stringify(result);
+            const lines = text.split('\n').length;
+            const chars = text.length;
+            const size = new Blob([text]).size;
+            
+            return `${lines} lines • ${chars} characters • ${this.formatBytes(size)}`;
+        } catch {
+            return 'Result statistics unavailable';
+        }
+    }
+    
+    /**
+     * Format timestamp for display
+     */
+    formatTimestamp(timestamp) {
+        return timestamp.toLocaleString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
+    }
+    
+    /**
+     * Format bytes for display
+     */
+    formatBytes(bytes) {
+        if (bytes === 0) return '0 B';
+        
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    }
+    
+    /**
+     * Escape HTML to prevent XSS
+     */
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    /**
+     * Copy result to clipboard
+     */
+    async copyToClipboard() {
+        if (!this.currentResult) {
+            this.showToast('Info', 'No result to copy', 'info');
+            return;
+        }
+        
+        try {
+            const textToCopy = typeof this.currentResult.data === 'string' 
+                ? this.currentResult.data 
+                : JSON.stringify(this.currentResult.data, null, 2);
+            
+            await navigator.clipboard.writeText(textToCopy);
+            this.showToast('Success', 'Result copied to clipboard', 'success');
+            
+            // Visual feedback on button
+            const copyBtn = document.getElementById('copy-result');
+            const originalIcon = copyBtn.innerHTML;
+            copyBtn.innerHTML = '<i class="bi bi-check"></i>';
+            setTimeout(() => {
+                copyBtn.innerHTML = originalIcon;
+            }, 1000);
+            
+        } catch (error) {
+            console.error('Failed to copy:', error);
+            this.showToast('Error', 'Failed to copy to clipboard', 'danger');
+        }
+    }
+    
+    /**
+     * Download result as file
+     */
+    downloadResult() {
+        if (!this.currentResult) {
+            this.showToast('Info', 'No result to download', 'info');
+            return;
+        }
+        
+        try {
+            const content = typeof this.currentResult.data === 'string' 
+                ? this.currentResult.data 
+                : JSON.stringify(this.currentResult.data, null, 2);
+            
+            const blob = new Blob([content], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${this.currentResult.toolName}_${this.formatTimestamp(this.currentResult.timestamp).replace(/[/:,\s]/g, '-')}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            
+            URL.revokeObjectURL(url);
+            
+            this.showToast('Success', 'Result downloaded successfully', 'success');
+            
+        } catch (error) {
+            console.error('Failed to download:', error);
+            this.showToast('Error', 'Failed to download result', 'danger');
+        }
+    }
+    
+    /**
+     * Clear all results
+     */
+    clearResults() {
+        this.currentResult = null;
+        
+        const outputArea = document.getElementById('output-area');
+        outputArea.innerHTML = this.getPlaceholderContent();
+        
+        // Disable action buttons
+        this.updateActionButtons(false);
+        
+        // Hide history panel
+        document.getElementById('history-panel').style.display = 'none';
+        
+        this.showToast('Info', 'Results cleared', 'info');
+    }
+    
+    /**
+     * Update action button states
+     */
+    updateActionButtons(enabled) {
+        const buttons = ['copy-result', 'download-result'];
+        buttons.forEach(id => {
+            const btn = document.getElementById(id);
+            btn.disabled = !enabled;
+            if (enabled) {
+                btn.classList.remove('disabled');
+            } else {
+                btn.classList.add('disabled');
+            }
+        });
+    }
+    
+    /**
+     * Add result to history
+     */
+    addToHistory(data, toolName, timestamp, type = 'success') {
+        const historyItem = {
+            data,
+            toolName,
+            timestamp,
+            type,
+            id: Date.now() + Math.random()
+        };
+        
+        this.resultHistory.unshift(historyItem);
+        
+        // Limit history size
+        if (this.resultHistory.length > this.maxHistorySize) {
+            this.resultHistory = this.resultHistory.slice(0, this.maxHistorySize);
+        }
+        
+        this.updateHistoryDisplay();
+    }
+    
+    /**
+     * Toggle history panel visibility
+     */
+    toggleHistory() {
+        const panel = document.getElementById('history-panel');
+        const btn = document.getElementById('toggle-history');
+        
+        if (panel.style.display === 'none') {
+            panel.style.display = 'block';
+            btn.innerHTML = '<i class="bi bi-eye-slash"></i>';
+            btn.title = 'Hide history';
+        } else {
+            panel.style.display = 'none';
+            btn.innerHTML = '<i class="bi bi-clock-history"></i>';
+            btn.title = 'Show history';
+        }
+    }
+    
+    /**
+     * Update history display
+     */
+    updateHistoryDisplay() {
+        const historyContent = document.getElementById('history-content');
+        
+        if (this.resultHistory.length === 0) {
+            historyContent.innerHTML = '<p class="text-muted">No previous results</p>';
+            return;
+        }
+        
+        const historyItems = this.resultHistory.map((item, index) => {
+            const badge = item.type === 'error' ? 'danger' : 'success';
+            const icon = item.type === 'error' ? 'bi-exclamation-triangle' : 'bi-check-circle';
+            
+            return `
+                <div class="history-item border rounded p-2 mb-2 ${item.type === 'error' ? 'border-danger' : ''}" data-id="${item.id}">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="badge bg-${badge}">
+                            <i class="bi ${icon} me-1"></i>
+                            ${item.toolName}
+                        </span>
+                        <small class="text-muted">${this.formatTimestamp(item.timestamp)}</small>
+                    </div>
+                    <div class="history-preview small text-muted" style="max-height: 60px; overflow: hidden;">
+                        ${this.getHistoryPreview(item.data)}
+                    </div>
+                    <div class="mt-1">
+                        <button class="btn btn-sm btn-outline-secondary" onclick="resultsSection.restoreFromHistory('${item.id}')">
+                            <i class="bi bi-arrow-up-square"></i> Restore
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        
+        historyContent.innerHTML = historyItems;
+    }
+    
+    /**
+     * Get preview text for history item
+     */
+    getHistoryPreview(data) {
+        const text = typeof data === 'string' ? data : JSON.stringify(data);
+        const preview = text.substring(0, 100);
+        return this.escapeHtml(preview) + (text.length > 100 ? '...' : '');
+    }
+    
+    /**
+     * Restore result from history
+     */
+    restoreFromHistory(historyId) {
+        const historyItem = this.resultHistory.find(item => item.id == historyId);
+        if (!historyItem) return;
+        
+        if (historyItem.type === 'error') {
+            this.displayError(historyItem.data, historyItem.toolName, historyItem.timestamp);
+        } else {
+            this.displayResult(historyItem.data, historyItem.toolName, historyItem.timestamp);
+        }
+        
+        this.showToast('Info', 'Result restored from history', 'info');
+    }
+    
+    /**
+     * Scroll to results area
+     */
+    scrollToResults() {
+        this.container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    
+    /**
+     * Show toast notification
+     */
+    showToast(title, message, type = 'info') {
+        // Create toast container if it doesn't exist
+        let container = document.querySelector('.toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.className = 'toast-container position-fixed top-0 end-0 p-3';
+            container.style.zIndex = '9999';
+            document.body.appendChild(container);
+        }
+        
+        // Create toast
+        const toast = document.createElement('div');
+        toast.className = `toast align-items-center text-white bg-${type} border-0`;
+        toast.setAttribute('role', 'alert');
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    <strong>${title}:</strong> ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        `;
+        
+        container.appendChild(toast);
+        
+        // Show toast
+        const bsToast = new bootstrap.Toast(toast, { delay: 3000 });
+        bsToast.show();
+        
+        // Remove from DOM after hiding
+        toast.addEventListener('hidden.bs.toast', () => {
+            toast.remove();
+        });
+    }
+    
+    /**
+     * Get current result
+     */
+    getCurrentResult() {
+        return this.currentResult;
+    }
+    
+    /**
+     * Get result history
+     */
+    getHistory() {
+        return this.resultHistory;
+    }
+    
+    /**
+     * Clear history
+     */
+    clearHistory() {
+        this.resultHistory = [];
+        this.updateHistoryDisplay();
+        this.showToast('Info', 'History cleared', 'info');
+    }
+    
+    /**
+     * Check if results section has content
+     */
+    hasResults() {
+        return this.currentResult !== null;
+    }
+    
+    /**
+     * Destroy and cleanup
+     */
+    destroy() {
+        if (this.container) {
+            this.container.innerHTML = '';
+        }
+        
+        // Remove global reference
+        if (window.resultsSection === this) {
+            delete window.resultsSection;
+        }
+    }
+}
+
 // Export for use in other modules
 if (typeof module !== 'undefined' && module.exports) {
     // Node.js environment
-    module.exports = { SystemDashboard, SmartFormControls };
+    module.exports = { SystemDashboard, SmartFormControls, ToolsSection, ResultsSection };
 } else {
     // Browser environment - attach to window
     window.SystemDashboard = SystemDashboard;
     window.SmartFormControls = SmartFormControls;
+    window.ToolsSection = ToolsSection;
+    window.ResultsSection = ResultsSection;
 }

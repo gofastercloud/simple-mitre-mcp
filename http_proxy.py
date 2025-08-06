@@ -538,7 +538,7 @@ class HTTPProxy:
         """
         if not groups_data:
             return []
-            
+
         formatted_groups = []
 
         for group in groups_data:
@@ -587,7 +587,7 @@ class HTTPProxy:
         """
         if not tactics_data:
             return []
-            
+
         formatted_tactics = []
 
         for tactic in tactics_data:
@@ -629,12 +629,12 @@ class HTTPProxy:
         """
         if not techniques_data or not query:
             return []
-            
+
         matching_techniques = []
 
         for technique in techniques_data:
             technique_name = technique.get("name", "")
-            
+
             # Extract MITRE ATT&CK ID from external references
             technique_id = ""
             external_refs = technique.get("external_references", [])
@@ -642,7 +642,7 @@ class HTTPProxy:
                 if ref.get("source_name") == "mitre-attack":
                     technique_id = ref.get("external_id", "")
                     break
-            
+
             # Fallback to using the STIX ID if no MITRE ID found
             if not technique_id:
                 technique_id = technique.get("id", "")

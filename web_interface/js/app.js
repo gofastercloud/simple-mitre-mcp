@@ -1,10 +1,17 @@
-// MITRE ATT&CK MCP Explorer JavaScript
+/**
+ * MITRE ATT&CK Intelligence Platform - Main Application
+ * 
+ * This is the main application entry point that coordinates all components
+ * and handles the overall application lifecycle.
+ */
 
-// Global state
+// Global state and component instances
 let isConnected = false;
 let currentTool = '';
 let systemDashboard = null;
 let smartFormControls = null;
+let toolsSection = null;
+let resultsSection = null;
 
 // Demo configurations
 const demos = {
@@ -65,35 +72,137 @@ const demos = {
     }
 };
 
-// Initialize the application
+/**
+ * Initialize the application when DOM is loaded
+ */
 document.addEventListener('DOMContentLoaded', async function() {
-    // Initialize system dashboard
+    console.log('🚀 Initializing MITRE ATT&CK Intelligence Platform...');
+    
+    try {
+        await initializeApplication();
+        console.log('✅ Application initialized successfully');
+    } catch (error) {
+        console.error('❌ Application initialization failed:', error);
+        showApplicationError('Failed to initialize application. Please refresh the page.');
+    }
+});
+
+/**
+ * Initialize all application components
+ */
+async function initializeApplication() {
+    // Initialize components in sequence for better error handling
+    
+    // 1. Initialize system dashboard
+    console.log('Initializing system dashboard...');
     try {
         systemDashboard = new SystemDashboard('system-dashboard');
         await systemDashboard.render();
+        console.log('✅ System dashboard initialized');
     } catch (error) {
-        console.error('Failed to initialize system dashboard:', error);
+        console.error('❌ System dashboard initialization failed:', error);
+        throw new Error('System dashboard initialization failed');
     }
     
-    // Initialize smart form controls
+    // 2. Initialize tools section
+    console.log('Initializing tools section...');
+    try {
+        toolsSection = new ToolsSection('tools-section');
+        await toolsSection.render();
+        console.log('✅ Tools section initialized');
+    } catch (error) {
+        console.error('❌ Tools section initialization failed:', error);
+        throw new Error('Tools section initialization failed');
+    }
+    
+    // 3. Initialize results section
+    console.log('Initializing results section...');
+    try {
+        resultsSection = new ResultsSection('results-section');
+        console.log('✅ Results section initialized');
+    } catch (error) {
+        console.error('❌ Results section initialization failed:', error);
+        throw new Error('Results section initialization failed');
+    }
+    
+    // 4. Initialize smart form controls (after tools section is rendered)
+    console.log('Initializing smart form controls...');
     try {
         smartFormControls = new SmartFormControls();
         await smartFormControls.initialize();
-        console.log('Smart form controls initialized successfully');
+        console.log('✅ Smart form controls initialized');
     } catch (error) {
-        console.error('Failed to initialize smart form controls:', error);
+        console.error('❌ Smart form controls initialization failed:', error);
+        // Don't throw here as this is not critical for basic functionality
+        console.warn('Some form features may not work properly');
     }
     
-    // Set up connection monitoring
+    // 5. Set up connection monitoring
+    console.log('Setting up connection monitoring...');
     checkConnection();
     setInterval(checkConnection, 30000); // Check every 30 seconds
     
+    // 6. Set up event listeners
+    console.log('Setting up event listeners...');
+    setupEventListeners();
+}
+
+/**
+ * Setup global event listeners
+ */
+function setupEventListeners() {
     // Listen for dashboard stat card clicks
     const dashboardContainer = document.getElementById('system-dashboard');
     if (dashboardContainer) {
         dashboardContainer.addEventListener('statCardClick', handleStatCardClick);
     }
-});
+    
+    // Listen for application-level errors
+    window.addEventListener('error', handleGlobalError);
+    window.addEventListener('unhandledrejection', handleGlobalError);
+}
+
+/**
+ * Show application-level error
+ */
+function showApplicationError(message) {
+    const appContainer = document.getElementById('app');
+    if (appContainer) {
+        appContainer.innerHTML = `
+            <div class="container-fluid py-5">
+                <div class="row justify-content-center">
+                    <div class="col-md-6">
+                        <div class="alert alert-danger text-center">
+                            <i class="bi bi-exclamation-triangle display-1 mb-3"></i>
+                            <h4>Application Error</h4>
+                            <p>${message}</p>
+                            <button class="btn btn-outline-danger" onclick="location.reload()">
+                                <i class="bi bi-arrow-clockwise me-2"></i>Reload Application
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+}
+
+/**
+ * Handle global application errors
+ */
+function handleGlobalError(event) {
+    console.error('Global application error:', event);
+    
+    // Don't show error overlay for minor issues
+    if (event.error && event.error.message && !event.error.message.includes('Failed to initialize')) {
+        return;
+    }
+    
+    // Show toast notification for global errors
+    if (typeof ResultsSection !== 'undefined' && resultsSection) {
+        resultsSection.showToast('Application Error', 'An unexpected error occurred', 'danger');
+    }
+}
 
 // Connection management
 async function checkConnection() {
