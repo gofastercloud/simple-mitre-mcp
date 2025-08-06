@@ -437,7 +437,9 @@ class ToolsSection {
             const result = await api.callTool(toolName, parameters);
             
             // Display result
-            if (window.resultsSection) {
+            if (this.resultsHandler) {
+                this.resultsHandler(result, toolName);
+            } else if (window.resultsSection) {
                 window.resultsSection.displayResult(result, toolName);
             } else {
                 console.log('Tool result:', result);
@@ -450,7 +452,14 @@ class ToolsSection {
             console.error(`Tool execution failed:`, error);
             
             // Display error
-            if (window.resultsSection) {
+            if (this.resultsHandler) {
+                // Create error result object for consistent handling
+                this.resultsHandler({
+                    success: false,
+                    error: error.message,
+                    toolName: toolName
+                }, toolName);
+            } else if (window.resultsSection) {
                 window.resultsSection.displayError(`${this.formatToolName(toolName)}: ${error.message}`);
             }
             
@@ -713,6 +722,13 @@ class ToolsSection {
      */
     async refresh() {
         await this.render();
+    }
+    
+    /**
+     * Set results handler for displaying tool execution results
+     */
+    setResultsHandler(handler) {
+        this.resultsHandler = handler;
     }
     
     /**

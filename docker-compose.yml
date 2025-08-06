@@ -1,0 +1,23 @@
+services:
+  mitre-attack-mcp:
+    build: .
+    container_name: mitre-attack-mcp
+    ports:
+      # Web interface accessible from external network
+      - "8080:8080"
+      # API accessible from external network  
+      - "8000:8000"
+    volumes:
+      # Persist logs outside container
+      - "./logs:/app/logs"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - MCP_HTTP_HOST=0.0.0.0
+      - MCP_HTTP_PORT=8000
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/", "&&", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s

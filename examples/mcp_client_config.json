@@ -1,11 +1,12 @@
 {
   "mcpServers": {
     "mitre-attack": {
-      "command": "python",
+      "command": "uv",
       "args": [
+        "run",
         "src/main_stdio.py"
       ],
-      "cwd": "/path/to/simple-mitre-mcp",
+      "cwd": "/Users/gofastercloud/Code/projects/MCP/simple-mitre-mcp",
       "env": {
         "PYTHONUNBUFFERED": "1"
       }
