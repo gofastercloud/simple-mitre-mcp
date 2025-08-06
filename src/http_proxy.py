@@ -20,8 +20,14 @@ import aiohttp_cors
 
 # No need to add src to path since we're already in src
 
-from .mcp_server import create_mcp_server
-from .data_loader import DataLoader
+# Handle imports depending on how this module is called
+try:
+    from .mcp_server import create_mcp_server
+    from .data_loader import DataLoader
+except ImportError:
+    # Fallback for when run as standalone module
+    from src.mcp_server import create_mcp_server
+    from src.data_loader import DataLoader
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(name)s:%(message)s")

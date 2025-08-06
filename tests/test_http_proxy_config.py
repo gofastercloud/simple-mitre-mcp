@@ -46,7 +46,7 @@ class TestHTTPProxyConfiguration:
             assert host == "localhost", "Should use default host"
             assert port == 8000, "Should use default port"
 
-    @patch("http_proxy.create_http_proxy_server")
+    @patch("src.http_proxy.create_http_proxy_server")
     def test_http_proxy_server_creation_mock(self, mock_create_server):
         """Test HTTP proxy server creation without actual connections."""
         # Mock the server creation to avoid actual connections
@@ -72,7 +72,7 @@ class TestHTTPProxyConfiguration:
 
     def test_http_proxy_class_initialization_mock(self):
         """Test HTTP proxy class initialization with mocked MCP server."""
-        from http_proxy import HTTPProxy
+        from src.http_proxy import HTTPProxy
 
         # Create a mock MCP server
         mock_mcp_server = Mock()
@@ -89,7 +89,7 @@ class TestHTTPProxyConfiguration:
 
     def test_http_proxy_routes_setup(self):
         """Test that HTTP proxy routes are set up correctly."""
-        from http_proxy import HTTPProxy
+        from src.http_proxy import HTTPProxy
 
         mock_mcp_server = Mock()
         proxy = HTTPProxy(mock_mcp_server)
@@ -100,7 +100,7 @@ class TestHTTPProxyConfiguration:
 
     def test_http_proxy_cors_setup(self):
         """Test that CORS is set up correctly."""
-        from http_proxy import HTTPProxy
+        from src.http_proxy import HTTPProxy
 
         mock_mcp_server = Mock()
         proxy = HTTPProxy(mock_mcp_server)
@@ -184,8 +184,8 @@ class TestHTTPProxyConfiguration:
     def test_mock_server_creation_async(self):
         """Test async server creation with mocks to avoid connection issues."""
 
-        @patch("http_proxy.DataLoader")
-        @patch("http_proxy.create_mcp_server")
+        @patch("src.http_proxy.DataLoader")
+        @patch("src.http_proxy.create_mcp_server")
         @patch("aiohttp.web.AppRunner")
         @patch("aiohttp.web.TCPSite")
         async def mock_test(mock_site, mock_runner, mock_create_mcp, mock_data_loader):
