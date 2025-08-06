@@ -1548,6 +1548,11 @@ class ToolsSection {
         const smartControl = this.getSmartControlType(key);
         const classes = smartControl ? `${baseClasses} ${smartControl}` : baseClasses;
         
+        // Check if field is required based on the tool schema
+        const tool = this.tools.find(t => t.name === toolName);
+        const isRequired = tool?.inputSchema?.required?.includes(key) || false;
+        const requiredAttr = isRequired ? 'required' : '';
+        
         if (prop.type === 'array') {
             return `
                 <textarea 
@@ -1557,6 +1562,7 @@ class ToolsSection {
                     rows="3" 
                     placeholder="Enter values separated by commas or new lines"
                     data-type="array"
+                    ${requiredAttr}
                 ></textarea>
             `;
         } else if (prop.enum && prop.enum.length > 0) {
@@ -1564,21 +1570,21 @@ class ToolsSection {
                 `<option value="${value}">${value}</option>`
             ).join('');
             return `
-                <select class="form-select ${smartControl || ''}" id="${fieldId}" name="${key}">
+                <select class="form-select ${smartControl || ''}" id="${fieldId}" name="${key}" ${requiredAttr}>
                     <option value="">Select an option...</option>
                     ${options}
                 </select>
             `;
         } else if (smartControl) {
             return `
-                <select class="form-select ${smartControl}" id="${fieldId}" name="${key}" data-smart-control="${smartControl.replace('-select', '')}">
+                <select class="form-select ${smartControl}" id="${fieldId}" name="${key}" data-smart-control="${smartControl.replace('-select', '')}" ${requiredAttr}>
                     <option value="">Select...</option>
                 </select>
             `;
         } else if (prop.type === 'boolean') {
             return `
                 <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="${fieldId}" name="${key}">
+                    <input class="form-check-input" type="checkbox" id="${fieldId}" name="${key}" ${requiredAttr}>
                     <label class="form-check-label" for="${fieldId}">
                         Enable
                     </label>
@@ -1594,6 +1600,7 @@ class ToolsSection {
                     placeholder="${prop.description || 'Enter a number'}"
                     ${prop.minimum ? `min="${prop.minimum}"` : ''}
                     ${prop.maximum ? `max="${prop.maximum}"` : ''}
+                    ${requiredAttr}
                 >
             `;
         } else {
@@ -1604,6 +1611,7 @@ class ToolsSection {
                     id="${fieldId}" 
                     name="${key}" 
                     placeholder="${prop.description || 'Enter value'}"
+                    ${requiredAttr}
                 >
             `;
         }
@@ -1772,25 +1780,35 @@ class ToolsSection {
         const formData = new FormData(form);
         const parameters = {};
         
-        for (const [key, value] of formData.entries()) {
-            if (value.trim()) {
-                const field = form.querySelector(`[name="${key}"]`);
-                const dataType = field?.dataset?.type;
-                
-                if (dataType === 'array') {
-                    // Handle array fields (comma or newline separated)
-                    parameters[key] = value.split(/[,\n]/)
-                        .map(v => v.trim())
-                        .filter(v => v.length > 0);
-                } else if (field?.type === 'checkbox') {
-                    parameters[key] = field.checked;
-                } else if (field?.type === 'number') {
-                    parameters[key] = parseFloat(value);
-                } else {
-                    parameters[key] = value;
+        // Get all form fields to handle checkboxes and empty values properly
+        const allFields = form.querySelectorAll('input, select, textarea');
+        
+        allFields.forEach(field => {
+            const key = field.name;
+            if (!key) return; // Skip fields without names
+            
+            if (field.type === 'checkbox') {
+                // Always include checkbox values (true/false)
+                parameters[key] = field.checked;
+            } else {
+                // Get value from FormData for other field types
+                const value = formData.get(key);
+                if (value !== null && value.trim() !== '') {
+                    const dataType = field.dataset?.type;
+                    
+                    if (dataType === 'array') {
+                        // Handle array fields (comma or newline separated)
+                        parameters[key] = value.split(/[,\n]/)
+                            .map(v => v.trim())
+                            .filter(v => v.length > 0);
+                    } else if (field.type === 'number') {
+                        parameters[key] = parseFloat(value);
+                    } else {
+                        parameters[key] = value.trim();
+                    }
                 }
             }
-        }
+        });
         
         return parameters;
     }
