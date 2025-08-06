@@ -44,7 +44,7 @@
   - Write unit tests for data population endpoints
   - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5_
 
-- [ ] 6. Implement JavaScript API communication layer
+- [x] 6. Implement JavaScript API communication layer
   - Create `web_interface/js/api.js` with API class for all backend communication
   - Implement methods for `getSystemInfo()`, `getTools()`, `getGroups()`, `getTactics()`
   - Add `callTool()` method with proper error handling and response processing
@@ -53,7 +53,7 @@
   - Write unit tests for API communication layer
   - _Requirements: 9.1, 9.2, 9.3_
 
-- [ ] 7. Create system dashboard component
+- [-] 7. Create system dashboard component
   - Create `web_interface/js/components.js` with `SystemDashboard` class
   - Implement dashboard rendering with Bootstrap card layout and stat cards
   - Add real-time data loading and display for entity counts and system information

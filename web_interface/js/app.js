@@ -3,6 +3,7 @@
 // Global state
 let isConnected = false;
 let currentTool = '';
+let systemDashboard = null;
 
 // Demo configurations
 const demos = {
@@ -64,9 +65,24 @@ const demos = {
 };
 
 // Initialize the application
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
+    // Initialize system dashboard
+    try {
+        systemDashboard = new SystemDashboard('system-dashboard');
+        await systemDashboard.render();
+    } catch (error) {
+        console.error('Failed to initialize system dashboard:', error);
+    }
+    
+    // Set up connection monitoring
     checkConnection();
     setInterval(checkConnection, 30000); // Check every 30 seconds
+    
+    // Listen for dashboard stat card clicks
+    const dashboardContainer = document.getElementById('system-dashboard');
+    if (dashboardContainer) {
+        dashboardContainer.addEventListener('statCardClick', handleStatCardClick);
+    }
 });
 
 // Connection management
@@ -97,15 +113,29 @@ function setConnectionStatus(connected) {
     }
 }
 
+// Dashboard stat card click handler
+function handleStatCardClick(event) {
+    const { statType, systemInfo } = event.detail;
+    console.log(`Stat card clicked: ${statType}`, systemInfo);
+    
+    // Future enhancement: could navigate to specific tool or filter based on stat type
+    // For now, just log the interaction
+}
+
 // Tab management
-function switchTab(tabName) {
+function switchTab(tabName, event) {
     // Update tab buttons
     document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-    event.target.classList.add('active');
+    if (event && event.target) {
+        event.target.classList.add('active');
+    }
     
     // Update tab content
     document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-    document.getElementById(tabName + '-tab').classList.add('active');
+    const targetTab = document.getElementById(tabName + '-tab');
+    if (targetTab) {
+        targetTab.classList.add('active');
+    }
 }
 
 // Demo execution

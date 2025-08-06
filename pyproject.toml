@@ -42,6 +42,7 @@ dev-dependencies = [
     "safety>=3.6.0",
     "types-pyyaml>=6.0.12.20250516",
     "types-requests>=2.32.4.20250611",
+    "selenium>=4.34.2",
 ]
 
 [tool.pytest.ini_options]
