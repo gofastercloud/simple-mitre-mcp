@@ -34,7 +34,7 @@
   - Write unit tests for system information endpoint functionality
   - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
 
-- [ ] 5. Create data population endpoints for smart form controls
+- [x] 5. Create data population endpoints for smart form controls
   - Add `/api/groups` endpoint that returns formatted threat group data for dropdowns
   - Add `/api/tactics` endpoint that returns formatted tactic data for dropdowns
   - Add `/api/techniques` endpoint with query parameter support for autocomplete
@@ -44,7 +44,7 @@
   - Write unit tests for data population endpoints
   - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5_
 
-- [ ] 6. Implement JavaScript API communication layer
+- [x] 6. Implement JavaScript API communication layer
   - Create `web_interface/js/api.js` with API class for all backend communication
   - Implement methods for `getSystemInfo()`, `getTools()`, `getGroups()`, `getTactics()`
   - Add `callTool()` method with proper error handling and response processing

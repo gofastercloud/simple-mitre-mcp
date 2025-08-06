@@ -18,11 +18,11 @@ from aiohttp import web, web_request
 from aiohttp.web_response import Response
 import aiohttp_cors
 
-from mcp_server import create_mcp_server
-from data_loader import DataLoader
-
 # Add src directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent / "src"))
+
+from mcp_server import create_mcp_server
+from data_loader import DataLoader
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(name)s:%(message)s")
