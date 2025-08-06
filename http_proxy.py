@@ -11,17 +11,18 @@ import json
 import logging
 import os
 import sys
+from datetime import datetime
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 from aiohttp import web, web_request
 from aiohttp.web_response import Response
 import aiohttp_cors
 
-# Add src directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent / "src"))
-
 from mcp_server import create_mcp_server
 from data_loader import DataLoader
+
+# Add src directory to path for imports
+sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(name)s:%(message)s")
@@ -35,6 +36,7 @@ class HTTPProxy:
         """Initialize the HTTP proxy with an MCP server instance."""
         self.mcp_server = mcp_server
         self.app = web.Application()
+        self.startup_time = datetime.now()
         self.setup_routes()
         self.setup_cors()
 
@@ -43,10 +45,17 @@ class HTTPProxy:
         self.app.router.add_get("/", self.serve_web_interface)
         self.app.router.add_get("/tools", self.handle_tools_list)
         self.app.router.add_post("/call_tool", self.handle_tool_call)
+        self.app.router.add_get("/system_info", self.handle_system_info)
         # Add static file serving for web interface assets
-        self.app.router.add_static("/css/", Path(__file__).parent / "web_interface" / "css")
-        self.app.router.add_static("/js/", Path(__file__).parent / "web_interface" / "js")
-        self.app.router.add_static("/assets/", Path(__file__).parent / "web_interface" / "assets")
+        self.app.router.add_static(
+            "/css/", Path(__file__).parent / "web_interface" / "css"
+        )
+        self.app.router.add_static(
+            "/js/", Path(__file__).parent / "web_interface" / "js"
+        )
+        self.app.router.add_static(
+            "/assets/", Path(__file__).parent / "web_interface" / "assets"
+        )
 
     def setup_cors(self):
         """Set up CORS to allow browser requests."""
@@ -279,6 +288,123 @@ class HTTPProxy:
             logger.error(f"Error handling tool call: {e}")
             return web.json_response({"error": str(e)}, status=500)
 
+    async def handle_system_info(self, request: web_request.Request) -> Response:
+        """Handle requests for comprehensive system information."""
+        try:
+            logger.info("Executing system_info endpoint")
+
+            # Get data statistics from MCP server
+            data_stats = await self._get_data_statistics()
+
+            # Get server version from package metadata or default
+            server_version = "1.0.0"  # Could be extracted from pyproject.toml in future
+
+            system_info = {
+                "server_info": {
+                    "version": server_version,
+                    "mcp_protocol_version": "1.0",
+                    "startup_time": self.startup_time.isoformat(),
+                    "data_source": "MITRE ATT&CK Enterprise",
+                },
+                "data_statistics": data_stats,
+                "capabilities": {
+                    "basic_tools": 5,
+                    "advanced_tools": 3,
+                    "total_tools": 8,
+                    "web_interface": True,
+                    "api_access": True,
+                },
+            }
+
+            return web.json_response(system_info)
+
+        except Exception as e:
+            logger.error(f"Error getting system info: {e}")
+            return web.json_response({"error": str(e)}, status=500)
+
+    async def _get_data_statistics(self) -> Dict[str, Any]:
+        """Extract comprehensive statistics from loaded data."""
+        stats = {}
+
+        try:
+            # Get cached data from the data loader
+            if hasattr(self.mcp_server, "data_loader") and self.mcp_server.data_loader:
+                data = self.mcp_server.data_loader.get_cached_data("mitre_attack")
+
+                if data:
+                    # Count entities by type
+                    stats["techniques_count"] = len(data.get("techniques", []))
+                    stats["tactics_count"] = len(data.get("tactics", []))
+                    stats["groups_count"] = len(data.get("groups", []))
+                    stats["mitigations_count"] = len(data.get("mitigations", []))
+
+                    # Count relationships
+                    stats["relationships_count"] = await self._count_relationships()
+
+                    # Get data freshness information
+                    stats["last_updated"] = self.startup_time.isoformat()
+                    stats["data_loaded"] = True
+                else:
+                    # No data loaded
+                    stats = {
+                        "techniques_count": 0,
+                        "tactics_count": 0,
+                        "groups_count": 0,
+                        "mitigations_count": 0,
+                        "relationships_count": 0,
+                        "last_updated": None,
+                        "data_loaded": False,
+                    }
+            else:
+                # Data loader not available
+                stats = {
+                    "techniques_count": 0,
+                    "tactics_count": 0,
+                    "groups_count": 0,
+                    "mitigations_count": 0,
+                    "relationships_count": 0,
+                    "last_updated": None,
+                    "data_loaded": False,
+                }
+
+        except Exception as e:
+            logger.warning(f"Could not get data statistics: {e}")
+            # Return default stats on error
+            stats = {
+                "techniques_count": 0,
+                "tactics_count": 0,
+                "groups_count": 0,
+                "mitigations_count": 0,
+                "relationships_count": 0,
+                "last_updated": None,
+                "data_loaded": False,
+                "error": str(e),
+            }
+
+        return stats
+
+    async def _count_relationships(self) -> int:
+        """Count the total number of relationships in the loaded data."""
+        try:
+            if hasattr(self.mcp_server, "data_loader") and self.mcp_server.data_loader:
+                # Try to get relationships from cached data
+                data = self.mcp_server.data_loader.get_cached_data("mitre_attack")
+                if data and "relationships" in data:
+                    return len(data["relationships"])
+
+                # Try to get relationships from the separate relationships cache
+                relationships_data = self.mcp_server.data_loader.get_cached_data(
+                    "mitre_attack_relationships"
+                )
+                if relationships_data:
+                    return len(relationships_data)
+
+            return 0
+
+        except Exception as e:
+            logger.warning(f"Could not count relationships: {e}")
+            return 0
+
 
 async def create_http_proxy_server(host: str = "localhost", port: int = 8000):
     """Create and configure the HTTP proxy server."""
@@ -312,6 +438,7 @@ async def create_http_proxy_server(host: str = "localhost", port: int = 8000):
         logger.info(f"  - Web Interface: http://{host}:{port}/")
         logger.info(f"  - Tools List: http://{host}:{port}/tools")
         logger.info(f"  - Tool Execution: POST http://{host}:{port}/call_tool")
+        logger.info(f"  - System Information: http://{host}:{port}/system_info")
 
         return runner, mcp_server
 
