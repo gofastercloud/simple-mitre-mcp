@@ -13,7 +13,7 @@ import os
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, List
 from aiohttp import web, web_request
 from aiohttp.web_response import Response
 import aiohttp_cors
@@ -46,6 +46,10 @@ class HTTPProxy:
         self.app.router.add_get("/tools", self.handle_tools_list)
         self.app.router.add_post("/call_tool", self.handle_tool_call)
         self.app.router.add_get("/system_info", self.handle_system_info)
+        # Data population endpoints for smart form controls
+        self.app.router.add_get("/api/groups", self.handle_get_groups)
+        self.app.router.add_get("/api/tactics", self.handle_get_tactics)
+        self.app.router.add_get("/api/techniques", self.handle_get_techniques)
         # Add static file serving for web interface assets
         self.app.router.add_static(
             "/css/", Path(__file__).parent / "web_interface" / "css"
@@ -405,6 +409,277 @@ class HTTPProxy:
             logger.warning(f"Could not count relationships: {e}")
             return 0
 
+    async def handle_get_groups(self, request: web_request.Request) -> Response:
+        """Handle requests for threat group data for dropdown population."""
+        try:
+            logger.info("Executing /api/groups endpoint")
+
+            # Input validation - no parameters expected for this endpoint
+            if request.query:
+                logger.warning(f"Unexpected query parameters: {dict(request.query)}")
+
+            # Get cached data
+            if (
+                not hasattr(self.mcp_server, "data_loader")
+                or not self.mcp_server.data_loader
+            ):
+                return web.json_response(
+                    {"error": "Data loader not available"}, status=500
+                )
+
+            data = self.mcp_server.data_loader.get_cached_data("mitre_attack")
+            if not data:
+                return web.json_response(
+                    {"error": "MITRE ATT&CK data not loaded"}, status=500
+                )
+
+            # Extract groups for dropdown
+            groups = self._extract_groups_for_dropdown(data.get("groups", []))
+
+            return web.json_response({"groups": groups})
+
+        except Exception as e:
+            logger.error(f"Error in /api/groups endpoint: {e}")
+            return web.json_response({"error": str(e)}, status=500)
+
+    async def handle_get_tactics(self, request: web_request.Request) -> Response:
+        """Handle requests for tactic data for dropdown population."""
+        try:
+            logger.info("Executing /api/tactics endpoint")
+
+            # Input validation - no parameters expected for this endpoint
+            if request.query:
+                logger.warning(f"Unexpected query parameters: {dict(request.query)}")
+
+            # Get cached data
+            if (
+                not hasattr(self.mcp_server, "data_loader")
+                or not self.mcp_server.data_loader
+            ):
+                return web.json_response(
+                    {"error": "Data loader not available"}, status=500
+                )
+
+            data = self.mcp_server.data_loader.get_cached_data("mitre_attack")
+            if not data:
+                return web.json_response(
+                    {"error": "MITRE ATT&CK data not loaded"}, status=500
+                )
+
+            # Extract tactics for dropdown
+            tactics = self._extract_tactics_for_dropdown(data.get("tactics", []))
+
+            return web.json_response({"tactics": tactics})
+
+        except Exception as e:
+            logger.error(f"Error in /api/tactics endpoint: {e}")
+            return web.json_response({"error": str(e)}, status=500)
+
+    async def handle_get_techniques(self, request: web_request.Request) -> Response:
+        """Handle requests for technique data for autocomplete functionality."""
+        try:
+            logger.info("Executing /api/techniques endpoint")
+
+            # Input validation - check for query parameter
+            query = request.query.get("q", "").strip()
+            if not query:
+                return web.json_response(
+                    {"error": "Query parameter 'q' is required"}, status=400
+                )
+
+            # Validate query length to prevent excessive processing
+            if len(query) < 2:
+                return web.json_response(
+                    {"error": "Query must be at least 2 characters long"}, status=400
+                )
+
+            if len(query) > 100:
+                return web.json_response(
+                    {"error": "Query must be less than 100 characters"}, status=400
+                )
+
+            # Get cached data
+            if (
+                not hasattr(self.mcp_server, "data_loader")
+                or not self.mcp_server.data_loader
+            ):
+                return web.json_response(
+                    {"error": "Data loader not available"}, status=500
+                )
+
+            data = self.mcp_server.data_loader.get_cached_data("mitre_attack")
+            if not data:
+                return web.json_response(
+                    {"error": "MITRE ATT&CK data not loaded"}, status=500
+                )
+
+            # Extract techniques for autocomplete
+            techniques = self._extract_techniques_for_autocomplete(
+                data.get("techniques", []), query.lower()
+            )
+
+            return web.json_response({"techniques": techniques})
+
+        except Exception as e:
+            logger.error(f"Error in /api/techniques endpoint: {e}")
+            return web.json_response({"error": str(e)}, status=500)
+
+    def _extract_groups_for_dropdown(
+        self, groups_data: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
+        """
+        Extract and format threat group data for dropdown population.
+
+        Args:
+            groups_data: Raw groups data from the data loader
+
+        Returns:
+            List of formatted group objects with id, name, display_name, and aliases
+        """
+        formatted_groups = []
+
+        for group in groups_data:
+            group_id = group.get("id", "")
+            group_name = group.get("name", "")
+            aliases = group.get("aliases", [])
+
+            # Skip groups without essential data
+            if not group_id or not group_name:
+                continue
+
+            # Create display name with aliases
+            display_name = group_name
+            if aliases:
+                # Show first few aliases in display name
+                alias_text = ", ".join(aliases[:2])  # Limit to first 2 aliases
+                if len(aliases) > 2:
+                    alias_text += f" (+{len(aliases) - 2} more)"
+                display_name = f"{group_name} ({alias_text})"
+
+            formatted_group = {
+                "id": group_id,
+                "name": group_name,
+                "display_name": display_name,
+                "aliases": aliases,
+            }
+
+            formatted_groups.append(formatted_group)
+
+        # Sort by group name for consistent ordering
+        formatted_groups.sort(key=lambda x: x["name"].lower())
+
+        return formatted_groups
+
+    def _extract_tactics_for_dropdown(
+        self, tactics_data: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
+        """
+        Extract and format tactic data for dropdown population.
+
+        Args:
+            tactics_data: Raw tactics data from the data loader
+
+        Returns:
+            List of formatted tactic objects with id, name, and display_name
+        """
+        formatted_tactics = []
+
+        for tactic in tactics_data:
+            tactic_id = tactic.get("id", "")
+            tactic_name = tactic.get("name", "")
+
+            # Skip tactics without essential data
+            if not tactic_id or not tactic_name:
+                continue
+
+            # Create display name with ID and name
+            display_name = f"{tactic_name} ({tactic_id})"
+
+            formatted_tactic = {
+                "id": tactic_id,
+                "name": tactic_name,
+                "display_name": display_name,
+            }
+
+            formatted_tactics.append(formatted_tactic)
+
+        # Sort by tactic ID for consistent ordering (TA0001, TA0002, etc.)
+        formatted_tactics.sort(key=lambda x: x["id"])
+
+        return formatted_tactics
+
+    def _extract_techniques_for_autocomplete(
+        self, techniques_data: List[Dict[str, Any]], query: str
+    ) -> List[Dict[str, Any]]:
+        """
+        Extract and format technique data for autocomplete functionality.
+
+        Args:
+            techniques_data: Raw techniques data from the data loader
+            query: Search query string (already lowercased)
+
+        Returns:
+            List of formatted technique objects matching the query
+        """
+        matching_techniques = []
+
+        for technique in techniques_data:
+            technique_id = technique.get("id", "")
+            technique_name = technique.get("name", "")
+
+            # Skip techniques without essential data
+            if not technique_id or not technique_name:
+                continue
+
+            # Check if technique matches query
+            matches = False
+            match_reason = ""
+
+            # Search in technique ID
+            if query in technique_id.lower():
+                matches = True
+                match_reason = "ID"
+
+            # Search in technique name
+            elif query in technique_name.lower():
+                matches = True
+                match_reason = "Name"
+
+            # Search in description (if available)
+            elif (
+                "description" in technique and query in technique["description"].lower()
+            ):
+                matches = True
+                match_reason = "Description"
+
+            if matches:
+                # Create display name with ID and name
+                display_name = f"{technique_name} ({technique_id})"
+
+                formatted_technique = {
+                    "id": technique_id,
+                    "name": technique_name,
+                    "display_name": display_name,
+                    "match_reason": match_reason,
+                }
+
+                matching_techniques.append(formatted_technique)
+
+        # Sort by relevance: ID matches first, then name matches, then description matches
+        # Within each category, sort alphabetically
+        def sort_key(tech):
+            if tech["match_reason"] == "ID":
+                return (0, tech["id"])
+            elif tech["match_reason"] == "Name":
+                return (1, tech["name"].lower())
+            else:  # Description
+                return (2, tech["name"].lower())
+
+        matching_techniques.sort(key=sort_key)
+
+        # Limit results to prevent overwhelming the UI
+        return matching_techniques[:50]
+
 
 async def create_http_proxy_server(host: str = "localhost", port: int = 8000):
     """Create and configure the HTTP proxy server."""
@@ -439,6 +714,11 @@ async def create_http_proxy_server(host: str = "localhost", port: int = 8000):
         logger.info(f"  - Tools List: http://{host}:{port}/tools")
         logger.info(f"  - Tool Execution: POST http://{host}:{port}/call_tool")
         logger.info(f"  - System Information: http://{host}:{port}/system_info")
+        logger.info(f"  - Groups Data: http://{host}:{port}/api/groups")
+        logger.info(f"  - Tactics Data: http://{host}:{port}/api/tactics")
+        logger.info(
+            f"  - Techniques Search: http://{host}:{port}/api/techniques?q=<query>"
+        )
 
         return runner, mcp_server
 
