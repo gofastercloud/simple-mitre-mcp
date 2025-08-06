@@ -4,6 +4,7 @@
 let isConnected = false;
 let currentTool = '';
 let systemDashboard = null;
+let smartFormControls = null;
 
 // Demo configurations
 const demos = {
@@ -72,6 +73,15 @@ document.addEventListener('DOMContentLoaded', async function() {
         await systemDashboard.render();
     } catch (error) {
         console.error('Failed to initialize system dashboard:', error);
+    }
+    
+    // Initialize smart form controls
+    try {
+        smartFormControls = new SmartFormControls();
+        await smartFormControls.initialize();
+        console.log('Smart form controls initialized successfully');
+    } catch (error) {
+        console.error('Failed to initialize smart form controls:', error);
     }
     
     // Set up connection monitoring
@@ -195,48 +205,62 @@ function updateCustomForm() {
         `,
         get_technique: `
             <div class="input-group">
-                <label for="technique_id">Technique ID:</label>
-                <input type="text" id="technique_id" placeholder="e.g., T1055, T1059">
+                <label for="technique_id">Technique:</label>
+                <input type="text" id="technique_id" class="technique-autocomplete" data-smart-control="technique" placeholder="Start typing technique name or ID...">
+                <small class="form-text text-muted">Type at least 2 characters to see suggestions</small>
             </div>
         `,
         get_group_techniques: `
             <div class="input-group">
-                <label for="group_id">Group ID:</label>
-                <input type="text" id="group_id" placeholder="e.g., G0016, G0007">
+                <label for="group_id">Threat Group:</label>
+                <select id="group_id" class="group-select" data-smart-control="group">
+                    <option value="">Select a threat group...</option>
+                </select>
             </div>
         `,
         build_attack_path: `
             <div class="input-group">
                 <label for="start_tactic">Start Tactic:</label>
-                <input type="text" id="start_tactic" placeholder="e.g., TA0001" value="TA0001">
+                <select id="start_tactic" class="tactic-select" data-smart-control="tactic">
+                    <option value="">Select starting tactic...</option>
+                </select>
             </div>
             <div class="input-group">
                 <label for="end_tactic">End Tactic:</label>
-                <input type="text" id="end_tactic" placeholder="e.g., TA0040" value="TA0040">
+                <select id="end_tactic" class="tactic-select" data-smart-control="tactic">
+                    <option value="">Select target tactic...</option>
+                </select>
             </div>
             <div class="input-group">
-                <label for="group_id_path">Group ID (optional):</label>
-                <input type="text" id="group_id_path" placeholder="e.g., G0016">
+                <label for="group_id_path">Threat Group (optional):</label>
+                <select id="group_id_path" class="group-select" data-smart-control="group">
+                    <option value="">Select a threat group...</option>
+                </select>
             </div>
         `,
         analyze_coverage_gaps: `
             <div class="input-group">
-                <label for="threat_groups">Threat Groups (comma-separated):</label>
-                <input type="text" id="threat_groups" placeholder="e.g., G0016,G0007,G0032">
+                <label for="threat_groups">Threat Groups:</label>
+                <select id="threat_groups" class="group-select" data-smart-control="group" multiple>
+                    <option value="">Select threat groups...</option>
+                </select>
+                <small class="form-text text-muted">Hold Ctrl/Cmd to select multiple groups</small>
             </div>
             <div class="input-group">
                 <label for="exclude_mitigations">Exclude Mitigations (optional):</label>
-                <input type="text" id="exclude_mitigations" placeholder="e.g., M1013,M1026">
+                <input type="text" id="exclude_mitigations" placeholder="e.g., M1013,M1026" class="form-control">
+                <small class="form-text text-muted">Enter mitigation IDs separated by commas</small>
             </div>
         `,
         detect_technique_relationships: `
             <div class="input-group">
-                <label for="technique_id_rel">Technique ID:</label>
-                <input type="text" id="technique_id_rel" placeholder="e.g., T1055" value="T1055">
+                <label for="technique_id_rel">Technique:</label>
+                <input type="text" id="technique_id_rel" class="technique-autocomplete" data-smart-control="technique" placeholder="Start typing technique name or ID...">
+                <small class="form-text text-muted">Type at least 2 characters to see suggestions</small>
             </div>
             <div class="input-group">
                 <label for="depth">Analysis Depth:</label>
-                <select id="depth">
+                <select id="depth" class="form-select">
                     <option value="1">1 - Direct relationships</option>
                     <option value="2" selected>2 - Extended relationships</option>
                     <option value="3">3 - Deep analysis</option>
@@ -246,6 +270,13 @@ function updateCustomForm() {
     };
     
     parametersDiv.innerHTML = parameterForms[selectedTool] || '';
+    
+    // Reinitialize smart form controls for the new form elements
+    if (smartFormControls && smartFormControls.isReady()) {
+        setTimeout(() => {
+            smartFormControls.setupFormControls();
+        }, 100); // Small delay to ensure DOM is updated
+    }
 }
 
 async function runCustomQuery() {
@@ -269,13 +300,21 @@ async function runCustomQuery() {
     
     inputs.forEach(input => {
         if (input.value.trim()) {
-            if (input.id === 'threat_groups' || input.id === 'exclude_mitigations') {
-                // Handle comma-separated arrays
+            if (input.id === 'threat_groups' && input.multiple) {
+                // Handle multi-select for threat groups
+                const selectedOptions = Array.from(input.selectedOptions).map(option => option.value);
+                if (selectedOptions.length > 0) {
+                    params[input.id] = selectedOptions;
+                }
+            } else if (input.id === 'exclude_mitigations') {
+                // Handle comma-separated arrays for mitigations
                 params[input.id] = input.value.split(',').map(s => s.trim()).filter(s => s);
             } else if (input.type === 'number') {
                 params[input.id] = parseInt(input.value);
             } else {
-                params[input.id] = input.value.trim();
+                // Handle regular inputs and selects
+                const paramName = input.id.replace('_path', '').replace('_rel', '');
+                params[paramName] = input.value.trim();
             }
         }
     });
