@@ -1,5 +1,66 @@
 /* Component-Specific Styles for MITRE ATT&CK Intelligence Platform */
 
+/* CSS Variables for Light/Dark Mode */
+:root {
+    /* Light mode colors (default) */
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8f9fa;
+    --bg-tertiary: #e9ecef;
+    --text-primary: #212529;
+    --text-secondary: #6c757d;
+    --text-muted: #adb5bd;
+    --border-color: #dee2e6;
+    --shadow-sm: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    --shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    --shadow-lg: 0 1rem 3rem rgba(0, 0, 0, 0.175);
+    --accordion-expanded-bg: #0d6efd;
+    --accordion-expanded-text: #ffffff;
+    --accordion-collapsed-bg: #f8f9fa;
+    --accordion-collapsed-text: #212529;
+}
+
+/* Dark mode colors */
+[data-bs-theme="dark"] {
+    --bg-primary: #212529;
+    --bg-secondary: #343a40;
+    --bg-tertiary: #495057;
+    --text-primary: #f8f9fa;
+    --text-secondary: #adb5bd;
+    --text-muted: #6c757d;
+    --border-color: #495057;
+    --shadow-sm: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 1rem 3rem rgba(0, 0, 0, 0.5);
+    --accordion-expanded-bg: #198754;
+    --accordion-expanded-text: #ffffff;
+    --accordion-collapsed-bg: #343a40;
+    --accordion-collapsed-text: #f8f9fa;
+}
+
+/* Base theme styling */
+body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.card {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+}
+
+.card-header {
+    background-color: var(--bg-secondary);
+    border-bottom-color: var(--border-color);
+}
+
+.status-bar {
+    background: var(--bg-secondary);
+    border-color: var(--border-color);
+    color: var(--text-primary);
+}
+
 /* System Dashboard Components */
 .system-dashboard {
     margin-bottom: 2rem;
@@ -754,7 +815,8 @@
 .accordion-button {
     font-weight: 500;
     padding: 1rem 1.25rem;
-    background: var(--bs-light);
+    background: var(--accordion-collapsed-bg);
+    color: var(--accordion-collapsed-text);
     border: none;
     text-align: left;
     display: flex;
@@ -764,8 +826,8 @@
 }
 
 .accordion-button:not(.collapsed) {
-    background: var(--bs-primary);
-    color: white;
+    background: var(--accordion-expanded-bg) !important;
+    color: var(--accordion-expanded-text) !important;
     box-shadow: none;
 }
 

@@ -21,6 +21,14 @@
 </head>
 
 <body>
+  <!-- Initialize dark mode as default -->
+  <script>
+    // Set dark mode as default on page load
+    (function() {
+      const savedTheme = localStorage.getItem('theme') || 'dark';
+      document.documentElement.setAttribute('data-bs-theme', savedTheme);
+    })();
+  </script>
   <div class="container-fluid">
     <!-- System Dashboard -->
     <div id="system-dashboard"></div>
@@ -33,6 +41,9 @@
       </div>
       <div class="server-info">
         <span id="serverInfo">8 Tools Available • Real-time Analysis</span>
+        <button type="button" class="btn btn-outline-secondary btn-sm ms-3" id="theme-toggle" title="Toggle dark/light mode">
+          <i class="bi bi-moon-fill" id="theme-icon"></i>
+        </button>
       </div>
     </div>
 
@@ -48,6 +59,7 @@
   
   <!-- Custom JS Modules -->
   <script src="js/api.js"></script>
+  <script src="js/ThemeToggle.js"></script>
   <script src="js/SystemDashboard.js"></script>
   <script src="js/SmartFormControls.js"></script>
   <script src="js/ToolsSection.js"></script>
