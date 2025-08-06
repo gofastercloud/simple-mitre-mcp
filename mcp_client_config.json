@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "mitre-attack": {
+      "command": "python",
+      "args": [
+        "main_stdio.py"
+      ],
+      "cwd": "/path/to/simple-mitre-mcp",
+      "env": {
+        "PYTHONUNBUFFERED": "1"
+      }
+    }
+  }
+}
