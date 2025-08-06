@@ -25,6 +25,7 @@
     <!-- System Dashboard -->
     <div id="system-dashboard"></div>
 
+    <!-- Status Bar -->
     <div class="status-bar">
       <div class="connection-status">
         <div class="status-indicator" id="statusIndicator"></div>
@@ -35,107 +36,11 @@
       </div>
     </div>
 
-    <div class="main-content">
-      <div class="left-panel">
-        <div class="card">
-          <h2><i class="fas fa-rocket"></i> Interactive Demo Center</h2>
+    <!-- Tools Section -->
+    <div id="tools-section" class="mb-4"></div>
 
-          <div class="tabs">
-            <div class="tab active" onclick="switchTab('basic', event)">
-              <i class="fas fa-search"></i> Basic Tools
-            </div>
-            <div class="tab" onclick="switchTab('advanced', event)">
-              <i class="fas fa-brain"></i> Advanced Analysis
-            </div>
-            <div class="tab" onclick="switchTab('custom', event)">
-              <i class="fas fa-cogs"></i> Custom Query
-            </div>
-          </div>
-
-          <!-- Basic Tools Tab -->
-          <div id="basic-tab" class="tab-content active">
-            <div class="demo-grid">
-              <div class="demo-card" onclick="runDemo('search_powershell')">
-                <h3><i class="fas fa-search"></i> PowerShell Search</h3>
-                <p>Search for all PowerShell-related techniques and mitigations</p>
-              </div>
-              <div class="demo-card" onclick="runDemo('list_tactics')">
-                <h3><i class="fas fa-list"></i> All Tactics</h3>
-                <p>Display complete list of MITRE ATT&CK tactics</p>
-              </div>
-              <div class="demo-card" onclick="runDemo('technique_t1055')">
-                <h3><i class="fas fa-info-circle"></i> Process Injection</h3>
-                <p>Detailed analysis of T1055 Process Injection technique</p>
-              </div>
-              <div class="demo-card" onclick="runDemo('apt29_techniques')">
-                <h3><i class="fas fa-users"></i> APT29 TTPs</h3>
-                <p>Techniques used by APT29 (Cozy Bear) threat group</p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Advanced Analysis Tab -->
-          <div id="advanced-tab" class="tab-content">
-            <div class="demo-grid">
-              <div class="demo-card" onclick="runDemo('attack_path')">
-                <h3><i class="fas fa-route"></i> Attack Path Analysis</h3>
-                <p>Build multi-stage attack path from Initial Access to Impact</p>
-              </div>
-              <div class="demo-card" onclick="runDemo('coverage_gaps')">
-                <h3><i class="fas fa-shield-alt"></i> Coverage Gap Analysis</h3>
-                <p>Analyze defensive gaps against APT29 and APT1</p>
-              </div>
-              <div class="demo-card" onclick="runDemo('technique_relationships')">
-                <h3><i class="fas fa-project-diagram"></i> Relationship Discovery</h3>
-                <p>Explore complex relationships for Process Injection</p>
-              </div>
-              <div class="demo-card" onclick="runDemo('apt_comparison')">
-                <h3><i class="fas fa-balance-scale"></i> APT Comparison</h3>
-                <p>Compare techniques across multiple threat groups</p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Custom Query Tab -->
-          <div id="custom-tab" class="tab-content">
-            <div class="custom-input-section">
-              <div class="input-group">
-                <label for="toolSelect">Select Tool:</label>
-                <select id="toolSelect" onchange="updateCustomForm()">
-                  <option value="">Choose a tool...</option>
-                  <option value="search_attack">Search ATT&CK</option>
-                  <option value="get_technique">Get Technique Details</option>
-                  <option value="get_group_techniques">Group Techniques</option>
-                  <option value="build_attack_path">Build Attack Path</option>
-                  <option value="analyze_coverage_gaps">Coverage Gap Analysis</option>
-                  <option value="detect_technique_relationships">Technique Relationships</option>
-                </select>
-              </div>
-              <div id="customParameters"></div>
-              <button class="btn btn-primary" onclick="runCustomQuery()">
-                <i class="fas fa-play"></i> Execute Custom Query
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="right-panel">
-        <div class="card results-panel">
-          <h2><i class="fas fa-terminal"></i> Analysis Results</h2>
-          <div class="results-content" id="results">
-            <div style="text-align: center; color: var(--text-muted); padding: 50px 20px;">
-              <i class="fas fa-chart-line" style="font-size: 3rem; margin-bottom: 20px; opacity: 0.3;"></i>
-              <h3>Ready for Analysis</h3>
-              <p>Select a demo or create a custom query to see results here.</p>
-              <p style="margin-top: 15px; font-size: 0.9rem;">
-                💡 Try the <strong>Advanced Analysis</strong> tab for sophisticated threat modeling
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <!-- Results Section -->
+    <div id="results-section"></div>
   </div>
 
   <!-- Bootstrap 5.3 JS -->
