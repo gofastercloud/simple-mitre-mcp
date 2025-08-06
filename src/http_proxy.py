@@ -81,7 +81,7 @@ class HTTPProxy:
     async def serve_web_interface(self, request: web_request.Request) -> Response:
         """Serve the web explorer HTML interface."""
         try:
-            web_interface_path = Path(__file__).parent / "web_interface" / "index.html"
+            web_interface_path = Path(__file__).parent.parent / "web_interface" / "index.html"
             if web_interface_path.exists():
                 with open(web_interface_path, "r", encoding="utf-8") as f:
                     html_content = f.read()
