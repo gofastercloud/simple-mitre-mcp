@@ -48,7 +48,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
    - Task completion confirmation"
    ```
 4. **Push to remote immediately**: `git push origin [current-feature-branch]`
-5. **Do NOT proceed to next task** until current work is committed and pushed
+5. **Update task status** to completed using TodoWrite tool
+6. **VERIFY commit succeeded**: `git log --oneline -1` (confirm latest commit exists)
+7. **VERIFY push succeeded**: `git status` (should show "up to date with origin")
+8. **Do NOT proceed to next task** until current work is committed, pushed, and verified
+
+**⚠️ MANDATORY VERIFICATION COMMANDS:**
+```bash
+# After each task completion, run these commands in sequence:
+git add .
+git -c core.pager=cat commit -m "feat: [description]"
+git push origin $(git branch --show-current)
+git log --oneline -1  # Verify commit exists
+git status            # Verify push succeeded
+```
 
 **⚠️ Use `git -c core.pager=cat commit` to avoid terminal pager issues!**
 
@@ -70,6 +83,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **No hardcoded framework logic** - use config files for entity types, schemas, tools
 - **Extensible design** - supports any structured security framework, not just MITRE ATT&CK
 - **Environment variable overrides** for deployment flexibility
+
+### Extensibility & Reusability Principles
+- **Framework-agnostic architecture** - designed to support any structured security framework
+- **Multi-framework support** - while built for MITRE ATT&CK, supports other threat intelligence formats
+- **Standards-compliant** - uses official MCP protocol and STIX parsing libraries
+- **Pluggable data sources** - configuration-driven data source definitions
+- **Modular tool system** - easy addition of new MCP tools without core changes
 
 ## Architecture Overview
 
@@ -107,8 +127,12 @@ This is a MITRE ATT&CK MCP (Model Context Protocol) server that provides structu
 
 ## Current Project Status
 
-### STIX2 Library Refactor (In Progress)
-**Uncompleted tasks from specs:**
+### Active Specifications
+**Web Explorer Improvements:**
+- Task 9: Create tools section with enhanced forms (PENDING)
+- Task 10: Implement enhanced results display system (PENDING)
+
+**STIX2 Library Refactor (Completed tasks 1-8, remaining):**
 - Task 11: Update type hints and improve code quality
 - Task 12: Remove deprecated custom parsing logic
 - Task 13: Add future extensibility examples and documentation
