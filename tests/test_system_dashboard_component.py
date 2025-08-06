@@ -18,12 +18,12 @@ class TestSystemDashboardComponent:
 
     @pytest.fixture
     def components_js_content(self):
-        """Read the actual components.js file content."""
-        components_path = os.path.join(
-            os.path.dirname(__file__), "..", "web_interface", "js", "components.js"
+        """Read the actual SystemDashboard.js file content."""
+        dashboard_path = os.path.join(
+            os.path.dirname(__file__), "..", "web_interface", "js", "SystemDashboard.js"
         )
-        if os.path.exists(components_path):
-            with open(components_path, "r") as f:
+        if os.path.exists(dashboard_path):
+            with open(dashboard_path, "r") as f:
                 return f.read()
         return ""
 
@@ -46,10 +46,10 @@ class TestSystemDashboardComponent:
         }
 
     def test_components_js_file_exists(self, components_js_content):
-        """Test that the components.js file exists and contains SystemDashboard class."""
+        """Test that the SystemDashboard.js file exists and contains SystemDashboard class."""
         assert (
             components_js_content != ""
-        ), "components.js file should exist and not be empty"
+        ), "SystemDashboard.js file should exist and not be empty"
         assert (
             "class SystemDashboard" in components_js_content
         ), "Should contain SystemDashboard class"
