@@ -262,7 +262,6 @@ class STIXParser:
             logger.error(f"Data type: {type(stix_data)}, Entity types: {entity_types}")
             raise
 
-
     def _parse_stix_bundle_with_validation(
         self, stix_data: Dict[str, Any]
     ) -> List[STIXObject]:
@@ -570,8 +569,6 @@ class STIXParser:
         """Map STIX object type to entity type."""
         return self.stix_type_mapping.get(stix_type, "")
 
-
-
     def _extract_mitre_id(self, stix_obj: Dict[str, Any]) -> str:
         """
         Extract MITRE ATT&CK ID from external references (legacy method).
@@ -661,16 +658,13 @@ class STIXParser:
             return self._extract_technique_data_from_stix_object(stix2_obj)
 
         except (STIXError, InvalidValueError, MissingPropertiesError) as e:
-            logger.warning(
-                f"STIX2 library parsing failed for technique: {e}"
-            )
+            logger.warning(f"STIX2 library parsing failed for technique: {e}")
             return {"mitigations": []}
         except Exception as e:
             logger.warning(
                 f"Unexpected error parsing technique with STIX2 library: {e}"
             )
             return {"mitigations": []}
-
 
     def _extract_group_data(self, stix_obj: Dict[str, Any]) -> ParsedEntityData:
         """
@@ -693,16 +687,11 @@ class STIXParser:
             return self._extract_group_data_from_stix_object(stix2_obj)
 
         except (STIXError, InvalidValueError, MissingPropertiesError) as e:
-            logger.warning(
-                f"STIX2 library parsing failed for group: {e}"
-            )
+            logger.warning(f"STIX2 library parsing failed for group: {e}")
             return {"techniques": []}
         except Exception as e:
-            logger.warning(
-                f"Unexpected error parsing group with STIX2 library: {e}"
-            )
+            logger.warning(f"Unexpected error parsing group with STIX2 library: {e}")
             return {"techniques": []}
-
 
     def _extract_tactic_data(self, stix_obj: Dict[str, Any]) -> ParsedEntityData:
         """
@@ -726,16 +715,11 @@ class STIXParser:
             return self._extract_tactic_data_from_stix_object(stix2_obj)
 
         except (STIXError, InvalidValueError, MissingPropertiesError) as e:
-            logger.warning(
-                f"STIX2 library parsing failed for tactic: {e}"
-            )
+            logger.warning(f"STIX2 library parsing failed for tactic: {e}")
             return {}
         except Exception as e:
-            logger.warning(
-                f"Unexpected error parsing tactic with STIX2 library: {e}"
-            )
+            logger.warning(f"Unexpected error parsing tactic with STIX2 library: {e}")
             return {}
-
 
     def _extract_mitigation_data(self, stix_obj: Dict[str, Any]) -> ParsedEntityData:
         """
@@ -758,16 +742,13 @@ class STIXParser:
             return self._extract_mitigation_data_from_stix_object(stix2_obj)
 
         except (STIXError, InvalidValueError, MissingPropertiesError) as e:
-            logger.warning(
-                f"STIX2 library parsing failed for mitigation: {e}"
-            )
+            logger.warning(f"STIX2 library parsing failed for mitigation: {e}")
             return {"techniques": []}
         except Exception as e:
             logger.warning(
                 f"Unexpected error parsing mitigation with STIX2 library: {e}"
             )
             return {"techniques": []}
-
 
     def _extract_mitre_id_from_stix_object_with_validation(
         self, stix_obj: STIXObjectOrDict
