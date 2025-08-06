@@ -16,7 +16,7 @@ import sys
 
 sys.path.append(str(Path(__file__).parent.parent))
 
-from http_proxy import HTTPProxy
+from src.http_proxy import HTTPProxy
 from src.mcp_server import MCPServer
 
 

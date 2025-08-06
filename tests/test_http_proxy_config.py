@@ -19,7 +19,7 @@ class TestHTTPProxyConfiguration:
         """Test that HTTP proxy can be imported without making connections."""
         # This should not cause any connection attempts
         try:
-            from http_proxy import HTTPProxy
+            from src.http_proxy import HTTPProxy
 
             assert HTTPProxy is not None, "HTTPProxy class should be importable"
         except ImportError as e:
@@ -55,7 +55,7 @@ class TestHTTPProxyConfiguration:
         mock_create_server.return_value = (mock_runner, mock_server)
 
         # This should not cause connection issues
-        from http_proxy import create_http_proxy_server
+        from src.http_proxy import create_http_proxy_server
 
         assert create_http_proxy_server is not None, "Function should be importable"
 
@@ -170,8 +170,8 @@ class TestHTTPProxyConfiguration:
 
         try:
             # These imports should not cause network connections
-            import http_proxy
-            from http_proxy import HTTPProxy, create_http_proxy_server
+            import src.http_proxy as http_proxy
+            from src.http_proxy import HTTPProxy, create_http_proxy_server
 
             # These should all be available without connections
             assert http_proxy is not None
@@ -206,7 +206,7 @@ class TestHTTPProxyConfiguration:
             mock_site_instance.start = AsyncMock()
 
             # This should work without actual connections
-            from http_proxy import create_http_proxy_server
+            from src.http_proxy import create_http_proxy_server
 
             # The function should be callable (even if mocked)
             assert callable(create_http_proxy_server), "Function should be callable"

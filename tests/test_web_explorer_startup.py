@@ -76,23 +76,23 @@ class TestEnvironmentValidation:
         assert success is True
         assert len(errors) == 0
 
-    def test_validate_environment_missing_web_explorer_html(self):
-        """Test detection of missing web_explorer.html."""
+    def test_validate_environment_missing_web_interface_html(self):
+        """Test detection of missing web_interface/index.html."""
         # Temporarily rename the file
-        web_explorer_path = Path("web_explorer.html")
-        backup_path = Path("web_explorer.html.backup")
+        web_interface_path = Path("web_interface") / "index.html"
+        backup_path = Path("web_interface") / "index.html.backup"
 
-        if web_explorer_path.exists():
-            web_explorer_path.rename(backup_path)
+        if web_interface_path.exists():
+            web_interface_path.rename(backup_path)
 
         try:
             success, errors = validate_environment()
             assert success is False
-            assert any("web_explorer.html" in error for error in errors)
+            assert any("web_interface/index.html" in error for error in errors)
         finally:
             # Restore the file
             if backup_path.exists():
-                backup_path.rename(web_explorer_path)
+                backup_path.rename(web_interface_path)
 
     def test_validate_environment_invalid_port(self):
         """Test detection of invalid port configuration."""
@@ -156,13 +156,13 @@ class TestTroubleshootingGuide:
 
     def test_print_troubleshooting_guide_environment_errors(self, capsys):
         """Test troubleshooting guide with environment errors."""
-        env_errors = ["web_explorer.html not found"]
+        env_errors = ["web_interface/index.html not found"]
         print_troubleshooting_guide(environment_errors=env_errors)
         captured = capsys.readouterr()
 
         assert "TROUBLESHOOTING GUIDE" in captured.out
         assert "ENVIRONMENT ISSUES" in captured.out
-        assert "web_explorer.html" in captured.out
+        assert "web_interface/index.html" in captured.out
 
     def test_print_troubleshooting_guide_both_errors(self, capsys):
         """Test troubleshooting guide with both types of errors."""
@@ -208,29 +208,6 @@ class TestCommandLineInterface:
             assert "Running standalone validation..." in captured.out
 
 
-class TestStandaloneValidationScript:
-    """Test the standalone validation script."""
-
-    def test_standalone_script_imports(self):
-        """Test that the standalone validation script can be imported."""
-        import validate_web_explorer
-
-        assert hasattr(validate_web_explorer, "main")
-
-    def test_standalone_script_execution(self, capsys):
-        """Test that the standalone validation script executes correctly."""
-        from validate_web_explorer import main
-
-        with pytest.raises(SystemExit) as exc_info:
-            main()
-
-        # Should exit with 0 if validation passes
-        assert exc_info.value.code == 0
-        captured = capsys.readouterr()
-        assert "Standalone Validation" in captured.out
-        assert "SUCCESS" in captured.out
-
-
 class TestIntegration:
     """Integration tests for the complete validation system."""
 
@@ -259,13 +236,12 @@ class TestIntegration:
     def test_project_structure_intact(self):
         """Test that all required project files exist."""
         required_files = [
-            "web_explorer.html",
-            "http_proxy.py",
+            "web_interface/index.html",
+            "src/http_proxy.py",
             "src/mcp_server.py",
             "src/data_loader.py",
             "config/data_sources.yaml",
             "start_explorer.py",
-            "validate_web_explorer.py",
         ]
 
         for file_path in required_files:
@@ -301,7 +277,7 @@ class TestIntegration:
         assert "dependencies" in output.lower()
         assert "environment" in output.lower()
         assert "aiohttp" in output
-        assert "web_explorer.html" in output
+        assert "web_interface/index.html" in output
         assert "port" in output.lower()
 
         # Should indicate success or provide clear failure reasons

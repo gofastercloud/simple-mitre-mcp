@@ -18,11 +18,10 @@ from aiohttp import web, web_request
 from aiohttp.web_response import Response
 import aiohttp_cors
 
-# Add src directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent / "src"))
+# No need to add src to path since we're already in src
 
-from mcp_server import create_mcp_server
-from data_loader import DataLoader
+from .mcp_server import create_mcp_server
+from .data_loader import DataLoader
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(name)s:%(message)s")
@@ -52,13 +51,13 @@ class HTTPProxy:
         self.app.router.add_get("/api/techniques", self.handle_get_techniques)
         # Add static file serving for web interface assets
         self.app.router.add_static(
-            "/css/", Path(__file__).parent / "web_interface" / "css"
+            "/css/", Path(__file__).parent.parent / "web_interface" / "css"
         )
         self.app.router.add_static(
-            "/js/", Path(__file__).parent / "web_interface" / "js"
+            "/js/", Path(__file__).parent.parent / "web_interface" / "js"
         )
         self.app.router.add_static(
-            "/assets/", Path(__file__).parent / "web_interface" / "assets"
+            "/assets/", Path(__file__).parent.parent / "web_interface" / "assets"
         )
 
     def setup_cors(self):

@@ -57,7 +57,7 @@ def validate_dependencies() -> Tuple[bool, List[str]]:
 
     # Test project-specific imports
     project_modules = [
-        ("http_proxy", "HTTP proxy server module"),
+        ("src.http_proxy", "HTTP proxy server module"),
         ("src.mcp_server", "MCP server implementation"),
     ]
 
@@ -88,17 +88,17 @@ def validate_environment() -> Tuple[bool, List[str]]:
 
     print("🔍 Validating environment setup...")
 
-    # Check if web_explorer.html exists
-    web_explorer_path = Path(__file__).parent / "web_explorer.html"
-    if not web_explorer_path.exists():
-        issues.append("web_explorer.html not found in current directory")
-        print("  ❌ web_explorer.html - MISSING")
+    # Check if web interface exists
+    web_interface_path = Path(__file__).parent / "web_interface" / "index.html"
+    if not web_interface_path.exists():
+        issues.append("web_interface/index.html not found")
+        print("  ❌ web_interface/index.html - MISSING")
     else:
-        print("  ✅ web_explorer.html - OK")
+        print("  ✅ web_interface/index.html - OK")
 
     # Check if required source files exist
     required_files = [
-        "http_proxy.py",
+        "src/http_proxy.py",
         "src/mcp_server.py",
         "src/data_loader.py",
         "config/data_sources.yaml",
@@ -218,7 +218,7 @@ def open_browser(url, delay=2):
 async def start_web_explorer():
     """Start the web explorer with HTTP proxy server."""
     # Import here after validation
-    from http_proxy import create_http_proxy_server
+    from src.http_proxy import create_http_proxy_server
 
     # Get configuration from environment variables
     host = os.getenv("MCP_HTTP_HOST", "localhost")
@@ -294,9 +294,9 @@ def main():
 
     # Import http_proxy after validation
     try:
-        from http_proxy import create_http_proxy_server  # noqa: F401
+        from src.http_proxy import create_http_proxy_server  # noqa: F401
     except ImportError as e:
-        print(f"❌ Failed to import http_proxy: {e}")
+        print(f"❌ Failed to import src.http_proxy: {e}")
         print("   This indicates a project structure issue.")
         print_troubleshooting_guide(dependency_errors=[f"http_proxy: {str(e)}"])
         sys.exit(1)

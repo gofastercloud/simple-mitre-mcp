@@ -972,7 +972,7 @@ class TestHTTPProxyIntegration:
 
             # Import and create HTTP proxy
             try:
-                from http_proxy import HTTPProxy
+                from src.http_proxy import HTTPProxy
 
                 proxy = HTTPProxy(mcp_server)
 

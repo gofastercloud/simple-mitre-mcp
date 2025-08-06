@@ -17,7 +17,7 @@ from aiohttp.test_utils import AioHTTPTestCase, unittest_run_loop
 # Add src directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from http_proxy import HTTPProxy  # noqa: E402
+from src.http_proxy import HTTPProxy  # noqa: E402
 
 
 class TestDataPopulationEndpoints(AioHTTPTestCase):

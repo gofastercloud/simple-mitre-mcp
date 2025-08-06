@@ -233,8 +233,8 @@ For other MCP-compatible clients, use this general configuration:
 ### Configuration Examples
 
 Example configuration files are provided in the repository:
-- `claude_desktop_config.json` - Configuration for Claude Desktop
-- `mcp_client_config.json` - General MCP client configuration
+- `examples/claude_desktop_config.json` - Configuration for Claude Desktop
+- `examples/mcp_client_config.json` - General MCP client configuration
 
 ### MCP Server Capabilities
 
@@ -318,7 +318,7 @@ uv sync
 # Start HTTP proxy server
 uv run http_proxy.py
 
-# Open web_explorer.html in your browser
+# Open web_interface/index.html in your browser
 ```
 
 ### 🛠️ Available Tools
@@ -351,7 +351,7 @@ Web Browser → HTTP Proxy Server → MCP Tools (8 Tools) → MITRE ATT&CK Data
 ```
 
 **Components:**
-- **Web Explorer** (`web_explorer.html`): Frontend interface with basic and advanced tool sections
+- **Web Explorer** (`web_interface/index.html`): Frontend interface with basic and advanced tool sections
 - **HTTP Proxy** (`http_proxy.py`): Translates HTTP requests to MCP tool calls
 - **MCP Server** (`main.py`): FastMCP protocol server with comprehensive data processing
 

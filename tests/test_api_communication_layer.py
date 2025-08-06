@@ -17,7 +17,7 @@ from pathlib import Path
 # Add the project root to the path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from http_proxy import HTTPProxy, create_http_proxy_server
+from src.http_proxy import HTTPProxy, create_http_proxy_server
 from src.mcp_server import create_mcp_server
 from src.data_loader import DataLoader
 
