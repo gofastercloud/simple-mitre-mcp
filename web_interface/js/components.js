@@ -1575,6 +1575,19 @@ class ToolsSection {
                     ${options}
                 </select>
             `;
+        } else if (smartControl === 'technique-autocomplete') {
+            // Technique fields should be input elements for autocomplete, not selects
+            return `
+                <input 
+                    type="text" 
+                    class="${classes}" 
+                    id="${fieldId}" 
+                    name="${key}" 
+                    placeholder="${prop.description || 'Start typing technique name or ID...'}"
+                    data-smart-control="technique"
+                    ${requiredAttr}
+                >
+            `;
         } else if (smartControl) {
             return `
                 <select class="form-select ${smartControl}" id="${fieldId}" name="${key}" data-smart-control="${smartControl.replace('-select', '')}" ${requiredAttr}>
