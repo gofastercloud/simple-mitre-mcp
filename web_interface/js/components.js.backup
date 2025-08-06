@@ -2273,32 +2273,61 @@ class ResultsSection {
     }
 
     /**
-     * Parse result text into logical sections
+     * Parse result text into logical sections with enhanced intelligence
      */
     parseResultSections(result) {
         const text = String(result).trim();
         const sections = [];
         
-        // Split by common section headers
+        // Enhanced section patterns with capture groups for better parsing
         const sectionPatterns = [
-            /^([A-Z][A-Z\s&'-]+)$\n^={4,}$/gm,  // Headers with underlines
-            /^(\d+\.\s+[A-Z][^:\n]+):/gm,        // Numbered sections with colons
-            /^([A-Z][a-z\s]+\s+\([A-Z]\d+\)):$/gm, // Technique entries
-            /^(Description|Techniques Used|Aliases|Mitigations|Platforms|Tactics|Groups):/gim // Common field names
+            // Headers with underlines (GROUP TECHNIQUES, TECHNIQUE DETAILS, etc.)
+            {
+                pattern: /^([A-Z][A-Z\s&'-]+)$\n^={4,}$/gm,
+                type: 'header'
+            },
+            // Numbered technique/item entries (1. T1055: Process Injection)
+            {
+                pattern: /^(\d+\.\s+([A-Z]\d+(?:\.\d+)?):?\s*([^:\n]+))(?::(.*))?$/gm,
+                type: 'numbered_item'
+            },
+            // Technique entries without numbers (T1055: Process Injection)
+            {
+                pattern: /^(([A-Z]\d+(?:\.\d+)?):?\s*([^:\n]+)):?$/gm,
+                type: 'technique_item'
+            },
+            // Field labels (Description:, Techniques Used:, etc.)
+            {
+                pattern: /^(Description|Techniques Used|Aliases|Mitigations|Platforms|Tactics|Groups):/gim,
+                type: 'field'
+            }
         ];
         
-        // Try to find section boundaries
-        let lastIndex = 0;
         const sectionBoundaries = [];
         
-        sectionPatterns.forEach(pattern => {
+        // Find all section boundaries with enhanced information
+        sectionPatterns.forEach(patternObj => {
             let match;
+            const pattern = patternObj.pattern;
             while ((match = pattern.exec(text)) !== null) {
-                sectionBoundaries.push({
+                const boundary = {
                     start: match.index,
                     title: match[1].trim(),
-                    titleEnd: match.index + match[0].length
-                });
+                    titleEnd: match.index + match[0].length,
+                    type: patternObj.type,
+                    rawMatch: match
+                };
+                
+                // Extract enhanced information based on type
+                if (patternObj.type === 'numbered_item' || patternObj.type === 'technique_item') {
+                    boundary.mitre_id = match[2]; // T1055
+                    boundary.technique_name = match[3] ? match[3].trim() : ''; // Process Injection
+                    if (match[4]) {
+                        boundary.description = match[4].trim();
+                    }
+                }
+                
+                sectionBoundaries.push(boundary);
             }
         });
         
@@ -2306,24 +2335,37 @@ class ResultsSection {
         sectionBoundaries.sort((a, b) => a.start - b.start);
         
         if (sectionBoundaries.length === 0) {
-            return [{ title: 'Result', content: text }];
+            return [{ 
+                title: 'Result', 
+                content: text,
+                enhancedTitle: this.extractMainTitle(text)
+            }];
         }
         
-        // Create sections based on boundaries
+        // Create sections with enhanced titles
         for (let i = 0; i < sectionBoundaries.length; i++) {
             const boundary = sectionBoundaries[i];
             const nextBoundary = sectionBoundaries[i + 1];
             
             const sectionStart = boundary.titleEnd;
             const sectionEnd = nextBoundary ? nextBoundary.start : text.length;
-            
             const content = text.substring(sectionStart, sectionEnd).trim();
             
-            if (content) {
-                sections.push({
+            if (content || boundary.type === 'header') {
+                const section = {
                     title: boundary.title,
-                    content: content
-                });
+                    content: content,
+                    type: boundary.type,
+                    enhancedTitle: this.createEnhancedTitle(boundary, content)
+                };
+                
+                // Add MITRE identifier info if available
+                if (boundary.mitre_id) {
+                    section.mitre_id = boundary.mitre_id;
+                    section.technique_name = boundary.technique_name;
+                }
+                
+                sections.push(section);
             }
         }
         
@@ -2331,26 +2373,153 @@ class ResultsSection {
     }
 
     /**
-     * Create accordion-style result display
+     * Extract main title from text for simple results
+     */
+    extractMainTitle(text) {
+        const lines = text.split('\n');
+        
+        // Look for header patterns
+        for (let i = 0; i < Math.min(lines.length, 5); i++) {
+            const line = lines[i].trim();
+            
+            // Group name pattern
+            const groupMatch = line.match(/^Group Name:\s*(.+)$/);
+            if (groupMatch) {
+                return groupMatch[1];
+            }
+            
+            // Technique name pattern  
+            const techMatch = line.match(/^Name:\s*(.+)$/);
+            if (techMatch) {
+                return techMatch[1];
+            }
+            
+            // ID and name pattern
+            const idNameMatch = line.match(/^(ID|Name):\s*([A-Z]\d+(?:\.\d+)?)\s*-?\s*(.*)$/);
+            if (idNameMatch) {
+                return idNameMatch[3] || idNameMatch[2];
+            }
+        }
+        
+        return 'Result';
+    }
+
+    /**
+     * Create enhanced title for accordion headers
+     */
+    createEnhancedTitle(boundary, content) {
+        if (boundary.type === 'numbered_item' || boundary.type === 'technique_item') {
+            // For technique entries: "T1055: Process Injection"
+            if (boundary.mitre_id && boundary.technique_name) {
+                return `${boundary.mitre_id}: ${boundary.technique_name}`;
+            }
+        }
+        
+        if (boundary.type === 'header') {
+            // For headers, try to extract meaningful context from content
+            const contextInfo = this.extractContextFromContent(content);
+            if (contextInfo) {
+                return `${boundary.title} - ${contextInfo}`;
+            }
+        }
+        
+        if (boundary.type === 'field') {
+            // For fields, try to extract key information
+            const summary = this.extractFieldSummary(boundary.title, content);
+            if (summary) {
+                return `${boundary.title} (${summary})`;
+            }
+        }
+        
+        return boundary.title;
+    }
+
+    /**
+     * Extract context information from content
+     */
+    extractContextFromContent(content) {
+        const lines = content.split('\n').map(line => line.trim()).filter(line => line);
+        
+        // Look for group name
+        for (const line of lines.slice(0, 5)) {
+            const groupMatch = line.match(/^Group Name:\s*(.+)$/);
+            if (groupMatch) {
+                return groupMatch[1];
+            }
+            
+            const nameMatch = line.match(/^Name:\s*(.+)$/);
+            if (nameMatch) {
+                return nameMatch[1];
+            }
+        }
+        
+        // Look for counts in parentheses
+        const countMatch = content.match(/\((\d+)\):/);
+        if (countMatch) {
+            return `${countMatch[1]} items`;
+        }
+        
+        return null;
+    }
+
+    /**
+     * Extract summary for field sections
+     */
+    extractFieldSummary(fieldTitle, content) {
+        const lines = content.split('\n').filter(line => line.trim());
+        
+        if (fieldTitle.toLowerCase().includes('techniques')) {
+            const countMatch = content.match(/\((\d+)\)/);
+            if (countMatch) {
+                return `${countMatch[1]} techniques`;
+            }
+        }
+        
+        if (fieldTitle.toLowerCase() === 'platforms' && lines.length > 0) {
+            const platforms = lines[0].split(',').map(p => p.trim());
+            return platforms.slice(0, 3).join(', ') + (platforms.length > 3 ? '...' : '');
+        }
+        
+        if (fieldTitle.toLowerCase() === 'tactics' && lines.length > 0) {
+            const tactics = lines.filter(line => line.includes('TA'));
+            return `${tactics.length} tactics`;
+        }
+        
+        return null;
+    }
+
+    /**
+     * Create accordion-style result display with smart expansion
      */
     createAccordionResult(sections, toolName) {
         const accordionId = `accordion-${Date.now()}`;
         
+        // Calculate smart expansion - expand all if total content is small enough
+        const expansionConfig = this.calculateSmartExpansion(sections);
+        
         const accordionItems = sections.map((section, index) => {
             const itemId = `${accordionId}-item-${index}`;
-            const isFirst = index === 0;
+            const shouldExpand = expansionConfig.expandedItems.includes(index);
+            
+            // Use enhanced title if available, fallback to original title
+            const displayTitle = section.enhancedTitle || section.title;
             
             return `
-                <div class="accordion-item">
+                <div class="accordion-item" data-section-type="${section.type || 'default'}">
                     <h2 class="accordion-header">
-                        <button class="accordion-button ${isFirst ? '' : 'collapsed'}" type="button" 
+                        <button class="accordion-button ${shouldExpand ? '' : 'collapsed'}" type="button" 
                                 data-bs-toggle="collapse" data-bs-target="#${itemId}" 
-                                aria-expanded="${isFirst}" aria-controls="${itemId}">
-                            <strong>${this.escapeHtml(section.title)}</strong>
+                                aria-expanded="${shouldExpand}" aria-controls="${itemId}">
+                            <div class="accordion-title-content">
+                                <div class="accordion-main-title">
+                                    <strong>${this.escapeHtml(displayTitle)}</strong>
+                                </div>
+                                ${this.createAccordionSubtitle(section)}
+                            </div>
                             ${this.getSectionBadge(section)}
                         </button>
                     </h2>
-                    <div id="${itemId}" class="accordion-collapse collapse ${isFirst ? 'show' : ''}" 
+                    <div id="${itemId}" class="accordion-collapse collapse ${shouldExpand ? 'show' : ''}" 
                          data-bs-parent="#${accordionId}">
                         <div class="accordion-body">
                             ${this.formatSectionContent(section.content)}
@@ -2361,10 +2530,85 @@ class ResultsSection {
         }).join('');
         
         return `
-            <div class="accordion" id="${accordionId}">
+            <div class="accordion accordion-smart" id="${accordionId}" data-expansion-mode="${expansionConfig.mode}">
+                <div class="accordion-info text-muted small mb-2">
+                    ${expansionConfig.info}
+                </div>
                 ${accordionItems}
             </div>
         `;
+    }
+
+    /**
+     * Calculate smart expansion logic
+     */
+    calculateSmartExpansion(sections) {
+        const totalContentLength = sections.reduce((sum, section) => sum + section.content.length, 0);
+        const averageContentLength = totalContentLength / sections.length;
+        const viewportHeight = window.innerHeight || 800;
+        const estimatedItemHeight = 120; // Base height per accordion item
+        const availableHeight = viewportHeight * 0.6; // Use 60% of viewport
+        
+        // Calculate how many items can fit expanded
+        const maxExpandableItems = Math.floor(availableHeight / (estimatedItemHeight + averageContentLength / 5));
+        
+        let mode, expandedItems, info;
+        
+        if (sections.length <= 3 && totalContentLength < 2000) {
+            // Small result set - expand all
+            mode = 'expand_all';
+            expandedItems = sections.map((_, index) => index);
+            info = `All ${sections.length} sections expanded (compact result)`;
+        } else if (maxExpandableItems >= sections.length) {
+            // Content fits - expand all
+            mode = 'expand_all';
+            expandedItems = sections.map((_, index) => index);
+            info = `All ${sections.length} sections expanded (fits in view)`;
+        } else if (maxExpandableItems >= 2) {
+            // Expand first few sections
+            mode = 'expand_first';
+            expandedItems = Array.from({length: Math.min(maxExpandableItems, sections.length)}, (_, i) => i);
+            info = `First ${expandedItems.length} of ${sections.length} sections expanded`;
+        } else {
+            // Large content - expand only first
+            mode = 'expand_first_only';
+            expandedItems = [0];
+            info = `First section expanded (${sections.length} sections total)`;
+        }
+        
+        return { mode, expandedItems, info };
+    }
+
+    /**
+     * Create subtitle for accordion headers
+     */
+    createAccordionSubtitle(section) {
+        if (section.type === 'numbered_item' && section.mitre_id) {
+            // Extract tactic information from content
+            const tacticMatch = section.content.match(/Tactics?:\s*([^\n]+)/i);
+            if (tacticMatch) {
+                const tactics = tacticMatch[1].split(',').map(t => t.trim()).slice(0, 2);
+                return `<div class="accordion-subtitle text-muted">${tactics.join(', ')}</div>`;
+            }
+        }
+        
+        if (section.type === 'header' && section.content) {
+            // For headers, show a preview of key information
+            const lines = section.content.split('\n').slice(0, 3);
+            const preview = lines.find(line => 
+                line.includes('Group Name:') || 
+                line.includes('Name:') || 
+                line.includes('ID:')
+            );
+            if (preview) {
+                const cleanPreview = preview.replace(/^[^:]*:\s*/, '').substring(0, 50);
+                if (cleanPreview) {
+                    return `<div class="accordion-subtitle text-muted">${this.escapeHtml(cleanPreview)}</div>`;
+                }
+            }
+        }
+        
+        return '';
     }
 
     /**
