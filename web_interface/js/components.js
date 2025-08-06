@@ -2214,7 +2214,6 @@ class ResultsSection {
      */
     getResultTemplate(result, toolName, timestamp, type) {
         const formattedTimestamp = this.formatTimestamp(timestamp);
-        const formattedResult = this.formatResult(result);
         const statusBadge = type === 'error' ? 'danger' : 'success';
         const statusIcon = type === 'error' ? 'bi-exclamation-triangle' : 'bi-check-circle';
         
@@ -2238,12 +2237,264 @@ class ResultsSection {
                     </div>
                 </div>
                 <div class="result-body">
-                    <pre class="result-output"><code>${formattedResult}</code></pre>
+                    ${type === 'error' ? 
+                        `<div class="alert alert-danger m-3"><pre><code>${this.formatResult(result)}</code></pre></div>` : 
+                        this.parseAndFormatResult(result, toolName)
+                    }
                 </div>
             </div>
         `;
     }
     
+    /**
+     * Parse and format result with collapsible sections and MITRE links
+     */
+    parseAndFormatResult(result, toolName) {
+        try {
+            // Split result into sections
+            const sections = this.parseResultSections(result);
+            
+            if (sections.length <= 1) {
+                // Simple result - no sections found, display as enhanced single block
+                return this.formatSimpleResult(result);
+            }
+            
+            // Multi-section result - create accordion
+            return this.createAccordionResult(sections, toolName);
+            
+        } catch (error) {
+            console.error('Error parsing result:', error);
+            // Fallback to simple formatting
+            return `<div class="alert alert-warning m-3">
+                <h6>Result (Parsing Error)</h6>
+                <pre class="mt-2"><code>${this.escapeHtml(result)}</code></pre>
+            </div>`;
+        }
+    }
+
+    /**
+     * Parse result text into logical sections
+     */
+    parseResultSections(result) {
+        const text = String(result).trim();
+        const sections = [];
+        
+        // Split by common section headers
+        const sectionPatterns = [
+            /^([A-Z][A-Z\s&'-]+)$\n^={4,}$/gm,  // Headers with underlines
+            /^(\d+\.\s+[A-Z][^:\n]+):/gm,        // Numbered sections with colons
+            /^([A-Z][a-z\s]+\s+\([A-Z]\d+\)):$/gm, // Technique entries
+            /^(Description|Techniques Used|Aliases|Mitigations|Platforms|Tactics|Groups):/gim // Common field names
+        ];
+        
+        // Try to find section boundaries
+        let lastIndex = 0;
+        const sectionBoundaries = [];
+        
+        sectionPatterns.forEach(pattern => {
+            let match;
+            while ((match = pattern.exec(text)) !== null) {
+                sectionBoundaries.push({
+                    start: match.index,
+                    title: match[1].trim(),
+                    titleEnd: match.index + match[0].length
+                });
+            }
+        });
+        
+        // Sort boundaries by position
+        sectionBoundaries.sort((a, b) => a.start - b.start);
+        
+        if (sectionBoundaries.length === 0) {
+            return [{ title: 'Result', content: text }];
+        }
+        
+        // Create sections based on boundaries
+        for (let i = 0; i < sectionBoundaries.length; i++) {
+            const boundary = sectionBoundaries[i];
+            const nextBoundary = sectionBoundaries[i + 1];
+            
+            const sectionStart = boundary.titleEnd;
+            const sectionEnd = nextBoundary ? nextBoundary.start : text.length;
+            
+            const content = text.substring(sectionStart, sectionEnd).trim();
+            
+            if (content) {
+                sections.push({
+                    title: boundary.title,
+                    content: content
+                });
+            }
+        }
+        
+        return sections;
+    }
+
+    /**
+     * Create accordion-style result display
+     */
+    createAccordionResult(sections, toolName) {
+        const accordionId = `accordion-${Date.now()}`;
+        
+        const accordionItems = sections.map((section, index) => {
+            const itemId = `${accordionId}-item-${index}`;
+            const isFirst = index === 0;
+            
+            return `
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button ${isFirst ? '' : 'collapsed'}" type="button" 
+                                data-bs-toggle="collapse" data-bs-target="#${itemId}" 
+                                aria-expanded="${isFirst}" aria-controls="${itemId}">
+                            <strong>${this.escapeHtml(section.title)}</strong>
+                            ${this.getSectionBadge(section)}
+                        </button>
+                    </h2>
+                    <div id="${itemId}" class="accordion-collapse collapse ${isFirst ? 'show' : ''}" 
+                         data-bs-parent="#${accordionId}">
+                        <div class="accordion-body">
+                            ${this.formatSectionContent(section.content)}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        
+        return `
+            <div class="accordion" id="${accordionId}">
+                ${accordionItems}
+            </div>
+        `;
+    }
+
+    /**
+     * Format simple result (no sections)
+     */
+    formatSimpleResult(result) {
+        return `
+            <div class="card m-3">
+                <div class="card-body">
+                    <div class="formatted-content">
+                        ${this.formatSectionContent(result)}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    /**
+     * Format section content with MITRE links and enhanced formatting
+     */
+    formatSectionContent(content) {
+        let formatted = this.escapeHtml(content);
+        
+        // Add MITRE deep links
+        formatted = this.addMitreDeepLinks(formatted);
+        
+        // Format lists and structure
+        formatted = this.formatTextStructure(formatted);
+        
+        return formatted;
+    }
+
+    /**
+     * Add MITRE ATT&CK deep links to identifiers
+     */
+    addMitreDeepLinks(text) {
+        // Group IDs (G0001-G9999)
+        text = text.replace(/\b(G\d{4})\b/g, 
+            '<a href="https://attack.mitre.org/groups/$1" target="_blank" class="mitre-link mitre-group">$1 <i class="bi bi-box-arrow-up-right"></i></a>');
+        
+        // Technique IDs (T1001, T1001.001)
+        text = text.replace(/\b(T\d{4}(?:\.\d{3})?)\b/g, 
+            '<a href="https://attack.mitre.org/techniques/$1" target="_blank" class="mitre-link mitre-technique">$1 <i class="bi bi-box-arrow-up-right"></i></a>');
+        
+        // Tactic IDs (TA0001-TA0043)  
+        text = text.replace(/\b(TA\d{4})\b/g, 
+            '<a href="https://attack.mitre.org/tactics/$1" target="_blank" class="mitre-link mitre-tactic">$1 <i class="bi bi-box-arrow-up-right"></i></a>');
+        
+        // Mitigation IDs (M1001-M1999)
+        text = text.replace(/\b(M\d{4})\b/g, 
+            '<a href="https://attack.mitre.org/mitigations/$1" target="_blank" class="mitre-link mitre-mitigation">$1 <i class="bi bi-box-arrow-up-right"></i></a>');
+        
+        // Software IDs (S0001-S9999) 
+        text = text.replace(/\b(S\d{4})\b/g, 
+            '<a href="https://attack.mitre.org/software/$1" target="_blank" class="mitre-link mitre-software">$1 <i class="bi bi-box-arrow-up-right"></i></a>');
+        
+        return text;
+    }
+
+    /**
+     * Format text structure (lists, paragraphs, etc.)
+     */
+    formatTextStructure(text) {
+        // Convert numbered lists to proper HTML lists
+        let formatted = text.replace(/^(\d+\.\s+)(.+)$/gm, '<li><strong>$1</strong>$2</li>');
+        if (formatted.includes('<li>')) {
+            formatted = '<ol class="formatted-list">' + formatted.replace(/^(?!<li>)/gm, '') + '</ol>';
+        }
+        
+        // Convert double newlines to paragraphs
+        formatted = formatted.split('\n\n').map(para => {
+            para = para.trim();
+            if (para && !para.includes('<ol') && !para.includes('<li>')) {
+                return `<p>${para.replace(/\n/g, '<br>')}</p>`;
+            }
+            return para;
+        }).join('\n');
+        
+        // Format field labels (Description:, Platforms:, etc.)
+        formatted = formatted.replace(/^([A-Z][a-z\s]+):(.+)$/gm, 
+            '<div class="field-group"><span class="field-label">$1:</span><span class="field-value">$2</span></div>');
+        
+        return formatted;
+    }
+
+    /**
+     * Get badge for section based on content
+     */
+    getSectionBadge(section) {
+        const content = section.content.toLowerCase();
+        let count = 0;
+        let type = 'secondary';
+        
+        // Count techniques
+        const techniqueMatches = section.content.match(/\bT\d{4}(?:\.\d{3})?\b/g);
+        if (techniqueMatches) {
+            count = techniqueMatches.length;
+            type = 'primary';
+        }
+        
+        // Count groups
+        const groupMatches = section.content.match(/\bG\d{4}\b/g);
+        if (groupMatches) {
+            count = Math.max(count, groupMatches.length);
+            type = 'success';
+        }
+        
+        // Count mitigations
+        const mitigationMatches = section.content.match(/\bM\d{4}\b/g);
+        if (mitigationMatches) {
+            count = Math.max(count, mitigationMatches.length);
+            type = 'info';
+        }
+        
+        if (count > 0) {
+            return `<span class="badge bg-${type} ms-2">${count}</span>`;
+        }
+        
+        return '';
+    }
+
+    /**
+     * Escape HTML characters
+     */
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
     /**
      * Get error template
      */
