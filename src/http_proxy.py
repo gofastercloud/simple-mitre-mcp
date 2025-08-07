@@ -67,9 +67,10 @@ class HTTPProxy:
         self.app.router.add_static(
             "/js/", Path(__file__).parent.parent / "web_interface" / "js"
         )
-        self.app.router.add_static(
-            "/assets/", Path(__file__).parent.parent / "web_interface" / "assets"
-        )
+        # Only add assets route if directory exists
+        assets_path = Path(__file__).parent.parent / "web_interface" / "assets"
+        if assets_path.exists():
+            self.app.router.add_static("/assets/", assets_path)
 
     def setup_cors(self):
         """Set up CORS to allow browser requests."""
