@@ -38,7 +38,7 @@ class TestDependencyValidation:
     def test_validate_dependencies_with_missing_module(self):
         """Test that validate_dependencies detects missing modules."""
         from unittest.mock import Mock
-        
+
         # Mock importlib.import_module to simulate missing module
         with patch("start_explorer.importlib.import_module") as mock_import:
             # Enhanced start_explorer now checks more modules
@@ -46,7 +46,7 @@ class TestDependencyValidation:
                 if module_name == "src.http_proxy":
                     raise ImportError("No module named 'src.http_proxy'")
                 return Mock(__version__="1.0.0")
-            
+
             mock_import.side_effect = side_effect
 
             success, errors = validate_dependencies(verbose=False)
@@ -190,7 +190,10 @@ class TestCommandLineInterface:
             assert exc_info.value.code == 0
             captured = capsys.readouterr()
             # Enhanced start_explorer has different help text format
-            assert "MITRE ATT&CK MCP Web Explorer" in captured.out or "Interactive threat intelligence analysis interface" in captured.out
+            assert (
+                "MITRE ATT&CK MCP Web Explorer" in captured.out
+                or "Interactive threat intelligence analysis interface" in captured.out
+            )
             assert "usage:" in captured.out.lower() or "Usage:" in captured.out
 
     def test_validate_command(self, capsys):
@@ -198,7 +201,7 @@ class TestCommandLineInterface:
         with patch("sys.argv", ["start_explorer.py", "--validate"]):
             with patch("start_explorer.run_startup_validation") as mock_validation:
                 mock_validation.return_value = True
-                
+
                 with pytest.raises(SystemExit) as exc_info:
                     from start_explorer import main
 
@@ -208,7 +211,10 @@ class TestCommandLineInterface:
                 assert exc_info.value.code == 0
                 captured = capsys.readouterr()
                 # Enhanced start_explorer has different validation text
-                assert "comprehensive validation" in captured.out.lower() or "Running standalone validation..." in captured.out
+                assert (
+                    "comprehensive validation" in captured.out.lower()
+                    or "Running standalone validation..." in captured.out
+                )
 
 
 class TestIntegration:
@@ -479,7 +485,7 @@ class TestDataPopulationEndpoints:
             # Test group extraction method with mock data
             mock_groups_data = [
                 {"id": "G0001", "name": "Test Group 1"},
-                {"id": "G0002", "name": "Test Group 2"}
+                {"id": "G0002", "name": "Test Group 2"},
             ]
             groups = proxy._extract_groups_for_dropdown(mock_groups_data)
             assert isinstance(groups, list)
@@ -493,7 +499,11 @@ class TestDataPopulationEndpoints:
 
         except Exception as e:
             # Expected if MCP server not available in test environment
-            assert "MCP server" in str(e) or "connection" in str(e).lower() or "missing 1 required positional argument" in str(e)
+            assert (
+                "MCP server" in str(e)
+                or "connection" in str(e).lower()
+                or "missing 1 required positional argument" in str(e)
+            )
 
     @pytest.mark.asyncio
     async def test_tactics_endpoint_structure(self):
@@ -513,7 +523,7 @@ class TestDataPopulationEndpoints:
             # Test tactics extraction method with mock data
             mock_tactics_data = [
                 {"id": "TA0001", "name": "Initial Access"},
-                {"id": "TA0002", "name": "Execution"}
+                {"id": "TA0002", "name": "Execution"},
             ]
             tactics = proxy._extract_tactics_for_dropdown(mock_tactics_data)
             assert isinstance(tactics, list)
@@ -527,7 +537,11 @@ class TestDataPopulationEndpoints:
 
         except Exception as e:
             # Expected if MCP server not available in test environment
-            assert "MCP server" in str(e) or "connection" in str(e).lower() or "missing 1 required positional argument" in str(e)
+            assert (
+                "MCP server" in str(e)
+                or "connection" in str(e).lower()
+                or "missing 1 required positional argument" in str(e)
+            )
 
     def test_api_endpoint_validation(self):
         """Test API endpoint input validation."""

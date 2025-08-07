@@ -48,7 +48,7 @@ def get_module_version(module_name: str) -> Optional[str]:
     """Get the version of a module if available."""
     try:
         module = importlib.import_module(module_name)
-        return getattr(module, '__version__', 'Unknown')
+        return getattr(module, "__version__", "Unknown")
     except (ImportError, AttributeError):
         return None
 
@@ -83,7 +83,7 @@ def validate_dependencies(verbose: bool = False) -> Tuple[bool, List[str]]:
         try:
             importlib.import_module(module_name)
             version = get_module_version(module_name) if check_version else None
-            
+
             if verbose and version:
                 print(f"  ✅ {module_name} v{version} - OK")
             else:
@@ -122,17 +122,17 @@ def validate_dependencies(verbose: bool = False) -> Tuple[bool, List[str]]:
 def validate_web_interface_structure() -> Tuple[bool, List[str]]:
     """
     Validate the complete web interface file structure.
-    
+
     Returns:
         Tuple[bool, List[str]]: (success, list of error messages)
     """
     issues = []
     print("🔍 Validating web interface structure...")
-    
+
     # Required web interface files
     web_files = [
         "web_interface/index.html",
-        "web_interface/css/styles.css", 
+        "web_interface/css/styles.css",
         "web_interface/css/components.css",
         "web_interface/js/app.js",
         "web_interface/js/api.js",
@@ -140,9 +140,9 @@ def validate_web_interface_structure() -> Tuple[bool, List[str]]:
         "web_interface/js/ToolsSection.js",
         "web_interface/js/ResultsSection.js",
         "web_interface/js/SmartFormControls.js",
-        "web_interface/js/ThemeToggle.js"
+        "web_interface/js/ThemeToggle.js",
     ]
-    
+
     for file_path in web_files:
         path = Path(file_path)
         if not path.exists():
@@ -153,27 +153,27 @@ def validate_web_interface_structure() -> Tuple[bool, List[str]]:
             print(f"  ❌ {file_path} - EMPTY")
         else:
             print(f"  ✅ {file_path} - OK")
-    
+
     return len(issues) == 0, issues
 
 
 def validate_configuration_files() -> Tuple[bool, List[str]]:
     """
     Validate configuration files exist and have valid format.
-    
+
     Returns:
         Tuple[bool, List[str]]: (success, list of error messages)
     """
     issues = []
     print("\n🔍 Validating configuration files...")
-    
+
     config_files = [
         ("config/data_sources.yaml", "YAML"),
         ("config/entity_schemas.yaml", "YAML"),
         ("config/tools.yaml", "YAML"),
         ("pyproject.toml", "TOML"),
     ]
-    
+
     for file_path, file_type in config_files:
         path = Path(file_path)
         if not path.exists():
@@ -184,17 +184,19 @@ def validate_configuration_files() -> Tuple[bool, List[str]]:
             try:
                 if file_type == "YAML":
                     import yaml
-                    with open(path, 'r') as f:
+
+                    with open(path, "r") as f:
                         yaml.safe_load(f)
                 elif file_type == "TOML":
                     import tomllib
-                    with open(path, 'rb') as f:
+
+                    with open(path, "rb") as f:
                         tomllib.load(f)
                 print(f"  ✅ {file_path} - OK")
             except Exception as e:
                 issues.append(f"Invalid {file_type} format in {file_path}: {e}")
                 print(f"  ❌ {file_path} - INVALID FORMAT")
-    
+
     return len(issues) == 0, issues
 
 
@@ -215,10 +217,14 @@ def validate_environment(verbose: bool = False) -> Tuple[bool, List[str]]:
     # Check Python version
     python_version = sys.version_info
     if python_version < (3, 12):
-        issues.append(f"Python 3.12+ required, found {python_version.major}.{python_version.minor}")
+        issues.append(
+            f"Python 3.12+ required, found {python_version.major}.{python_version.minor}"
+        )
         print(f"  ❌ Python {python_version.major}.{python_version.minor} - TOO OLD")
     else:
-        print(f"  ✅ Python {python_version.major}.{python_version.minor}.{python_version.micro} - OK")
+        print(
+            f"  ✅ Python {python_version.major}.{python_version.minor}.{python_version.micro} - OK"
+        )
 
     # Check project structure
     required_directories = [
@@ -241,7 +247,7 @@ def validate_environment(verbose: bool = False) -> Tuple[bool, List[str]]:
     issues.extend(web_issues)
 
     # Validate configuration files
-    config_ok, config_issues = validate_configuration_files() 
+    config_ok, config_issues = validate_configuration_files()
     issues.extend(config_issues)
 
     # Check environment variables
@@ -249,7 +255,7 @@ def validate_environment(verbose: bool = False) -> Tuple[bool, List[str]]:
     port = os.getenv("MCP_HTTP_PORT", "8000")
 
     print(f"\n🔍 Validating server configuration...")
-    
+
     # Validate port
     try:
         port_int = int(port)
@@ -265,7 +271,7 @@ def validate_environment(verbose: bool = False) -> Tuple[bool, List[str]]:
         print(f"  ❌ Port {port} - INVALID FORMAT")
 
     # Validate host
-    if host in ['localhost', '127.0.0.1', '0.0.0.0']:
+    if host in ["localhost", "127.0.0.1", "0.0.0.0"]:
         print(f"  ✅ Host {host} - OK")
     else:
         print(f"  ⚠️  Host {host} - CUSTOM (ensure it's accessible)")
@@ -287,12 +293,12 @@ def validate_environment(verbose: bool = False) -> Tuple[bool, List[str]]:
 async def health_check(host: str, port: int, timeout: int = 10) -> Dict[str, Any]:
     """
     Perform health check on the running web explorer server.
-    
+
     Args:
         host: Server host
-        port: Server port  
+        port: Server port
         timeout: Request timeout in seconds
-        
+
     Returns:
         Dictionary with health check results
     """
@@ -301,70 +307,74 @@ async def health_check(host: str, port: int, timeout: int = 10) -> Dict[str, Any
         "server_reachable": False,
         "endpoints": {},
         "response_times": {},
-        "errors": []
+        "errors": [],
     }
-    
+
     base_url = f"http://{host}:{port}"
-    
+
     # Test endpoints to check
-    test_endpoints = [
-        "/",
-        "/tools", 
-        "/system_info",
-        "/api/groups",
-        "/api/tactics"
-    ]
-    
+    test_endpoints = ["/", "/tools", "/system_info", "/api/groups", "/api/tactics"]
+
     print(f"🏥 Running health check on {base_url}...")
-    
+
     try:
         for endpoint in test_endpoints:
             url = base_url + endpoint
             start_time = time.time()
-            
+
             try:
                 req = urllib.request.Request(url)
-                req.add_header('User-Agent', 'WebExplorerHealthCheck/1.0')
-                
+                req.add_header("User-Agent", "WebExplorerHealthCheck/1.0")
+
                 with urllib.request.urlopen(req, timeout=timeout) as response:
                     response_time = time.time() - start_time
                     health_status["endpoints"][endpoint] = {
                         "status": response.status,
-                        "healthy": response.status == 200
+                        "healthy": response.status == 200,
                     }
-                    health_status["response_times"][endpoint] = round(response_time * 1000, 2)
-                    
+                    health_status["response_times"][endpoint] = round(
+                        response_time * 1000, 2
+                    )
+
                     if response.status == 200:
                         print(f"  ✅ {endpoint} - OK ({response_time*1000:.1f}ms)")
                     else:
                         print(f"  ⚠️  {endpoint} - HTTP {response.status}")
-                        
+
             except urllib.error.URLError as e:
                 health_status["endpoints"][endpoint] = {
                     "status": "error",
                     "error": str(e),
-                    "healthy": False
+                    "healthy": False,
                 }
                 health_status["errors"].append(f"{endpoint}: {str(e)}")
                 print(f"  ❌ {endpoint} - ERROR: {str(e)}")
-    
+
     except Exception as e:
         health_status["errors"].append(f"Health check failed: {str(e)}")
         print(f"  ❌ Health check failed: {str(e)}")
         return health_status
-        
+
     # Determine overall health
-    healthy_endpoints = sum(1 for ep in health_status["endpoints"].values() if ep.get("healthy", False))
+    healthy_endpoints = sum(
+        1 for ep in health_status["endpoints"].values() if ep.get("healthy", False)
+    )
     total_endpoints = len(test_endpoints)
-    
-    health_status["healthy"] = healthy_endpoints >= (total_endpoints * 0.8)  # 80% success rate
+
+    health_status["healthy"] = healthy_endpoints >= (
+        total_endpoints * 0.8
+    )  # 80% success rate
     health_status["server_reachable"] = healthy_endpoints > 0
-    
+
     if health_status["healthy"]:
-        print(f"✅ Health check passed ({healthy_endpoints}/{total_endpoints} endpoints healthy)")
+        print(
+            f"✅ Health check passed ({healthy_endpoints}/{total_endpoints} endpoints healthy)"
+        )
     else:
-        print(f"⚠️  Health check partial ({healthy_endpoints}/{total_endpoints} endpoints healthy)")
-        
+        print(
+            f"⚠️  Health check partial ({healthy_endpoints}/{total_endpoints} endpoints healthy)"
+        )
+
     return health_status
 
 
@@ -411,19 +421,19 @@ def print_troubleshooting_guide(
     print("\n🏥 HEALTH CHECKS:")
     print("   • Run validation only:")
     print("     uv run start_explorer.py --validate")
-    print("   • Run health check on running server:")  
+    print("   • Run health check on running server:")
     print("     uv run start_explorer.py --health-check")
     print("   • Run with verbose output:")
     print("     uv run start_explorer.py --verbose --validate")
 
     print("\n📞 ADDITIONAL HELP:")
     print("   • Project documentation: README.md")
-    print("   • Deployment guide: deployment/TROUBLESHOOTING.md") 
+    print("   • Deployment guide: deployment/TROUBLESHOOTING.md")
     print("   • Check UV installation: uv --version")
     print("   • Run tests to verify setup: uv run python -m pytest tests/ -x")
     print("   • Enable debug logging: LOG_LEVEL=DEBUG uv run start_explorer.py")
     print("   • Check system requirements and compatibility")
-    
+
     print("\n🚨 COMMON FIXES:")
     print("   • Import errors: uv sync --reinstall")
     print("   • Port conflicts: MCP_HTTP_PORT=8080 uv run start_explorer.py")
@@ -435,21 +445,25 @@ def print_troubleshooting_guide(
 def setup_signal_handlers():
     """Setup graceful shutdown signal handlers."""
     global shutdown_requested
-    
+
     def signal_handler(signum, frame):
         global shutdown_requested
         signal_name = signal.Signals(signum).name
         print(f"\n🛑 Received {signal_name}, initiating graceful shutdown...")
         shutdown_requested = True
-    
+
     # Handle common shutdown signals
     for sig in [signal.SIGINT, signal.SIGTERM]:
         signal.signal(sig, signal_handler)
-    
+
     # Handle SIGHUP for reload (Unix only)
-    if hasattr(signal, 'SIGHUP'):
+    if hasattr(signal, "SIGHUP"):
+
         def reload_handler(signum, frame):
-            print("\n🔄 Received SIGHUP, consider restarting to reload configuration...")
+            print(
+                "\n🔄 Received SIGHUP, consider restarting to reload configuration..."
+            )
+
         signal.signal(signal.SIGHUP, reload_handler)
 
 
@@ -468,8 +482,10 @@ def run_startup_validation(verbose: bool = False) -> bool:
 
     # Validate Python environment first
     python_version = sys.version_info
-    print(f"🐍 Python {python_version.major}.{python_version.minor}.{python_version.micro} on {sys.platform}")
-    
+    print(
+        f"🐍 Python {python_version.major}.{python_version.minor}.{python_version.micro} on {sys.platform}"
+    )
+
     if verbose:
         print(f"   Executable: {sys.executable}")
         print(f"   Working Directory: {os.getcwd()}")
@@ -496,27 +512,29 @@ def run_startup_validation(verbose: bool = False) -> bool:
 async def run_health_check(host: str, port: int) -> bool:
     """
     Run health check against a running server.
-    
+
     Args:
         host: Server host
         port: Server port
-        
+
     Returns:
         bool: True if health check passes
     """
     try:
         health_result = await health_check(host, port)
-        
+
         if health_result["healthy"]:
             print("\n✅ Server health check passed!")
-            
+
             # Show response times
             if health_result["response_times"]:
                 print("\n📊 Performance Metrics:")
                 for endpoint, time_ms in health_result["response_times"].items():
-                    status = "🟢" if time_ms < 1000 else "🟡" if time_ms < 3000 else "🔴"
+                    status = (
+                        "🟢" if time_ms < 1000 else "🟡" if time_ms < 3000 else "🔴"
+                    )
                     print(f"   {status} {endpoint}: {time_ms}ms")
-            
+
             return True
         else:
             print("\n⚠️  Server health check failed!")
@@ -525,7 +543,7 @@ async def run_health_check(host: str, port: int) -> bool:
                 for error in health_result["errors"]:
                     print(f"   • {error}")
             return False
-            
+
     except Exception as e:
         print(f"\n❌ Health check failed with error: {e}")
         return False
@@ -544,13 +562,13 @@ def open_browser(url, delay=2):
 async def start_web_explorer(open_browser_flag: bool = True, verbose: bool = False):
     """
     Start the web explorer with HTTP proxy server.
-    
+
     Args:
         open_browser_flag: Whether to open browser automatically
         verbose: Show verbose output
     """
     global shutdown_requested
-    
+
     # Import here after validation
     from src.http_proxy import create_http_proxy_server
 
@@ -560,15 +578,17 @@ async def start_web_explorer(open_browser_flag: bool = True, verbose: bool = Fal
 
     # Setup graceful shutdown
     setup_signal_handlers()
-    
+
     runner = None
     mcp_server = None
 
     try:
         print("🚀 Starting MITRE ATT&CK MCP Web Explorer...")
-        print(f"📊 Loading MITRE ATT&CK data and starting server on http://{host}:{port}")
+        print(
+            f"📊 Loading MITRE ATT&CK data and starting server on http://{host}:{port}"
+        )
         print("⏳ This may take 10-15 seconds for initial data loading...")
-        
+
         if verbose:
             print(f"   Host: {host}")
             print(f"   Port: {port}")
@@ -578,7 +598,7 @@ async def start_web_explorer(open_browser_flag: bool = True, verbose: bool = Fal
         start_time = time.time()
         runner, mcp_server = await create_http_proxy_server(host, port)
         startup_time = time.time() - start_time
-        
+
         if verbose:
             print(f"   Startup time: {startup_time:.2f} seconds")
 
@@ -593,7 +613,7 @@ async def start_web_explorer(open_browser_flag: bool = True, verbose: bool = Fal
         print(f"✅ Web Explorer ready at: {url}")
         print("🛠️  Available tools: 8 (5 basic + 3 advanced threat modeling)")
         print("📋 Press Ctrl+C to stop the server")
-        
+
         if verbose:
             print(f"🔍 Debug mode enabled - verbose logging active")
 
@@ -602,16 +622,16 @@ async def start_web_explorer(open_browser_flag: bool = True, verbose: bool = Fal
         try:
             while not shutdown_requested:
                 await asyncio.sleep(1)
-                
+
         except KeyboardInterrupt:
             if not shutdown_initiated:
                 print("\n🛑 Received interrupt signal, shutting down...")
                 shutdown_initiated = True
-        
+
         # Graceful shutdown sequence
         if not shutdown_initiated:
             print("\n🛑 Shutting down Web Explorer...")
-            
+
     except OSError as e:
         if "Address already in use" in str(e):
             print(f"❌ Port {port} is already in use.")
@@ -621,7 +641,7 @@ async def start_web_explorer(open_browser_flag: bool = True, verbose: bool = Fal
         else:
             print(f"❌ Network error: {e}")
         sys.exit(1)
-        
+
     except Exception as e:
         logger.error(f"Failed to start Web Explorer: {e}")
         print(f"❌ Unexpected error: {e}")
@@ -630,7 +650,7 @@ async def start_web_explorer(open_browser_flag: bool = True, verbose: bool = Fal
         print("   - Check logs for detailed error information")
         print("   - Ensure all dependencies are installed: uv sync")
         sys.exit(1)
-        
+
     finally:
         # Cleanup resources
         if runner:
@@ -662,39 +682,53 @@ Examples:
   LOG_LEVEL=DEBUG uv run start_explorer.py --validate
 
 For more help, see: deployment/TROUBLESHOOTING.md
-        """)
+        """,
+    )
 
     # Main actions
     action_group = parser.add_mutually_exclusive_group()
     action_group.add_argument(
-        '--validate', '-v', action='store_true',
-        help='Run validation checks only (don\'t start server)')
+        "--validate",
+        "-v",
+        action="store_true",
+        help="Run validation checks only (don't start server)",
+    )
     action_group.add_argument(
-        '--health-check', action='store_true',
-        help='Run health check against running server')
+        "--health-check",
+        action="store_true",
+        help="Run health check against running server",
+    )
 
     # Server options
     parser.add_argument(
-        '--no-browser', action='store_true',
-        help='Don\'t automatically open web browser')
+        "--no-browser", action="store_true", help="Don't automatically open web browser"
+    )
     parser.add_argument(
-        '--port', type=int, metavar='PORT',
-        help='Override server port (can also use MCP_HTTP_PORT env var)')
+        "--port",
+        type=int,
+        metavar="PORT",
+        help="Override server port (can also use MCP_HTTP_PORT env var)",
+    )
     parser.add_argument(
-        '--host', metavar='HOST',
-        help='Override server host (can also use MCP_HTTP_HOST env var)')
+        "--host",
+        metavar="HOST",
+        help="Override server host (can also use MCP_HTTP_HOST env var)",
+    )
 
     # Debug options
     parser.add_argument(
-        '--verbose', action='store_true',
-        help='Show detailed output and debug information')
+        "--verbose",
+        action="store_true",
+        help="Show detailed output and debug information",
+    )
     parser.add_argument(
-        '--quiet', '-q', action='store_true',
-        help='Minimize output (only show errors)')
+        "--quiet", "-q", action="store_true", help="Minimize output (only show errors)"
+    )
 
-    # Utility options  
+    # Utility options
     parser.add_argument(
-        '--version', action='version', version='MITRE ATT&CK MCP Web Explorer 1.0.0')
+        "--version", action="version", version="MITRE ATT&CK MCP Web Explorer 1.0.0"
+    )
 
     return parser
 
@@ -707,18 +741,22 @@ def configure_logging(verbose: bool = False, quiet: bool = False):
         log_level = logging.DEBUG
     else:
         # Check environment variable
-        env_level = os.getenv('LOG_LEVEL', 'INFO').upper()
+        env_level = os.getenv("LOG_LEVEL", "INFO").upper()
         log_level = getattr(logging, env_level, logging.INFO)
 
     logging.basicConfig(
         level=log_level,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s' if verbose else '%(levelname)s: %(message)s'
+        format=(
+            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+            if verbose
+            else "%(levelname)s: %(message)s"
+        ),
     )
 
     # Reduce noise from some libraries in non-verbose mode
     if not verbose:
-        logging.getLogger('aiohttp').setLevel(logging.WARNING)
-        logging.getLogger('urllib3').setLevel(logging.WARNING)
+        logging.getLogger("aiohttp").setLevel(logging.WARNING)
+        logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 
 def main():
@@ -733,9 +771,9 @@ def main():
 
         # Override environment variables with command line arguments
         if args.host:
-            os.environ['MCP_HTTP_HOST'] = args.host
+            os.environ["MCP_HTTP_HOST"] = args.host
         if args.port:
-            os.environ['MCP_HTTP_PORT'] = str(args.port)
+            os.environ["MCP_HTTP_PORT"] = str(args.port)
 
         host = os.getenv("MCP_HTTP_HOST", "localhost")
         port = int(os.getenv("MCP_HTTP_PORT", "8000"))
@@ -778,10 +816,11 @@ def main():
 
             # Start the web explorer
             try:
-                asyncio.run(start_web_explorer(
-                    open_browser_flag=not args.no_browser,
-                    verbose=args.verbose
-                ))
+                asyncio.run(
+                    start_web_explorer(
+                        open_browser_flag=not args.no_browser, verbose=args.verbose
+                    )
+                )
             except KeyboardInterrupt:
                 if not args.quiet:
                     print("\n👋 Goodbye!")
