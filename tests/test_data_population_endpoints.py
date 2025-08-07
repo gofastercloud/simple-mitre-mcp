@@ -12,7 +12,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from aiohttp import web
-from aiohttp.test_utils import AioHTTPTestCase, unittest_run_loop
+from aiohttp.test_utils import AioHTTPTestCase
 
 # Add src directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
@@ -102,7 +102,6 @@ class TestDataPopulationEndpoints(AioHTTPTestCase):
             },
         ]
 
-    @unittest_run_loop
     async def test_get_groups_success(self):
         """Test successful groups endpoint response."""
         # Mock the data loader to return sample data
@@ -137,7 +136,6 @@ class TestDataPopulationEndpoints(AioHTTPTestCase):
                 first_group["aliases"], ["Fancy Bear", "Pawn Storm", "Sofacy"]
             )
 
-    @unittest_run_loop
     async def test_get_groups_no_data_loader(self):
         """Test groups endpoint when data loader is not available."""
         # Remove data loader from mock server
@@ -150,7 +148,6 @@ class TestDataPopulationEndpoints(AioHTTPTestCase):
         self.assertIn("error", data)
         self.assertIn("Data loader not available", data["error"])
 
-    @unittest_run_loop
     async def test_get_groups_no_data_loaded(self):
         """Test groups endpoint when no data is loaded."""
         with patch.object(
@@ -165,7 +162,6 @@ class TestDataPopulationEndpoints(AioHTTPTestCase):
             self.assertIn("error", data)
             self.assertIn("MITRE ATT&CK data not loaded", data["error"])
 
-    @unittest_run_loop
     async def test_get_tactics_success(self):
         """Test successful tactics endpoint response."""
         # Mock the data loader to return sample data
@@ -197,7 +193,6 @@ class TestDataPopulationEndpoints(AioHTTPTestCase):
             self.assertEqual(first_tactic["name"], "Initial Access")
             self.assertEqual(first_tactic["display_name"], "Initial Access (TA0001)")
 
-    @unittest_run_loop
     async def test_get_tactics_no_data_loader(self):
         """Test tactics endpoint when data loader is not available."""
         # Remove data loader from mock server
@@ -210,7 +205,6 @@ class TestDataPopulationEndpoints(AioHTTPTestCase):
         self.assertIn("error", data)
         self.assertIn("Data loader not available", data["error"])
 
-    @unittest_run_loop
     async def test_get_techniques_success_id_match(self):
         """Test successful techniques endpoint response with ID match."""
         # Mock the data loader to return sample data
@@ -243,7 +237,6 @@ class TestDataPopulationEndpoints(AioHTTPTestCase):
             self.assertEqual(technique["display_name"], "Process Injection (T1055)")
             self.assertEqual(technique["match_reason"], "ID")
 
-    @unittest_run_loop
     async def test_get_techniques_success_name_match(self):
         """Test successful techniques endpoint response with name match."""
         # Mock the data loader to return sample data
@@ -275,7 +268,6 @@ class TestDataPopulationEndpoints(AioHTTPTestCase):
             self.assertEqual(technique["name"], "Process Injection")
             self.assertEqual(technique["match_reason"], "Name")
 
-    @unittest_run_loop
     async def test_get_techniques_missing_query_param(self):
         """Test techniques endpoint with missing query parameter."""
         resp = await self.client.request("GET", "/api/techniques")
@@ -285,7 +277,6 @@ class TestDataPopulationEndpoints(AioHTTPTestCase):
         self.assertIn("error", data)
         self.assertIn("Query parameter 'q' is required", data["error"])
 
-    @unittest_run_loop
     async def test_get_techniques_empty_query_param(self):
         """Test techniques endpoint with empty query parameter."""
         resp = await self.client.request("GET", "/api/techniques?q=")
@@ -295,7 +286,6 @@ class TestDataPopulationEndpoints(AioHTTPTestCase):
         self.assertIn("error", data)
         self.assertIn("Query parameter 'q' is required", data["error"])
 
-    @unittest_run_loop
     async def test_get_techniques_short_query(self):
         """Test techniques endpoint with query too short."""
         resp = await self.client.request("GET", "/api/techniques?q=T")
@@ -305,7 +295,6 @@ class TestDataPopulationEndpoints(AioHTTPTestCase):
         self.assertIn("error", data)
         self.assertIn("Query must be at least 2 characters long", data["error"])
 
-    @unittest_run_loop
     async def test_get_techniques_long_query(self):
         """Test techniques endpoint with query too long."""
         long_query = "a" * 101  # 101 characters
@@ -316,7 +305,6 @@ class TestDataPopulationEndpoints(AioHTTPTestCase):
         self.assertIn("error", data)
         self.assertIn("Query must be less than 100 characters", data["error"])
 
-    @unittest_run_loop
     async def test_get_techniques_no_matches(self):
         """Test techniques endpoint with query that matches nothing."""
         # Mock the data loader to return sample data

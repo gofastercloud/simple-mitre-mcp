@@ -9,7 +9,7 @@ import json
 import pytest
 from unittest.mock import Mock, patch, AsyncMock
 from aiohttp import web
-from aiohttp.test_utils import AioHTTPTestCase, unittest_run_loop
+from aiohttp.test_utils import AioHTTPTestCase
 
 import sys
 from pathlib import Path
@@ -71,7 +71,6 @@ class TestAPIEndpoints(AioHTTPTestCase):
         proxy = HTTPProxy(mock_mcp_server)
         return proxy.app
 
-    @unittest_run_loop
     async def test_system_info_endpoint(self):
         """Test the /system_info endpoint."""
         resp = await self.client.request("GET", "/system_info")
@@ -99,7 +98,6 @@ class TestAPIEndpoints(AioHTTPTestCase):
         self.assertTrue(capabilities["web_interface"])
         self.assertTrue(capabilities["api_access"])
 
-    @unittest_run_loop
     async def test_tools_list_endpoint(self):
         """Test the /tools endpoint."""
         resp = await self.client.request("GET", "/tools")
@@ -124,7 +122,6 @@ class TestAPIEndpoints(AioHTTPTestCase):
             self.assertIn("properties", schema)
             self.assertIn("required", schema)
 
-    @unittest_run_loop
     async def test_groups_endpoint(self):
         """Test the /api/groups endpoint."""
         resp = await self.client.request("GET", "/api/groups")
@@ -147,7 +144,6 @@ class TestAPIEndpoints(AioHTTPTestCase):
             if group["aliases"]:
                 self.assertIn("(", group["display_name"])
 
-    @unittest_run_loop
     async def test_tactics_endpoint(self):
         """Test the /api/tactics endpoint."""
         resp = await self.client.request("GET", "/api/tactics")
@@ -168,7 +164,6 @@ class TestAPIEndpoints(AioHTTPTestCase):
             # Check that display_name includes ID
             self.assertIn(tactic["id"], tactic["display_name"])
 
-    @unittest_run_loop
     async def test_techniques_endpoint_with_query(self):
         """Test the /api/techniques endpoint with query parameter."""
         resp = await self.client.request("GET", "/api/techniques?q=process")
@@ -194,7 +189,6 @@ class TestAPIEndpoints(AioHTTPTestCase):
                 or query.lower() in technique.get("description", "").lower()
             )
 
-    @unittest_run_loop
     async def test_techniques_endpoint_missing_query(self):
         """Test the /api/techniques endpoint without query parameter."""
         resp = await self.client.request("GET", "/api/techniques")
@@ -204,7 +198,6 @@ class TestAPIEndpoints(AioHTTPTestCase):
         self.assertIn("error", data)
         self.assertIn("required", data["error"].lower())
 
-    @unittest_run_loop
     async def test_techniques_endpoint_short_query(self):
         """Test the /api/techniques endpoint with too short query."""
         resp = await self.client.request("GET", "/api/techniques?q=a")
@@ -214,7 +207,6 @@ class TestAPIEndpoints(AioHTTPTestCase):
         self.assertIn("error", data)
         self.assertIn("2 characters", data["error"])
 
-    @unittest_run_loop
     async def test_techniques_endpoint_long_query(self):
         """Test the /api/techniques endpoint with too long query."""
         long_query = "a" * 101  # 101 characters
@@ -225,7 +217,6 @@ class TestAPIEndpoints(AioHTTPTestCase):
         self.assertIn("error", data)
         self.assertIn("100 characters", data["error"])
 
-    @unittest_run_loop
     async def test_call_tool_endpoint_success(self):
         """Test successful tool execution via /call_tool endpoint."""
         # Mock successful tool execution
@@ -255,7 +246,6 @@ class TestAPIEndpoints(AioHTTPTestCase):
         result = await resp.text()
         self.assertIn("Test tool execution result", result)
 
-    @unittest_run_loop
     async def test_call_tool_endpoint_missing_tool_name(self):
         """Test /call_tool endpoint with missing tool name."""
         payload = {"parameters": {"query": "test"}}
@@ -272,7 +262,6 @@ class TestAPIEndpoints(AioHTTPTestCase):
         self.assertIn("error", data)
         self.assertIn("tool name", data["error"].lower())
 
-    @unittest_run_loop
     async def test_call_tool_endpoint_invalid_json(self):
         """Test /call_tool endpoint with invalid JSON."""
         resp = await self.client.request(
@@ -287,7 +276,6 @@ class TestAPIEndpoints(AioHTTPTestCase):
         self.assertIn("error", data)
         self.assertIn("json", data["error"].lower())
 
-    @unittest_run_loop
     async def test_call_tool_endpoint_empty_body(self):
         """Test /call_tool endpoint with empty request body."""
         resp = await self.client.request(

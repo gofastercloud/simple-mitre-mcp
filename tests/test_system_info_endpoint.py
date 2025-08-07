@@ -11,7 +11,7 @@ import pytest
 from datetime import datetime
 from unittest.mock import Mock, AsyncMock, patch
 from aiohttp import web
-from aiohttp.test_utils import AioHTTPTestCase, unittest_run_loop
+from aiohttp.test_utils import AioHTTPTestCase
 
 import sys
 from pathlib import Path
@@ -50,7 +50,6 @@ class TestSystemInfoEndpoint(AioHTTPTestCase):
         proxy = HTTPProxy(mock_mcp_server)
         return proxy.app
 
-    @unittest_run_loop
     async def test_system_info_endpoint_success(self):
         """Test successful system info endpoint response."""
         resp = await self.client.request("GET", "/system_info")
@@ -88,7 +87,6 @@ class TestSystemInfoEndpoint(AioHTTPTestCase):
         self.assertTrue(capabilities["web_interface"])
         self.assertTrue(capabilities["api_access"])
 
-    @unittest_run_loop
     async def test_system_info_no_data_loaded(self):
         """Test system info endpoint when no data is loaded."""
         # Create proxy with no data
@@ -116,7 +114,6 @@ class TestSystemInfoEndpoint(AioHTTPTestCase):
         self.assertEqual(stats["relationships_count"], 0)
         self.assertFalse(stats["data_loaded"])
 
-    @unittest_run_loop
     async def test_system_info_no_data_loader(self):
         """Test system info endpoint when data loader is not available."""
         # Create proxy with no data loader
