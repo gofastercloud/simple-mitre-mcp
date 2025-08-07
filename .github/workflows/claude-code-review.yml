@@ -1,14 +1,15 @@
 name: Claude Code Review
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
+  issue_comment:
+    types: [created]
   pull_request_review_comment:
     types: [created]
 
 jobs:
   claude-review:
     runs-on: ubuntu-latest
+    if: contains(github.event.comment.body, '@claude') || github.event_name == 'pull_request_review_comment'
     permissions:
       contents: read
       pull-requests: write
@@ -16,54 +17,7 @@ jobs:
 
     steps:
     - name: Claude Code Review
-      uses: anthropics/claude-code-action@v1
+      uses: anthropics/claude-code-action@v0.0.54
       with:
-        # Required: Your Anthropic API key
         anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
-        
-        # Optional: GitHub token (defaults to github.token)
         github-token: ${{ secrets.GITHUB_TOKEN }}
-        
-        # Optional: Model to use (defaults to claude-3-5-sonnet-20241022)
-        model: claude-3-5-sonnet-20241022
-        
-        # Optional: Maximum tokens for the response (defaults to 8192)
-        max-tokens: 8192
-        
-        # Optional: Custom system prompt for reviews
-        system-prompt: |
-          You are an expert code reviewer with deep knowledge of Python, JavaScript, security best practices, and MCP (Model Context Protocol) implementations. 
-          
-          Focus on:
-          - Code quality, maintainability, and best practices
-          - Security vulnerabilities and potential issues
-          - Performance implications
-          - Testing coverage and quality
-          - Documentation completeness
-          - Compatibility with existing codebase patterns
-          - MCP protocol compliance for this threat intelligence platform
-          
-          Be constructive and provide specific, actionable feedback with code examples when helpful.
-        
-        # Optional: Only review changed files (defaults to true)
-        review-changed-files-only: true
-        
-        # Optional: File patterns to include in reviews
-        include-patterns: |
-          **/*.py
-          **/*.js
-          **/*.html
-          **/*.css
-          **/*.yaml
-          **/*.yml
-          **/*.md
-        
-        # Optional: File patterns to exclude from reviews
-        exclude-patterns: |
-          **/__pycache__/**
-          **/.pytest_cache/**
-          **/node_modules/**
-          **/*.pyc
-          **/*.log
-          **/uv.lock
-          **/.venv/**
