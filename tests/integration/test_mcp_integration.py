@@ -1,19 +1,25 @@
 """
-Comprehensive MCP integration tests for STIX2 library refactor backward compatibility.
+Consolidated MCP integration tests.
 
-This module provides comprehensive testing to ensure all 8 MCP tools continue to work
-correctly with the refactored STIX parser using the official STIX2 library.
+This module consolidates all MCP server integration tests including:
+- Comprehensive MCP tool integration
+- End-to-end MCP server functionality
+- Tool registration and execution
+- Error handling across all tools
+- Performance testing with comprehensive data
 """
 
 import pytest
+import asyncio
+import time
 from unittest.mock import Mock, patch
 from src.mcp_server import create_mcp_server
 from src.data_loader import DataLoader
 from src.parsers.stix_parser import STIXParser
 
 
-class TestComprehensiveMCPIntegration:
-    """Test comprehensive integration of all 8 MCP tools with refactored parser."""
+class TestMCPIntegration:
+    """Consolidated MCP server integration tests."""
 
     @pytest.fixture
     def comprehensive_mock_data_loader(self):
@@ -208,17 +214,13 @@ class TestComprehensiveMCPIntegration:
         return mock_loader
 
     @pytest.fixture
-    def mcp_server_with_refactored_parser(self, comprehensive_mock_data_loader):
-        """Create MCP server with comprehensive mock data using refactored parser."""
+    def mcp_server(self, comprehensive_mock_data_loader):
+        """Create MCP server with comprehensive mock data."""
         return create_mcp_server(comprehensive_mock_data_loader)
 
     @pytest.mark.asyncio
-    async def test_all_8_mcp_tools_registered_and_functional(
-        self, mcp_server_with_refactored_parser
-    ):
-        """Test that all 8 MCP tools are registered and functional with refactored parser."""
-        mcp_server = mcp_server_with_refactored_parser
-
+    async def test_all_8_mcp_tools_registered_and_functional(self, mcp_server):
+        """Test that all 8 MCP tools are registered and functional."""
         # Get the registered tools from the server
         tools = await mcp_server.list_tools()
         tool_names = [tool.name for tool in tools]
@@ -243,12 +245,8 @@ class TestComprehensiveMCPIntegration:
         ), f"Expected 8 tools, found {len(tool_names)}: {tool_names}"
 
     @pytest.mark.asyncio
-    async def test_basic_analysis_tools_with_refactored_parser(
-        self, mcp_server_with_refactored_parser
-    ):
-        """Test all 5 basic analysis tools work correctly with refactored parser."""
-        mcp_server = mcp_server_with_refactored_parser
-
+    async def test_basic_analysis_tools_integration(self, mcp_server):
+        """Test all 5 basic analysis tools work correctly together."""
         # Test 1: search_attack tool
         search_result, _ = await mcp_server.call_tool(
             "search_attack", {"query": "process injection"}
@@ -305,13 +303,9 @@ class TestComprehensiveMCPIntegration:
         assert "M1032" in mitigations_result[0].text  # Multi-factor Authentication
 
     @pytest.mark.asyncio
-    async def test_advanced_threat_modeling_tools_with_refactored_parser(
-        self, mcp_server_with_refactored_parser
-    ):
-        """Test all 3 advanced threat modeling tools are registered and callable with refactored parser."""
-        mcp_server = mcp_server_with_refactored_parser
-
-        # Test 6: build_attack_path tool - just verify it's callable
+    async def test_advanced_threat_modeling_tools_integration(self, mcp_server):
+        """Test all 3 advanced threat modeling tools are registered and callable."""
+        # Test 6: build_attack_path tool - verify it's callable
         try:
             attack_path_result, _ = await mcp_server.call_tool(
                 "build_attack_path",
@@ -327,7 +321,7 @@ class TestComprehensiveMCPIntegration:
             # Advanced tools may have complex dependencies, but they should be registered
             assert "not found" not in str(e).lower()
 
-        # Test 7: analyze_coverage_gaps tool - just verify it's callable
+        # Test 7: analyze_coverage_gaps tool - verify it's callable
         try:
             coverage_gaps_result, _ = await mcp_server.call_tool(
                 "analyze_coverage_gaps", {"threat_groups": ["G0016", "G0007"]}
@@ -339,7 +333,7 @@ class TestComprehensiveMCPIntegration:
             # Advanced tools may have complex dependencies, but they should be registered
             assert "not found" not in str(e).lower()
 
-        # Test 8: detect_technique_relationships tool - just verify it's callable
+        # Test 8: detect_technique_relationships tool - verify it's callable
         try:
             relationships_result, _ = await mcp_server.call_tool(
                 "detect_technique_relationships", {"technique_id": "T1055"}
@@ -352,12 +346,8 @@ class TestComprehensiveMCPIntegration:
             assert "not found" not in str(e).lower()
 
     @pytest.mark.asyncio
-    async def test_error_handling_consistency_across_all_tools(
-        self, mcp_server_with_refactored_parser
-    ):
-        """Test that error handling is consistent across all 8 tools with refactored parser."""
-        mcp_server = mcp_server_with_refactored_parser
-
+    async def test_error_handling_consistency_across_all_tools(self, mcp_server):
+        """Test that error handling is consistent across all 8 tools."""
         # Test error handling for tools that require specific IDs
         error_test_cases = [
             ("get_technique", {"technique_id": "INVALID_TECHNIQUE"}),
@@ -383,12 +373,8 @@ class TestComprehensiveMCPIntegration:
             )
 
     @pytest.mark.asyncio
-    async def test_data_consistency_across_all_tools_with_refactored_parser(
-        self, mcp_server_with_refactored_parser
-    ):
-        """Test that data is consistent across all tools when using refactored parser."""
-        mcp_server = mcp_server_with_refactored_parser
-
+    async def test_data_consistency_across_all_tools(self, mcp_server):
+        """Test that data is consistent across all tools."""
         # Test technique T1055 across multiple tools
         technique_id = "T1055"
 
@@ -423,18 +409,14 @@ class TestComprehensiveMCPIntegration:
         assert "M1026" in technique_text or "M1026" in mitigations_text
 
     @pytest.mark.asyncio
-    async def test_advanced_tool_parameter_validation_with_refactored_parser(
-        self, mcp_server_with_refactored_parser
-    ):
-        """Test parameter validation for advanced tools with refactored parser."""
-        mcp_server = mcp_server_with_refactored_parser
+    async def test_advanced_tool_parameter_validation(self, mcp_server):
+        """Test parameter validation for advanced tools."""
         tools = {tool.name: tool for tool in await mcp_server.list_tools()}
 
         # Test build_attack_path parameter schema
         attack_path_tool = tools["build_attack_path"]
         assert "start_tactic" in attack_path_tool.inputSchema["properties"]
         assert "end_tactic" in attack_path_tool.inputSchema["properties"]
-        # Note: Some tools may not have required parameters in their schema
 
         # Test analyze_coverage_gaps parameter schema
         coverage_tool = tools["analyze_coverage_gaps"]
@@ -449,14 +431,8 @@ class TestComprehensiveMCPIntegration:
         assert "technique_id" in relationships_tool.inputSchema.get("required", [])
 
     @pytest.mark.asyncio
-    async def test_performance_with_comprehensive_data_and_refactored_parser(
-        self, mcp_server_with_refactored_parser
-    ):
-        """Test performance of all tools with comprehensive data using refactored parser."""
-        import time
-
-        mcp_server = mcp_server_with_refactored_parser
-
+    async def test_performance_with_comprehensive_data(self, mcp_server):
+        """Test performance of all tools with comprehensive data."""
         # Test performance of each tool
         performance_tests = [
             ("search_attack", {"query": "process"}),
@@ -492,6 +468,25 @@ class TestComprehensiveMCPIntegration:
             total_time < 5.0
         ), f"Total execution time {total_time:.2f}s may indicate performance regression"
 
+    @pytest.mark.asyncio
+    async def test_server_configuration_integration(self, mcp_server):
+        """Test that server is properly configured with all components."""
+        # Check server has data loader
+        assert hasattr(mcp_server, 'data_loader') or hasattr(mcp_server, '_data_loader')
+        
+        # Check all tools are properly registered
+        tools = await mcp_server.list_tools()
+        assert len(tools) == 8
+        
+        # Check each tool has proper schema
+        for tool in tools:
+            assert tool.name is not None
+            assert tool.description is not None
+            assert tool.inputSchema is not None
+            assert isinstance(tool.inputSchema, dict)
+            assert "type" in tool.inputSchema
+            assert "properties" in tool.inputSchema
+
     def test_refactored_parser_maintains_data_structure_integrity(self):
         """Test that refactored parser maintains exact data structure integrity."""
         parser = STIXParser()
@@ -499,7 +494,6 @@ class TestComprehensiveMCPIntegration:
         # Create test data that exercises all parser paths
         import stix2
         import json
-        import uuid
 
         # Create comprehensive test objects
         technique = stix2.AttackPattern(

@@ -14,14 +14,14 @@
   - Set up test data factories for consistent test data generation
   - _Requirements: 1.2, 1.4, 5.1_
 
-- [-] 3. Consolidate and migrate unit tests
+- [x] 3. Consolidate and migrate unit tests
   - Migrate MCP server core functionality tests to tests/unit/
   - Consolidate tool-specific tests into tests/unit/test_tools/
   - Merge data loader and parser tests with shared fixtures
   - Eliminate redundant test cases while preserving coverage
   - _Requirements: 2.2, 2.3, 4.3_
 
-- [ ] 4. Consolidate and migrate integration tests
+- [-] 4. Consolidate and migrate integration tests
   - Merge MCP integration tests into focused test files
   - Consolidate HTTP interface and web interface tests
   - Combine API communication tests with integration suite

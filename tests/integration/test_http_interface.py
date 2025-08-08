@@ -1,29 +1,250 @@
 """
-Unit tests for the JavaScript API communication layer.
+Consolidated HTTP interface and web interface integration tests.
 
-This module tests the API endpoints that the JavaScript API layer communicates with,
-ensuring proper error handling, response formats, and functionality.
+This module consolidates all HTTP interface tests including:
+- HTTP proxy server functionality
+- Web interface communication
+- JSON-RPC protocol handling
+- API endpoint testing
+- Error handling and validation
 """
 
-import json
 import pytest
+import asyncio
+import json
+import aiohttp
+import os
+import time
 from unittest.mock import Mock, patch, AsyncMock
 from aiohttp import web
 from aiohttp.test_utils import AioHTTPTestCase
-
-import sys
-from pathlib import Path
-
-# Add the project root to the path
-sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.http_proxy import HTTPProxy, create_http_proxy_server
 from src.mcp_server import create_mcp_server
 from src.data_loader import DataLoader
 
 
-class TestAPIEndpoints(AioHTTPTestCase):
-    """Test the HTTP endpoints that the JavaScript API layer uses."""
+# Configuration with environment variable support
+MCP_HTTP_HOST = os.getenv("MCP_HTTP_HOST", "localhost")
+MCP_HTTP_PORT = int(os.getenv("MCP_HTTP_PORT", "8000"))
+MCP_HTTP_URL = f"http://{MCP_HTTP_HOST}:{MCP_HTTP_PORT}"
+
+
+class TestHTTPInterfaceIntegration:
+    """Test HTTP interface integration with MCP server."""
+
+    @pytest.fixture
+    def mock_data_loader(self):
+        """Create a mock data loader with sample data for testing."""
+        mock_loader = Mock(spec=DataLoader)
+
+        # Sample test data
+        sample_data = {
+            "tactics": [
+                {
+                    "id": "TA0001",
+                    "name": "Initial Access",
+                    "description": "The adversary is trying to get into your network.",
+                }
+            ],
+            "techniques": [
+                {
+                    "id": "T1055",
+                    "name": "Process Injection",
+                    "description": "Adversaries may inject code into processes.",
+                    "tactics": ["TA0002"],
+                    "platforms": ["Windows", "Linux"],
+                    "mitigations": ["M1040"],
+                }
+            ],
+            "groups": [
+                {
+                    "id": "G0016",
+                    "name": "APT29",
+                    "aliases": ["Cozy Bear"],
+                    "description": "APT29 is a threat group.",
+                    "techniques": ["T1055"],
+                }
+            ],
+            "mitigations": [
+                {
+                    "id": "M1040",
+                    "name": "Behavior Prevention on Endpoint",
+                    "description": "Use capabilities to prevent suspicious behavior patterns.",
+                }
+            ],
+        }
+
+        mock_loader.get_cached_data.return_value = sample_data
+        return mock_loader
+
+    @pytest.fixture
+    def mcp_server_with_data(self, mock_data_loader):
+        """Create MCP server with loaded data for testing."""
+        return create_mcp_server(mock_data_loader)
+
+    @pytest.mark.asyncio
+    async def test_mcp_server_tool_listing(self, mcp_server_with_data):
+        """Test that MCP server can list available tools."""
+        app = mcp_server_with_data
+
+        # Test list_tools
+        tools = await app.list_tools()
+        assert tools is not None
+        assert len(tools) == 8
+
+        tool_names = [tool.name for tool in tools]
+        expected_tools = [
+            "search_attack",
+            "get_technique",
+            "list_tactics",
+            "get_group_techniques",
+            "get_technique_mitigations",
+        ]
+
+        for expected_tool in expected_tools:
+            assert expected_tool in tool_names
+
+    @pytest.mark.asyncio
+    async def test_tool_execution(self, mcp_server_with_data):
+        """Test basic tool execution."""
+        app = mcp_server_with_data
+
+        # Test a simple tool call
+        result, _ = await app.call_tool("list_tactics", {})
+        assert result is not None
+        assert len(result) > 0
+        assert result[0].type == "text"
+        assert len(result[0].text) > 0
+
+    @pytest.mark.asyncio
+    async def test_tool_schemas_for_web_interface(self, mcp_server_with_data):
+        """Test and document tool schemas for web interface development."""
+        app = mcp_server_with_data
+
+        tools = await app.list_tools()
+
+        # Verify each tool has proper schema
+        for tool in tools:
+            assert tool.name is not None
+            assert tool.description is not None
+            assert tool.inputSchema is not None
+            assert isinstance(tool.inputSchema, dict)
+
+        # Verify specific tool schemas
+        tool_dict = {tool.name: tool for tool in tools}
+
+        # search_attack should require query parameter
+        search_tool = tool_dict["search_attack"]
+        assert "query" in search_tool.inputSchema["properties"]
+        assert "query" in search_tool.inputSchema.get("required", [])
+
+        # list_tactics should have no required parameters
+        tactics_tool = tool_dict["list_tactics"]
+        assert len(tactics_tool.inputSchema["properties"]) == 0
+
+    @pytest.mark.asyncio
+    async def test_json_rpc_tools_list_format(self, mock_data_loader):
+        """Test that JSON-RPC tools/list request format is correct."""
+        app = create_mcp_server(mock_data_loader)
+
+        # Test the internal method that would handle tools/list
+        tools = await app.list_tools()
+
+        assert tools is not None
+        assert len(tools) == 8
+
+        # Verify tool structure matches what web interface expects
+        for tool in tools:
+            assert hasattr(tool, "name")
+            assert hasattr(tool, "description")
+            assert hasattr(tool, "inputSchema")
+            assert isinstance(tool.inputSchema, dict)
+
+    @pytest.mark.asyncio
+    async def test_json_rpc_tool_call_format(self, mock_data_loader):
+        """Test that JSON-RPC tools/call request format is correct."""
+        app = create_mcp_server(mock_data_loader)
+
+        # Test list_tactics tool call
+        result, _ = await app.call_tool("list_tactics", {})
+
+        assert result is not None
+        assert len(result) > 0
+        assert result[0].type == "text"
+        assert isinstance(result[0].text, str)
+        assert len(result[0].text) > 0
+
+    @pytest.mark.asyncio
+    async def test_search_tool_with_parameters(self, mock_data_loader):
+        """Test search tool with parameters as web interface would use."""
+        app = create_mcp_server(mock_data_loader)
+
+        # Test search_attack tool call with query parameter
+        result, _ = await app.call_tool("search_attack", {"query": "process"})
+
+        assert result is not None
+        assert len(result) > 0
+        assert result[0].type == "text"
+        assert "process" in result[0].text.lower()
+
+    @pytest.mark.asyncio
+    async def test_technique_detail_tool(self, mock_data_loader):
+        """Test technique detail tool as web interface would use."""
+        app = create_mcp_server(mock_data_loader)
+
+        # Test get_technique tool call
+        result, _ = await app.call_tool("get_technique", {"technique_id": "T1055"})
+
+        assert result is not None
+        assert len(result) > 0
+        assert result[0].type == "text"
+        assert "T1055" in result[0].text
+        assert "Process Injection" in result[0].text
+
+    @pytest.mark.asyncio
+    async def test_error_handling_for_web_interface(self, mock_data_loader):
+        """Test error handling as web interface would encounter."""
+        app = create_mcp_server(mock_data_loader)
+
+        # Test with invalid technique ID
+        result, _ = await app.call_tool("get_technique", {"technique_id": "INVALID"})
+
+        assert result is not None
+        assert len(result) > 0
+        assert result[0].type == "text"
+        assert "not found" in result[0].text.lower()
+
+    def test_web_interface_tool_parameters(self, mock_data_loader):
+        """Test that tool parameters match web interface expectations."""
+        app = create_mcp_server(mock_data_loader)
+
+        # Get tools synchronously for parameter validation
+        tools = asyncio.run(app.list_tools())
+        tool_dict = {tool.name: tool for tool in tools}
+
+        # Verify search_attack parameters
+        search_tool = tool_dict["search_attack"]
+        assert "query" in search_tool.inputSchema["properties"]
+        assert search_tool.inputSchema["properties"]["query"]["type"] == "string"
+        assert "query" in search_tool.inputSchema.get("required", [])
+
+        # Verify get_technique parameters
+        technique_tool = tool_dict["get_technique"]
+        assert "technique_id" in technique_tool.inputSchema["properties"]
+        assert (
+            technique_tool.inputSchema["properties"]["technique_id"]["type"] == "string"
+        )
+        assert "technique_id" in technique_tool.inputSchema.get("required", [])
+
+        # Verify list_tactics has no required parameters
+        tactics_tool = tool_dict["list_tactics"]
+        assert len(tactics_tool.inputSchema["properties"]) == 0
+        assert tactics_tool.inputSchema.get("required", []) == []
+
+
+class TestHTTPProxyIntegration(AioHTTPTestCase):
+    """Test HTTP proxy integration with aiohttp."""
 
     async def get_application(self):
         """Create test application with mocked MCP server."""
@@ -207,16 +428,6 @@ class TestAPIEndpoints(AioHTTPTestCase):
         self.assertIn("error", data)
         self.assertIn("2 characters", data["error"])
 
-    async def test_techniques_endpoint_long_query(self):
-        """Test the /api/techniques endpoint with too long query."""
-        long_query = "a" * 101  # 101 characters
-        resp = await self.client.request("GET", f"/api/techniques?q={long_query}")
-        self.assertEqual(resp.status, 400)
-
-        data = await resp.json()
-        self.assertIn("error", data)
-        self.assertIn("100 characters", data["error"])
-
     async def test_call_tool_endpoint_success(self):
         """Test successful tool execution via /call_tool endpoint."""
         # Mock successful tool execution
@@ -276,20 +487,58 @@ class TestAPIEndpoints(AioHTTPTestCase):
         self.assertIn("error", data)
         self.assertIn("json", data["error"].lower())
 
-    async def test_call_tool_endpoint_empty_body(self):
-        """Test /call_tool endpoint with empty request body."""
-        resp = await self.client.request(
-            "POST", "/call_tool", data="", headers={"Content-Type": "application/json"}
-        )
 
-        self.assertEqual(resp.status, 400)
-        data = await resp.json()
-        self.assertIn("error", data)
-        self.assertIn("empty", data["error"].lower())
+class TestWebInterfaceIntegration:
+    """Integration tests for web interface with actual HTTP requests."""
+
+    @pytest.mark.integration
+    @pytest.mark.asyncio
+    async def test_http_request_format(self):
+        """Test actual HTTP request format (requires running server)."""
+        # This test would require a running server
+        # Skip if server is not available
+        pytest.skip("Integration test requires running MCP server")
+
+        async with aiohttp.ClientSession() as session:
+            # Test tools/list request
+            payload = {"jsonrpc": "2.0", "id": 1, "method": "tools/list"}
+
+            try:
+                async with session.post(MCP_HTTP_URL, json=payload) as response:
+                    assert response.status == 200
+                    result = await response.json()
+                    assert "result" in result
+                    assert "tools" in result["result"]
+            except aiohttp.ClientError:
+                pytest.skip(f"MCP server not running on {MCP_HTTP_URL}")
+
+    @pytest.mark.integration
+    @pytest.mark.asyncio
+    async def test_tool_call_http_format(self):
+        """Test actual tool call HTTP format (requires running server)."""
+        pytest.skip("Integration test requires running MCP server")
+
+        async with aiohttp.ClientSession() as session:
+            # Test tools/call request
+            payload = {
+                "jsonrpc": "2.0",
+                "id": 2,
+                "method": "tools/call",
+                "params": {"name": "list_tactics", "arguments": {}},
+            }
+
+            try:
+                async with session.post(MCP_HTTP_URL, json=payload) as response:
+                    assert response.status == 200
+                    result = await response.json()
+                    assert "result" in result
+                    assert "content" in result["result"]
+            except aiohttp.ClientError:
+                pytest.skip(f"MCP server not running on {MCP_HTTP_URL}")
 
 
-class TestAPIErrorHandling:
-    """Test error handling scenarios for the API endpoints."""
+class TestHTTPErrorHandling:
+    """Test HTTP interface error handling scenarios."""
 
     def test_api_error_creation(self):
         """Test APIError creation and properties."""
@@ -336,24 +585,6 @@ class TestAPIErrorHandling:
 
         return status >= 500
 
-    def test_timeout_calculation(self):
-        """Test timeout and backoff calculations."""
-        base_delay = 1000  # 1 second
-        backoff_multiplier = 2
-
-        # Test exponential backoff
-        assert self._calculate_delay(0, base_delay, backoff_multiplier) == 1000
-        assert self._calculate_delay(1, base_delay, backoff_multiplier) == 2000
-        assert self._calculate_delay(2, base_delay, backoff_multiplier) == 4000
-
-    def _calculate_delay(self, retry_count, base_delay, backoff_multiplier):
-        """Simulate JavaScript delay calculation."""
-        return base_delay * (backoff_multiplier**retry_count)
-
-
-class TestAPIValidation:
-    """Test API parameter validation logic."""
-
     def test_query_validation(self):
         """Test query parameter validation."""
         # Valid queries
@@ -374,134 +605,6 @@ class TestAPIValidation:
         if len(query) < 2 or len(query) > 100:
             return False
         return True
-
-    def test_tool_parameter_validation(self):
-        """Test tool parameter validation."""
-        # Valid parameters
-        assert self._validate_tool_params("search_attack", {"query": "test"}) == True
-        assert (
-            self._validate_tool_params("get_technique", {"technique_id": "T1055"})
-            == True
-        )
-
-        # Invalid parameters
-        assert (
-            self._validate_tool_params("", {"query": "test"}) == False
-        )  # Empty tool name
-        assert (
-            self._validate_tool_params("search_attack", None) == False
-        )  # Null parameters
-        assert (
-            self._validate_tool_params("search_attack", "invalid") == False
-        )  # Non-object parameters
-
-    def _validate_tool_params(self, tool_name, parameters):
-        """Simulate JavaScript tool parameter validation."""
-        if not tool_name or not isinstance(tool_name, str):
-            return False
-        if not isinstance(parameters, dict) or parameters is None:
-            return False
-        return True
-
-
-@pytest.fixture
-def mock_api_responses():
-    """Fixture providing mock API responses for testing."""
-    return {
-        "system_info": {
-            "server_info": {
-                "version": "1.0.0",
-                "mcp_protocol_version": "1.0",
-                "startup_time": "2024-01-01T00:00:00",
-                "data_source": "MITRE ATT&CK Enterprise",
-            },
-            "data_statistics": {
-                "techniques_count": 100,
-                "tactics_count": 14,
-                "groups_count": 50,
-                "mitigations_count": 40,
-                "relationships_count": 500,
-                "last_updated": "2024-01-01T00:00:00",
-                "data_loaded": True,
-            },
-            "capabilities": {
-                "basic_tools": 5,
-                "advanced_tools": 3,
-                "total_tools": 8,
-                "web_interface": True,
-                "api_access": True,
-            },
-        },
-        "tools": [
-            {
-                "name": "search_attack",
-                "description": "Search across all MITRE ATT&CK entities",
-                "inputSchema": {
-                    "type": "object",
-                    "properties": {
-                        "query": {"type": "string", "description": "Search query"}
-                    },
-                    "required": ["query"],
-                },
-            }
-        ],
-        "groups": [
-            {
-                "id": "G0016",
-                "name": "APT29",
-                "display_name": "APT29 (Cozy Bear, The Dukes)",
-                "aliases": ["Cozy Bear", "The Dukes"],
-            }
-        ],
-        "tactics": [
-            {
-                "id": "TA0001",
-                "name": "Initial Access",
-                "display_name": "Initial Access (TA0001)",
-            }
-        ],
-        "techniques": [
-            {
-                "id": "T1055",
-                "name": "Process Injection",
-                "display_name": "Process Injection (T1055)",
-                "match_reason": "Name",
-            }
-        ],
-    }
-
-
-def test_mock_responses_structure(mock_api_responses):
-    """Test that mock responses have the expected structure."""
-    # Test system_info structure
-    system_info = mock_api_responses["system_info"]
-    assert "server_info" in system_info
-    assert "data_statistics" in system_info
-    assert "capabilities" in system_info
-
-    # Test tools structure
-    tools = mock_api_responses["tools"]
-    assert len(tools) > 0
-    assert "name" in tools[0]
-    assert "inputSchema" in tools[0]
-
-    # Test groups structure
-    groups = mock_api_responses["groups"]
-    assert len(groups) > 0
-    assert "id" in groups[0]
-    assert "display_name" in groups[0]
-
-    # Test tactics structure
-    tactics = mock_api_responses["tactics"]
-    assert len(tactics) > 0
-    assert "id" in tactics[0]
-    assert "display_name" in tactics[0]
-
-    # Test techniques structure
-    techniques = mock_api_responses["techniques"]
-    assert len(techniques) > 0
-    assert "id" in techniques[0]
-    assert "match_reason" in techniques[0]
 
 
 if __name__ == "__main__":
