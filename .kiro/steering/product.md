@@ -1,6 +1,6 @@
 # Product Overview
 
-This project is a Model Context Protocol (MCP) server that provides comprehensive structured access to the MITRE ATT&CK framework for Large Language Models. The server enables security analysts, threat intelligence researchers, and cybersecurity professionals to query and explore the MITRE ATT&CK knowledge base through both natural language interactions and an intuitive web interface.
+This project is a comprehensive cybersecurity threat intelligence platform that provides multi-layered access to the MITRE ATT&CK framework and other security frameworks. The platform consists of a pure MCP (Model Context Protocol) server for AI assistant integration, a middleware API layer for business logic, a Flask web application for human-friendly interfaces, and a CLI tool for automation - enabling security analysts, threat intelligence researchers, and cybersecurity professionals to analyze threats through multiple access methods optimized for different use cases.
 
 ## Key Features
 
@@ -18,12 +18,12 @@ This project is a Model Context Protocol (MCP) server that provides comprehensiv
 - **Threat Group Profiling**: Deep analysis of threat actor techniques and patterns
 - **Platform-Specific Analysis**: Filter and analyze techniques by target platforms
 
-### Web-Based Interface
-- **Interactive Web Explorer**: Browser-based interface for non-technical users
-- **Real-Time Analysis**: Execute all MCP tools through an intuitive web interface
-- **Advanced Form Handling**: Support for complex multi-parameter analysis tools
-- **Responsive Design**: Works across different browsers and devices
-- **No Programming Required**: Full functionality accessible without command-line tools
+### Multi-Layer Platform Architecture
+- **Pure MCP Server**: Dedicated AI assistant integration with 8 specialized tools
+- **Middleware API Layer**: Business logic and data transformation services
+- **Flask Web Application**: Modern web interface with graph visualization capabilities
+- **Command-Line Interface**: Automation-friendly CLI for scripting and batch operations
+- **Multiple Access Methods**: REST APIs, MCP protocol, web interface, and CLI - each optimized for specific use cases
 
 ## Target Users
 
@@ -56,11 +56,12 @@ This MCP server is designed to be **extensible and reusable**:
 - **Consistent Interfaces**: All tools follow the same parameter and response patterns
 - **Flexible Deployment**: Tools accessible via both MCP protocol and HTTP/JSON API
 
-### Multiple Access Methods
-- **MCP Protocol**: Direct integration with Large Language Models and AI assistants
-- **HTTP/JSON API**: RESTful access for web applications and custom integrations
-- **Web Interface**: Browser-based access for interactive analysis and exploration
-- **Configuration Flexibility**: Environment-based configuration for different deployment scenarios
+### Component-Specific Access Patterns
+- **MCP Server**: STDIO/HTTP transports for Claude Desktop, ChatGPT, and other AI assistants
+- **Middleware APIs**: Internal Python interfaces for business logic and data aggregation
+- **Flask Web Server**: REST APIs for web applications, authentication, graph visualization endpoints
+- **CLI Tool**: Command-line interface for automation, scripting, and batch operations
+- **Configuration Management**: Centralized configuration system supporting all components
 
 ## Value Proposition
 

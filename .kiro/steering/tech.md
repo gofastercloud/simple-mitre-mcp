@@ -1,21 +1,67 @@
 # Technology Stack
 
-## Core Technologies
+## Multi-Layer Architecture Technologies
 
-- **Python 3**: Primary programming language
-- **FastMCP**: Official MCP server implementation from the `mcp` library
+### Core Data Layer
+- **Python 3.12+**: Primary programming language for all components
+- **STIX2 Library**: Official STIX parsing for secure threat intelligence data processing
 - **UV**: Modern Python package manager and project management tool
-- **Model Context Protocol (MCP)**: Communication protocol for AI tool integration
+- **YAML**: Configuration management across all components
+
+### MCP Server Layer
+- **FastMCP**: Official MCP server implementation from the `mcp` library
+- **Model Context Protocol (MCP)**: Communication protocol for AI assistant integration
+- **STDIO/HTTP Transports**: Multiple transport protocols for different AI clients
+
+### Middleware Layer
+- **Python Internal APIs**: Business logic and data transformation interfaces
+- **Pydantic**: Data validation and type safety across component boundaries
+- **In-Memory Caching**: Fast data access and query optimization
+
+### Web Application Layer
+- **Flask**: Modern web framework for HTTP APIs and web application serving
+- **Flask Extensions**: Authentication, CORS, caching, and middleware support
+- **Cytoscape.js**: Interactive graph visualization for MITRE ATT&CK relationships
+- **Bootstrap 5**: Responsive UI framework for web interface
+
+### CLI Layer
+- **Click**: Command-line interface framework for automation tools
+- **Rich**: Enhanced CLI output formatting and progress indicators
 
 ## Dependencies
 
-### Core Libraries (Prefer Existing, Battle-Tested Libraries)
-- **mcp**: Official Model Context Protocol SDK for Python - provides FastMCP server implementation
-- **stix2**: Official STIX 2.x library for parsing STIX data formats
+### Component-Specific Dependencies
+
+#### Data Layer Dependencies
+- **stix2**: Official STIX 2.x library for secure threat intelligence parsing
 - **requests**: HTTP library for downloading threat intelligence data
-- **pyyaml**: Configuration file parsing (YAML format)
-- **pytest**: Testing framework
+- **pyyaml**: Configuration file parsing across all components
 - **pydantic**: Data validation and settings management
+
+#### MCP Server Dependencies  
+- **mcp**: Official Model Context Protocol SDK for Python
+- **FastMCP**: MCP server implementation for AI assistant integration
+
+#### Web Application Dependencies
+- **Flask**: Web framework for HTTP APIs and static serving
+- **Flask-CORS**: Cross-origin resource sharing support
+- **Flask-Caching**: Response caching and performance optimization
+- **Jinja2**: Template engine for dynamic web content
+
+#### CLI Dependencies
+- **Click**: Command-line interface framework
+- **Rich**: Enhanced terminal output and progress indicators
+- **Typer**: Alternative CLI framework with automatic help generation
+
+#### Visualization Dependencies
+- **Cytoscape.js**: Client-side graph visualization library
+- **D3.js**: Alternative data visualization library (if needed)
+
+#### Development and Testing
+- **pytest**: Testing framework for all components
+- **black**: Code formatting
+- **flake8**: Code linting
+- **mypy**: Static type checking
 
 ### Library Selection Principles
 - **Always prefer official libraries** for well-known protocols and formats
@@ -23,12 +69,19 @@
 - **Prioritize security-focused libraries** for parsing external data
 - **Choose libraries with active communities** and regular updates
 
-## Configuration-Driven Architecture
+## Multi-Component Configuration Architecture
 
-- **Data Sources**: Configured via YAML files, not hardcoded
-- **Entity Schemas**: Defined in configuration to support different frameworks
-- **Tool Definitions**: MCP tools configured externally for easy extension
-- **URL Endpoints**: Data source URLs specified in configuration files
+### Centralized Configuration Management
+- **Data Sources**: YAML configuration shared across all components
+- **Entity Schemas**: Framework-agnostic entity definitions
+- **Component Configuration**: Individual settings for MCP server, Flask app, CLI, and middleware
+- **Environment Overrides**: Environment variables for deployment-specific settings
+
+### Component-Specific Configuration
+- **MCP Server**: Tool definitions, transport configuration, AI client settings
+- **Middleware Layer**: Business logic rules, caching strategies, data transformation settings  
+- **Flask Web App**: REST API configuration, authentication settings, graph visualization options
+- **CLI Tool**: Command definitions, output formatting, automation settings
 
 ## Example Data Source Configuration
 
@@ -113,16 +166,27 @@ gh pr checks $PR_NUMBER
 # Use MCP client tools or test with MCP-compatible clients
 ```
 
-## Architecture Approach
+## Multi-Layer Architecture Approach
 
-- **Library-First Development**: Use existing, battle-tested libraries for standard protocols and formats
-- **Extensible Design**: Framework-agnostic architecture supporting multiple security data sources
-- **Configuration-Driven**: All data sources, schemas, and tools defined in external config files
-- **Standards-Compliant**: Use official MCP library (FastMCP) and STIX data parsing libraries
-- **In-memory data storage** for fast access with configurable data loading
-- **Pluggable data parsers** using established parsing libraries
-- **Security-Focused**: Prefer libraries with security track records for parsing external data
-- **Modular tool system** allowing easy addition of new MCP tools
+### Core Design Principles
+- **Separation of Concerns**: Each layer has distinct responsibilities and interfaces
+- **Component Independence**: Components can be developed, deployed, and scaled independently
+- **Library-First Development**: Use existing, battle-tested libraries for all standard protocols
+- **Configuration-Driven**: All components share centralized configuration management
+- **Standards-Compliant**: Official libraries for MCP, STIX, Flask, and CLI frameworks
+
+### Layer-Specific Approaches
+- **Data Layer**: Centralized STIX parsing and caching with configuration-driven data source management
+- **MCP Server**: Pure AI assistant integration using official FastMCP with 8 specialized tools
+- **Middleware Layer**: Business logic APIs providing data aggregation and transformation services
+- **Flask Web Layer**: Modern web framework with REST APIs, authentication, and graph visualization
+- **CLI Layer**: Command-line automation tools with rich output formatting and scripting support
+
+### Inter-Component Communication
+- **Data Sharing**: Centralized data layer accessible by all components
+- **API Interfaces**: Well-defined internal APIs for middleware business logic
+- **Configuration Sync**: Shared configuration system with component-specific overrides
+- **Error Propagation**: Consistent error handling and logging across all layers
 
 ## Code Quality Standards
 

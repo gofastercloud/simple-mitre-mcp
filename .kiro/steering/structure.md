@@ -1,244 +1,289 @@
 # Project Structure
 
+## Multi-Layer Architecture Overview
+
+This project implements a comprehensive cybersecurity threat intelligence platform with a clean separation of concerns across multiple layers:
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                 External Interfaces                     │
+├──────────────────┬──────────────────┬──────────────────┤
+│   AI Assistants  │  Web Browsers    │   CLI Users      │
+│   (Claude, etc.) │  (Dashboard)     │   (Scripts)      │
+└──────────────────┴──────────────────┴──────────────────┘
+        │                   │                    │
+        ▼                   ▼                    ▼
+┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐
+│   MCP Server    │ │  Flask Web App  │ │   CLI Tool      │
+│   (Pure AI)     │ │  (Web + Graph)  │ │  (Automation)   │
+└─────────────────┘ └─────────────────┘ └─────────────────┘
+        │                   │                    │
+        └─────────────────────┼────────────────────┘
+                             │
+                             ▼
+                  ┌─────────────────┐
+                  │ Middleware APIs │
+                  │ (Business Logic)│
+                  └─────────────────┘
+                             │
+                             ▼
+                  ┌─────────────────┐
+                  │   Data Layer    │
+                  │ (STIX + Config) │
+                  └─────────────────┘
+```
+
 ## Directory Organization
 
 ```
 .
-├── start_explorer.py      # Web interface launcher script
-├── web_explorer.html      # Interactive web interface for all MCP tools
-├── pyproject.toml         # UV project configuration and dependencies
-├── README.md              # Project documentation and setup instructions
-├── claude_desktop_config.json # Claude Desktop MCP configuration example
-├── mcp_client_config.json # General MCP client configuration example
-├── config/                # Configuration files
+├── README.md               # Project overview and setup instructions
+├── pyproject.toml         # UV project configuration and all dependencies
+├── .env.example           # Environment variable configuration template
+├── config/                # Centralized configuration (shared across all components)
 │   ├── data_sources.yaml  # Data source definitions
 │   ├── entity_schemas.yaml # Entity type schemas
+│   ├── component_config.yaml # Component-specific settings
 │   └── tools.yaml         # MCP tool configurations
 ├── src/                   # Source code directory
-│   ├── __init__.py
-│   ├── main_web.py        # Main MCP server entry point (HTTP transport)
-│   ├── main_stdio.py      # Main MCP server entry point (STDIO transport for MCP clients)
-│   ├── http_proxy.py      # HTTP proxy server for web interface access
-│   ├── mcp_server.py      # FastMCP server implementation with 8 MCP tools
-│   ├── config_loader.py   # Configuration file loading
-│   ├── data_loader.py     # Generic data loading and parsing with relationship analysis
-│   └── parsers/           # Data format parsers
+│   ├── data/              # Data layer (shared foundation)
+│   │   ├── __init__.py
+│   │   ├── data_loader.py # STIX data loading and caching
+│   │   ├── config_loader.py # Configuration management
+│   │   └── parsers/       # Data format parsers
+│   │       ├── __init__.py
+│   │       ├── stix_parser.py # STIX format parser
+│   │       └── base_parser.py # Base parser interface
+│   ├── mcp_server/        # Pure MCP server (AI assistant integration)
+│   │   ├── __init__.py
+│   │   ├── mcp_server.py  # FastMCP server with 8 tools
+│   │   ├── main_stdio.py  # STDIO transport entry point
+│   │   └── main_http.py   # HTTP transport entry point
+│   ├── middleware/        # Business logic and data transformation APIs
+│   │   ├── __init__.py
+│   │   ├── threat_analysis.py # Threat analysis business logic
+│   │   ├── graph_builder.py   # Graph data structure creation
+│   │   ├── query_engine.py    # Advanced query processing
+│   │   └── cache_manager.py   # Caching and performance optimization
+│   ├── web_app/           # Flask web application
+│   │   ├── __init__.py
+│   │   ├── app.py         # Flask application factory
+│   │   ├── api/           # REST API endpoints
+│   │   │   ├── __init__.py
+│   │   │   ├── threat_intelligence.py # Threat intel endpoints
+│   │   │   ├── graph_data.py         # Graph visualization data
+│   │   │   └── system_info.py        # System information endpoints
+│   │   ├── auth/          # Authentication and authorization
+│   │   │   ├── __init__.py
+│   │   │   └── auth.py    # Auth logic (if needed)
+│   │   ├── static/        # Static files (CSS, JS, images)
+│   │   │   ├── css/
+│   │   │   ├── js/
+│   │   │   └── assets/
+│   │   └── templates/     # Jinja2 templates
+│   │       ├── base.html
+│   │       ├── dashboard.html
+│   │       └── graph.html
+│   ├── cli/               # Command-line interface
+│   │   ├── __init__.py
+│   │   ├── main.py        # CLI entry point
+│   │   ├── commands/      # CLI command modules
+│   │   │   ├── __init__.py
+│   │   │   ├── search.py  # Search commands
+│   │   │   ├── analysis.py # Analysis commands
+│   │   │   └── export.py  # Export commands
+│   │   └── utils/         # CLI utilities
+│   │       ├── __init__.py
+│   │       ├── output.py  # Rich output formatting
+│   │       └── config.py  # CLI-specific configuration
+│   └── shared/            # Shared utilities across components
 │       ├── __init__.py
-│       ├── stix_parser.py # STIX format parser with relationship extraction
-│       └── base_parser.py # Base parser interface
-├── tests/                 # Unit tests (ALL tests must be in this directory)
+│       ├── models.py      # Shared data models
+│       ├── exceptions.py  # Custom exception classes
+│       └── utils.py       # Common utility functions
+├── tests/                 # Comprehensive test suite (ALL tests in this directory)
 │   ├── __init__.py
-│   ├── test_mcp_server.py # Test MCP server functionality and all 8 tools
-│   ├── test_data_loader.py # Test data loading functionality
-│   ├── test_config_loader.py # Test configuration loading
-│   ├── test_parsers.py    # Test data parsers
-│   ├── test_build_attack_path.py # Test attack path construction tool
-│   ├── test_analyze_coverage_gaps.py # Test coverage gap analysis tool
-│   ├── test_detect_technique_relationships.py # Test relationship discovery tool
-│   ├── test_web_interface_advanced.py # Test web interface integration
-│   ├── test_end_to_end_integration.py # Test complete workflows
-│   └── test_port_config.py # Test port configuration functionality
-└── .kiro/                 # Kiro configuration
+│   ├── conftest.py        # Shared pytest fixtures
+│   ├── data/              # Test data layer
+│   │   ├── test_data_loader.py
+│   │   ├── test_config_loader.py
+│   │   └── test_parsers.py
+│   ├── mcp_server/        # Test MCP server functionality
+│   │   ├── test_mcp_server.py
+│   │   ├── test_tools.py
+│   │   └── test_transports.py
+│   ├── middleware/        # Test middleware APIs
+│   │   ├── test_threat_analysis.py
+│   │   ├── test_graph_builder.py
+│   │   └── test_query_engine.py
+│   ├── web_app/           # Test Flask web application
+│   │   ├── test_api_endpoints.py
+│   │   ├── test_auth.py
+│   │   └── test_web_interface.py
+│   ├── cli/               # Test CLI functionality
+│   │   ├── test_commands.py
+│   │   ├── test_search.py
+│   │   └── test_output.py
+│   └── integration/       # End-to-end integration tests
+│       ├── test_full_workflow.py
+│       ├── test_component_integration.py
+│       └── test_performance.py
+├── scripts/               # Development and deployment scripts
+│   ├── start_mcp_server.py   # MCP server launcher
+│   ├── start_web_app.py     # Flask web app launcher  
+│   ├── start_cli.py         # CLI launcher
+│   └── deploy.py           # Deployment script
+├── docs/                  # Component-specific documentation
+│   ├── mcp_server.md      # MCP server documentation
+│   ├── middleware.md      # Middleware API documentation
+│   ├── web_app.md         # Flask web app documentation
+│   ├── cli.md             # CLI documentation
+│   └── deployment.md      # Deployment guide
+├── examples/              # Usage examples for each component
+│   ├── mcp_examples/      # MCP server usage examples
+│   ├── api_examples/      # REST API usage examples
+│   └── cli_examples/      # CLI usage examples
+└── .kiro/                 # Kiro project management
     ├── specs/             # Project specifications
     └── steering/          # AI assistant guidance
 ```
 
+## Component Responsibilities
+
+### Data Layer (`src/data/`)
+- **STIX data loading and parsing** using official stix2 library
+- **Configuration management** shared across all components
+- **Data caching** and persistence for performance
+- **Framework-agnostic data models** supporting multiple threat intelligence formats
+
+### MCP Server Layer (`src/mcp_server/`)
+- **Pure AI assistant integration** using FastMCP
+- **8 specialized MCP tools** for threat intelligence analysis
+- **STDIO and HTTP transports** for different AI client types
+- **No web dependencies** - focused solely on MCP protocol
+
+### Middleware Layer (`src/middleware/`)
+- **Business logic APIs** for complex analysis operations
+- **Graph data structure creation** for visualization components
+- **Query engine** for advanced data retrieval and filtering
+- **Cache management** and performance optimization
+
+### Flask Web Application (`src/web_app/`)
+- **REST API endpoints** for web clients and external integrations
+- **Graph visualization interface** using Cytoscape.js
+- **Authentication and authorization** (if required)
+- **Static file serving** and web interface hosting
+
+### CLI Layer (`src/cli/`)
+- **Command-line automation tools** for scripting and batch operations
+- **Rich output formatting** for enhanced terminal experience
+- **Export capabilities** for integration with external tools
+- **Automation-friendly interfaces** for CI/CD and scripting
+
 ## Development Workflow Requirements
 
-> **CRITICAL**: This project has strict branch protection and workflow requirements. ALL changes must follow the patterns in `CONTRIBUTING.md` and `.kiro/steering/workflow.md`.
+> **CRITICAL**: This project has strict branch protection and workflow requirements. ALL changes must follow the patterns in `.kiro/steering/workflow.md` and `CONTRIBUTING.md`.
 
 ### Mandatory Workflow
-- **Read CONTRIBUTING.md first** - Contains complete workflow guide
-- **Use UV package manager** - Required for all dependency management
+- **Multi-component development** with proper layer separation
+- **Component-specific testing** with comprehensive test coverage
+- **Use UV package manager** for all dependency management
 - **Follow staging-to-main flow** - feature → staging → main (strictly enforced)
-- **Test locally first** - All 202+ tests must pass before pushing
-- **Create PRs to staging** - Never directly to main from feature branches
+- **Test all components** before pushing changes
 
-## Code Organization Principles
+### Component Development Guidelines
+- **Data Layer First**: Always start with data layer changes, then propagate up
+- **API Contracts**: Define clear interfaces between middleware and web/CLI layers
+- **Independent Testing**: Each component must have comprehensive test coverage
+- **Configuration Consistency**: Use centralized configuration management
 
-### Library-First Development
-- **Use Official Libraries**: Always prefer official libraries for well-known protocols (MCP, STIX, etc.)
-- **Battle-Tested Libraries**: Choose established libraries with security track records
-- **Avoid Custom Parsers**: Use existing parsers for standard formats (STIX, JSON, YAML)
-- **Security-Focused**: Prefer libraries designed for parsing untrusted external data
+## Configuration Management
 
-### Extensibility Principles
-- **No Framework-Specific Logic**: Avoid hardcoding MITRE ATT&CK or any specific framework logic
-- **Configuration-Driven**: All entity types, schemas, and data sources defined in config files
-- **Generic Tool Design**: Tools should work with any configured entity type
-- **Pluggable Architecture**: Support for different data formats through established parsing libraries
-
-### MCP Tools Structure
-
-#### Basic Analysis Tools (5 Core Tools)
-- **search_attack**: Global search across all ATT&CK entities
-- **get_technique**: Detailed technique information retrieval
-- **list_tactics**: Complete tactics enumeration
-- **get_group_techniques**: Threat group TTP analysis
-- **get_technique_mitigations**: Mitigation mapping for techniques
-
-#### Advanced Threat Modeling Tools (3 Sophisticated Tools)
-- **build_attack_path**: Multi-stage attack path construction through kill chain
-- **analyze_coverage_gaps**: Defensive coverage gap analysis against threat groups
-- **detect_technique_relationships**: Complex STIX relationship discovery and attribution analysis
-
-### Web Interface Architecture
-
-#### HTTP Proxy Server (`src/http_proxy.py`)
-- **Purpose**: Provides HTTP/JSON API bridge to MCP tools for web access
-- **Configuration**: Environment variable `MCP_HTTP_PORT` for port configuration
-- **Endpoints**: Tool listing, tool execution, and web interface serving
-- **Error Handling**: Comprehensive error handling with informative responses
-
-#### Web Explorer Interface (`web_explorer.html`)
-- **Design**: Single-page application with sections for basic and advanced tools
-- **Basic Tools Section**: Simple forms for fundamental queries
-- **Advanced Tools Section**: Complex forms supporting array inputs and multi-parameter analysis
-- **JavaScript Functions**: Dynamic form generation and result display
-- **Responsive Design**: Cross-browser compatibility and mobile-friendly interface
-
-#### Launcher Script (`start_explorer.py`)
-- **Purpose**: Convenient startup script for web interface with automatic browser opening
-- **Configuration**: Environment variable support for host/port settings
-- **Features**: Server status monitoring and graceful shutdown handling
-
-### Data Models and Processing
-
-#### Enhanced Data Models (Python Dictionaries with Relationships)
-- **Techniques**: Include relationship data for attribution and detection analysis
-- **Attack Paths**: Structured multi-stage attack progression data
-- **Coverage Gaps**: Quantitative analysis results with prioritization
-- **Relationship Maps**: Complex STIX relationship traversal results
-
-#### Advanced Data Processing
-- **Relationship Extraction**: Parse STIX relationship objects for attribution chains
-- **Attack Path Logic**: Implement kill chain progression algorithms
-- **Coverage Calculation**: Quantitative gap analysis with percentage calculations
-- **Caching Strategy**: In-memory relationship graphs for fast advanced tool execution
-
-### File Naming Conventions
-- Use snake_case for Python files and functions
-- Use descriptive names that indicate purpose
-- Keep module names short but clear
-- Prefix private functions with underscore
-- Test files follow `test_<module_name>.py` pattern
-
-### Code Readability Standards
-- Write self-documenting code with clear variable names
-- Break complex operations into smaller, named functions
-- **Use configuration constants instead of hardcoded values**
-- **Avoid framework-specific terminology in generic code**
-- Group related functionality logically within modules
-- Maintain consistent indentation and spacing
-
-### Configuration Management
-
-#### Environment Variables
+### Environment Variables
 ```bash
-# MCP Server Configuration
-MCP_SERVER_HOST=localhost    # Default: localhost
-MCP_SERVER_PORT=3000        # Default: 3000
-
-# HTTP Proxy Configuration  
-MCP_HTTP_HOST=localhost     # Default: localhost
-MCP_HTTP_PORT=8000         # Default: 8000
-
-# Data Source Configuration
+# Data Layer Configuration
 MITRE_ATTACK_URL=https://raw.githubusercontent.com/mitre/cti/master/enterprise-attack/enterprise-attack.json
+CACHE_DIR=./cache
+LOG_LEVEL=INFO
+
+# MCP Server Configuration
+MCP_SERVER_HOST=localhost
+MCP_SERVER_PORT=3000
+
+# Flask Web App Configuration
+FLASK_HOST=localhost
+FLASK_PORT=8000
+FLASK_DEBUG=false
+SECRET_KEY=your-secret-key
+
+# CLI Configuration
+CLI_OUTPUT_FORMAT=rich
+CLI_CACHE_ENABLED=true
 ```
 
-#### Configuration Files
-- Store all framework-specific data in YAML configuration files
-- Use descriptive configuration keys that explain their purpose
-- Validate configuration files on startup with clear error messages
-- Support environment variable overrides for deployment flexibility
-- Document all configuration options in README and inline comments
-
-### Testing Structure
-
-#### Comprehensive Test Coverage (167+ Tests)
-- **ALL tests must be placed in the `tests/` directory** - never create test files in the root directory or other locations
-- Mirror source structure in tests directory (e.g., `src/data_loader.py` → `tests/test_data_loader.py`)
-- One test file per source module with `test_` prefix
-- Use descriptive test function names with `test_` prefix
-- Include both positive and negative test cases
-- Document test scenarios in docstrings
-- Use pytest as the testing framework
-- Include `__init__.py` in tests directory to make it a proper Python package
-
-#### Advanced Tool Testing
-- **Attack Path Testing**: Validate multi-stage attack path construction logic
-- **Coverage Gap Testing**: Test quantitative analysis calculations and prioritization
-- **Relationship Testing**: Verify complex STIX relationship traversal and attribution chains
-- **Web Interface Testing**: Integration tests for HTTP proxy and web interface functionality
-- **Configuration Testing**: Environment variable and deployment configuration validation
-
-## Recommended Libraries
-
-### Protocol and Format Libraries
-- **stix2**: Official STIX 2.x library for parsing STIX data with relationship support
-- **mcp**: Official Model Context Protocol SDK with FastMCP server implementation
-- **pydantic**: Data validation and settings management
-- **pyyaml**: YAML configuration file parsing
-- **requests**: HTTP client for downloading data
-
-### Development and Testing
-- **pytest**: Testing framework with comprehensive fixture support
-- **black**: Code formatting
-- **flake8**: Code linting
-- **mypy**: Static type checking
-
-## Key Files
-
-### Core Server Files
-- **src/main_web.py**: Entry point that starts the FastMCP server with all 8 tools (HTTP transport)
-- **src/main_stdio.py**: Entry point for STDIO transport (MCP client integration)
-- **src/mcp_server.py**: Core MCP protocol handling with basic and advanced tools
-- **src/data_loader.py**: Enhanced data loading with relationship analysis
-- **src/parsers/stix_parser.py**: STIX parsing with relationship extraction
-
-### Web Interface Files
-- **src/http_proxy.py**: HTTP proxy server providing JSON API access to MCP tools
-- **web_explorer.html**: Interactive web interface with basic and advanced tool sections
-- **start_explorer.py**: Convenient launcher script with environment configuration
-
-### Configuration Files
-- **config/data_sources.yaml**: Data source definitions with relationship support
-- **config/entity_schemas.yaml**: Entity type schemas including relationship types
-- **config/tools.yaml**: All 8 MCP tool configurations
-- **.env.example**: Environment variable configuration template
-
-### Testing Files
-- **tests/test_*.py**: Comprehensive test suite covering all functionality
-- **tests/test_web_interface_advanced.py**: Web interface integration tests
-- **tests/test_build_attack_path.py**: Attack path construction testing
-- **tests/test_analyze_coverage_gaps.py**: Coverage gap analysis testing
-- **tests/test_detect_technique_relationships.py**: Relationship discovery testing
+### Component-Specific Configuration Files
+- **`config/data_sources.yaml`**: Data source definitions (shared)
+- **`config/entity_schemas.yaml`**: Entity type schemas (shared)
+- **`config/component_config.yaml`**: Component-specific settings
+- **`config/tools.yaml`**: MCP tool configurations
 
 ## Extension Guidelines
 
+### Adding New Components
+1. Create new directory under `src/` following naming conventions
+2. Implement component following separation of concerns principles
+3. Create comprehensive tests in `tests/[component]/`
+4. Update configuration files as needed
+5. Add component documentation in `docs/`
+
 ### Adding New Data Sources
 1. Define data source in `config/data_sources.yaml`
-2. Create appropriate parser in `src/parsers/` if needed
+2. Create parser in `src/data/parsers/` if needed
 3. Update entity schemas in `config/entity_schemas.yaml`
-4. No code changes should be required for new frameworks
+4. Test across all components that use the data
 
 ### Adding New MCP Tools
-1. Define tool configuration in `config/tools.yaml`
-2. Implement tool logic in `src/mcp_server.py` using @app.tool() decorator
-3. Add comprehensive unit tests in `tests/test_<tool_name>.py`
-4. Update web interface forms in `web_explorer.html` if needed
-5. Update HTTP proxy tool list in `src/http_proxy.py`
+1. Define tool in `config/tools.yaml`
+2. Implement in `src/mcp_server/mcp_server.py`
+3. Add comprehensive tests in `tests/mcp_server/`
+4. Update middleware APIs if needed
 
-### Adding Advanced Analysis Features
-1. Implement analysis logic as separate functions in appropriate modules
-2. Create MCP tool wrapper using @app.tool() decorator
-3. Add complex form handling to web interface if needed
-4. Include comprehensive testing for edge cases and error scenarios
-5. Document analysis algorithms and expected input/output formats
+### Adding New Web Features
+1. Create REST API endpoints in `src/web_app/api/`
+2. Implement middleware business logic if needed
+3. Add frontend components in static files
+4. Create comprehensive tests
 
-### Web Interface Customization
-1. Update `web_explorer.html` for new tool forms and result display
-2. Modify `src/http_proxy.py` to support new tool parameters and validation
-3. Test across different browsers and devices for compatibility
-4. Ensure responsive design principles are maintained
+### Adding New CLI Commands
+1. Create command module in `src/cli/commands/`
+2. Update CLI main entry point
+3. Add help documentation and examples
+4. Test command functionality
+
+## Key Principles
+
+### Separation of Concerns
+- **Data Layer**: Only data loading, parsing, and caching
+- **MCP Server**: Only AI assistant integration and tool execution
+- **Middleware**: Only business logic and data transformation
+- **Web App**: Only web interfaces, REST APIs, and authentication
+- **CLI**: Only command-line automation and scripting
+
+### Component Independence
+- Each component can be developed and deployed independently
+- Clear API contracts between layers
+- Minimal coupling between components
+- Shared configuration management
+
+### Library-First Development
+- Use official libraries for all standard protocols
+- Prefer established, maintained libraries
+- Security-focused libraries for external data parsing
+- Consistent library usage across components
+
+### Testing Excellence
+- **ALL tests must be in `tests/` directory**
+- Component-specific test organization
+- Integration tests for component interaction
+- Performance tests for critical paths
+- 400+ comprehensive test coverage target
