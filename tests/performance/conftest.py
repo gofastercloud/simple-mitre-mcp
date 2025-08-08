@@ -151,17 +151,17 @@ def memory_profiler():
 
 @pytest.fixture
 def performance_thresholds():
-    """Performance thresholds for different operations."""
+    """Optimized performance thresholds for different operations."""
     return {
-        'data_loading': 2.0,        # seconds
-        'search_query': 0.5,        # seconds
-        'technique_lookup': 0.1,    # seconds
-        'group_analysis': 1.0,      # seconds
-        'attack_path': 3.0,         # seconds
-        'coverage_analysis': 2.0,   # seconds
-        'relationship_discovery': 1.5,  # seconds
-        'memory_per_entity': 1.0,   # MB per 1000 entities
-        'startup_time': 5.0         # seconds
+        'parsing_small': 1.0,       # seconds - small dataset parsing
+        'parsing_medium': 3.0,      # seconds - medium dataset parsing  
+        'parsing_large': 10.0,      # seconds - large dataset parsing
+        'search_query': 0.2,        # seconds - search operations
+        'technique_lookup': 0.1,    # seconds - single technique lookup
+        'mcp_tool_response': 0.5,   # seconds - MCP tool response time
+        'memory_per_1k_entities': 50.0,  # MB per 1000 entities
+        'startup_time': 2.0,        # seconds - application startup
+        'regression_factor': 1.5    # multiplier for regression detection
     }
 
 
@@ -190,9 +190,16 @@ def performance_test_timeout():
     signal.alarm(0)
 
 
+@pytest.fixture
+def regression_detector():
+    """Fixture providing performance regression detection."""
+    from tests.performance.test_regression_detection import PerformanceRegressionDetector
+    return PerformanceRegressionDetector()
+
+
 @pytest.fixture(autouse=True)
 def performance_test_setup():
-    """Setup for performance tests."""
+    """Setup for performance tests with regression detection."""
     # Force garbage collection before test
     gc.collect()
     

@@ -21,14 +21,14 @@
   - Eliminate redundant test cases while preserving coverage
   - _Requirements: 2.2, 2.3, 4.3_
 
-- [-] 4. Consolidate and migrate integration tests
+- [x] 4. Consolidate and migrate integration tests
   - Merge MCP integration tests into focused test files
   - Consolidate HTTP interface and web interface tests
   - Combine API communication tests with integration suite
   - Optimize integration test setup and teardown procedures
   - _Requirements: 2.2, 2.3, 3.4_
 
-- [ ] 5. Optimize performance and compatibility tests
+- [-] 5. Optimize performance and compatibility tests
   - Streamline performance benchmark tests for faster execution
   - Consolidate backward compatibility tests into single comprehensive suite
   - Implement performance regression detection mechanisms

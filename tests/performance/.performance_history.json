@@ -1,0 +1,120 @@
+{
+  "test_regression_detection": [
+    {
+      "execution_time": 0.5,
+      "memory_mb": 25.0,
+      "entities_processed": 100,
+      "timestamp": 1754616057.457671,
+      "date": "2025-08-08 11:20:57"
+    }
+  ],
+  "test_historical_regression": [
+    {
+      "execution_time": 0.5,
+      "memory_mb": 25.0,
+      "entities_processed": 100,
+      "timestamp": 1754616057.47025,
+      "date": "2025-08-08 11:20:57"
+    },
+    {
+      "execution_time": 0.51,
+      "memory_mb": 25.5,
+      "entities_processed": 100,
+      "timestamp": 1754616057.470398,
+      "date": "2025-08-08 11:20:57"
+    },
+    {
+      "execution_time": 0.52,
+      "memory_mb": 26.0,
+      "entities_processed": 100,
+      "timestamp": 1754616057.470474,
+      "date": "2025-08-08 11:20:57"
+    },
+    {
+      "execution_time": 0.53,
+      "memory_mb": 26.5,
+      "entities_processed": 100,
+      "timestamp": 1754616057.4705422,
+      "date": "2025-08-08 11:20:57"
+    },
+    {
+      "execution_time": 0.54,
+      "memory_mb": 27.0,
+      "entities_processed": 100,
+      "timestamp": 1754616057.470604,
+      "date": "2025-08-08 11:20:57"
+    }
+  ],
+  "test_performance_summary": [
+    {
+      "execution_time": 0.5,
+      "memory_mb": 25.0,
+      "entities_processed": 100,
+      "timestamp": 1754616057.482869,
+      "date": "2025-08-08 11:20:57"
+    },
+    {
+      "execution_time": 0.55,
+      "memory_mb": 27.0,
+      "entities_processed": 110,
+      "timestamp": 1754616057.4830122,
+      "date": "2025-08-08 11:20:57"
+    },
+    {
+      "execution_time": 0.6,
+      "memory_mb": 29.0,
+      "entities_processed": 120,
+      "timestamp": 1754616057.483093,
+      "date": "2025-08-08 11:20:57"
+    },
+    {
+      "execution_time": 0.65,
+      "memory_mb": 31.0,
+      "entities_processed": 130,
+      "timestamp": 1754616057.483169,
+      "date": "2025-08-08 11:20:57"
+    },
+    {
+      "execution_time": 0.7,
+      "memory_mb": 33.0,
+      "entities_processed": 140,
+      "timestamp": 1754616057.483252,
+      "date": "2025-08-08 11:20:57"
+    },
+    {
+      "execution_time": 0.75,
+      "memory_mb": 35.0,
+      "entities_processed": 150,
+      "timestamp": 1754616057.483329,
+      "date": "2025-08-08 11:20:57"
+    },
+    {
+      "execution_time": 0.8,
+      "memory_mb": 37.0,
+      "entities_processed": 160,
+      "timestamp": 1754616057.483408,
+      "date": "2025-08-08 11:20:57"
+    },
+    {
+      "execution_time": 0.8500000000000001,
+      "memory_mb": 39.0,
+      "entities_processed": 170,
+      "timestamp": 1754616057.483598,
+      "date": "2025-08-08 11:20:57"
+    },
+    {
+      "execution_time": 0.9,
+      "memory_mb": 41.0,
+      "entities_processed": 180,
+      "timestamp": 1754616057.4837508,
+      "date": "2025-08-08 11:20:57"
+    },
+    {
+      "execution_time": 0.95,
+      "memory_mb": 43.0,
+      "entities_processed": 190,
+      "timestamp": 1754616057.483865,
+      "date": "2025-08-08 11:20:57"
+    }
+  ]
+}
