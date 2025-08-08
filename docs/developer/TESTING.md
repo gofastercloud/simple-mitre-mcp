@@ -29,6 +29,88 @@ uv run python -m pytest tests/test_mcp_server.py -v
 uv run python -m pytest tests/test_search_attack.py::TestSearchAttack::test_search_basic -v
 ```
 
+### Optimized Test Execution
+
+The project includes several optimization features for faster and more efficient test execution:
+
+#### Parallel Test Execution
+```bash
+# Run tests in parallel with optimal worker count (auto-detected)
+uv run pytest tests/ -nauto --dist=worksteal
+
+# Run with specific number of workers
+uv run pytest tests/ -n4 --dist=worksteal
+
+# Use the optimized test script
+python scripts/run_tests_optimized.py --mode parallel
+```
+
+#### Fast Development Cycle
+```bash
+# Fast unit tests only (development workflow)
+make test-fast
+# or
+python scripts/run_tests_optimized.py --mode fast
+
+# Skip slow tests during development
+uv run pytest tests/ -m "not slow" --maxfail=5 --tb=short -q
+```
+
+#### Test Execution with Timing Reports
+```bash
+# Generate detailed timing report
+uv run pytest tests/ --timing-report --durations=10
+
+# Full test suite with all optimizations
+make test-full
+# or
+python scripts/run_tests_optimized.py --mode full
+```
+
+#### Category-Specific Execution
+```bash
+# Run specific test categories with optimization
+make test-category CATEGORY=unit
+make test-category CATEGORY=integration
+make test-category CATEGORY=performance
+
+# Using the optimization script
+python scripts/run_tests_optimized.py --mode category --category unit --timing-report
+```
+
+#### Performance Benchmarks
+```bash
+# Run performance benchmarks
+make test-benchmark
+# or
+python scripts/run_tests_optimized.py --mode benchmark
+
+# Run with benchmark reporting
+uv run pytest tests/performance/ --benchmark --timing-report
+```
+
+### Makefile Commands
+
+The project includes a comprehensive Makefile with optimized test commands:
+
+```bash
+# Available test commands
+make help                    # Show all available commands
+make test-fast              # Fast unit tests only
+make test-parallel          # Parallel execution with optimal workers
+make test-full              # Full test suite with coverage and timing
+make test-category CATEGORY=unit  # Run specific category
+make test-benchmark         # Performance benchmarks
+make test-coverage          # Detailed coverage reporting
+make test-regression        # Performance regression testing
+
+# Development workflow commands
+make dev-check              # Format, lint, and fast test
+make ci-check               # Full CI/CD validation
+make perf-analysis          # Performance analysis
+make test-stats             # Show test suite statistics
+```
+
 ### Test Categories
 
 #### Unit Tests (Fast - ~30 seconds)
@@ -337,6 +419,10 @@ addopts =
     --tb=short
     --no-cov-on-fail
     --cov-fail-under=90
+    --timeout=300
+    --timeout-method=thread
+    --benchmark-skip
+    --durations=10
 markers =
     unit: Unit tests (fast, isolated)
     integration: Integration tests (moderate speed)
@@ -344,6 +430,60 @@ markers =
     slow: Tests that take more than 5 seconds
     fast: Tests that complete in under 1 second
     benchmark: Benchmark tests (requires pytest-benchmark)
+    order: Test execution order priority
+```
+
+### Test Execution Optimization
+
+#### Parallel Execution Configuration
+The project uses `pytest-xdist` for parallel test execution with the following optimizations:
+
+- **Worker Distribution**: Uses `worksteal` strategy for dynamic load balancing
+- **Optimal Worker Count**: Auto-detects based on CPU cores (75% of available CPUs, max 8)
+- **Fixture Scoping**: Optimized fixture scopes to reduce setup/teardown overhead
+
+#### Performance Monitoring
+Test execution includes comprehensive performance monitoring:
+
+```python
+# Performance thresholds by category
+PERFORMANCE_THRESHOLDS = {
+    "unit": {"max": 1.0, "warning": 0.5, "target": 0.1},
+    "integration": {"max": 10.0, "warning": 5.0, "target": 2.0},
+    "performance": {"max": 60.0, "warning": 30.0, "target": 15.0},
+    "e2e": {"max": 120.0, "warning": 60.0, "target": 30.0}
+}
+```
+
+#### Test Ordering Optimization
+Tests are automatically ordered for optimal execution flow:
+
+1. **Unit tests** (fastest, run first)
+2. **Integration tests** (moderate speed)
+3. **Deployment tests** (setup-heavy)
+4. **Compatibility tests** (environment-specific)
+5. **Performance tests** (resource-intensive)
+6. **End-to-end tests** (slowest, run last)
+
+#### Fixture Optimization
+Fixtures are scoped for maximum efficiency:
+
+```python
+# Session-scoped (created once per test session)
+@pytest.fixture(scope="session")
+def test_data_factory():
+    return TestDataFactory()
+
+# Module-scoped (created once per test module)
+@pytest.fixture(scope="module")
+def sample_technique():
+    return TestDataFactory.create_sample_technique()
+
+# Function-scoped (created for each test)
+@pytest.fixture
+def temp_config_file():
+    # Temporary files that need cleanup
+    pass
 ```
 
 ### Coverage Configuration
@@ -521,6 +661,112 @@ def test_debug_example(caplog):
 - [ ] Performance tests have reasonable thresholds
 - [ ] Integration tests cover key workflows
 - [ ] Tests are properly categorized with markers
+
+## Test Execution Optimization Tools
+
+### Optimization Script (`scripts/run_tests_optimized.py`)
+
+The project includes a comprehensive test execution optimization script with multiple modes:
+
+```bash
+# Fast development cycle (unit tests only)
+python scripts/run_tests_optimized.py --mode fast
+
+# Parallel execution with auto-detected workers
+python scripts/run_tests_optimized.py --mode parallel
+
+# Full test suite with all optimizations
+python scripts/run_tests_optimized.py --mode full
+
+# Category-specific execution
+python scripts/run_tests_optimized.py --mode category --category unit
+
+# Performance benchmarks
+python scripts/run_tests_optimized.py --mode benchmark
+
+# Custom worker count
+python scripts/run_tests_optimized.py --mode parallel --workers 4
+
+# With timing reports
+python scripts/run_tests_optimized.py --mode parallel --timing-report
+
+# With coverage reporting
+python scripts/run_tests_optimized.py --mode parallel --coverage
+```
+
+### Performance Monitoring and Reporting
+
+#### Timing Reports
+The test suite generates detailed timing reports showing:
+
+- **Category Summary**: Test count, total time, and average time per category
+- **Slowest Tests**: Top 20 slowest tests with durations
+- **Performance Recommendations**: Optimization suggestions based on execution patterns
+- **Parallel Speedup Estimates**: Potential performance gains from parallel execution
+
+Example timing report output:
+```
+================================================================================
+TEST EXECUTION TIMING REPORT
+================================================================================
+
+CATEGORY SUMMARY:
+------------------------------------------------------------
+Category        Count    Total (s)    Avg (s)   
+------------------------------------------------------------
+unit            128      0.161        0.001     
+integration     45       2.340        0.052     
+performance     12       15.670       1.306     
+
+SLOWEST TESTS (Top 20):
+--------------------------------------------------------------------------------
+Duration (s) Category     Test
+--------------------------------------------------------------------------------
+5.234        performance  test_large_dataset_processing
+2.156        integration  test_full_workflow_integration
+1.890        performance  test_concurrent_operations
+
+PERFORMANCE RECOMMENDATIONS:
+----------------------------------------
+• 3 tests take >5 seconds - consider optimization
+• Total execution time: 18.171 seconds
+• Estimated parallel speedup: 3.2x (with unlimited workers)
+================================================================================
+```
+
+#### Performance Regression Detection
+The system automatically detects performance regressions by:
+
+- Tracking historical test execution times
+- Comparing current runs against baseline performance
+- Alerting when tests exceed 50% of historical average
+- Providing detailed regression analysis
+
+### Test Dependencies and Requirements
+
+#### Required Packages for Optimization
+```toml
+# pyproject.toml dev-dependencies
+[tool.uv]
+dev-dependencies = [
+    "pytest-xdist>=3.5.0",      # Parallel execution
+    "pytest-benchmark>=4.0.0",   # Performance benchmarking
+    "pytest-timeout>=2.3.1",     # Test timeouts
+    "pytest-order>=1.2.0",       # Test ordering
+    # ... other dependencies
+]
+```
+
+#### Environment Variables
+```bash
+# Parallel execution configuration
+export PYTEST_XDIST_WORKER_COUNT=4    # Override auto-detection
+export PYTEST_TIMEOUT=300             # Global test timeout
+
+# Performance monitoring
+export PYTEST_BENCHMARK_DISABLE=1     # Disable benchmarks in parallel mode
+export PYTEST_TIMING_REPORT=1         # Enable timing reports
+```
 
 ## Advanced Testing
 

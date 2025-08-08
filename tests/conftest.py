@@ -4,6 +4,8 @@ import pytest
 import tempfile
 import os
 import json
+import time
+import threading
 from unittest.mock import Mock, patch
 from typing import Dict, Any, List
 
@@ -29,31 +31,31 @@ def performance_factory():
     return PerformanceDataFactory()
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def sample_technique():
     """Provide a sample technique for testing."""
     return TestDataFactory.create_sample_technique()
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def sample_group():
     """Provide a sample group for testing."""
     return TestDataFactory.create_sample_group()
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def sample_tactic():
     """Provide a sample tactic for testing."""
     return TestDataFactory.create_sample_tactic()
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def sample_mitigation():
     """Provide a sample mitigation for testing."""
     return TestDataFactory.create_sample_mitigation()
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def sample_stix_bundle():
     """Provide a sample STIX bundle with multiple entities."""
     entities = [
@@ -66,25 +68,25 @@ def sample_stix_bundle():
     return TestDataFactory.create_sample_stix_bundle(entities)
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def attack_path_data():
     """Provide sample attack path data for testing."""
     return TestDataFactory.create_attack_path_data()
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def coverage_gap_data():
     """Provide sample coverage gap data for testing."""
     return TestDataFactory.create_coverage_gap_data()
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def test_config():
     """Provide test configuration data."""
     return ConfigurationFactory.create_test_config()
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def test_env_vars():
     """Provide test environment variables."""
     return ConfigurationFactory.create_test_environment_vars()
@@ -129,7 +131,7 @@ def mock_requests_get():
         yield mock_get
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def mock_data_loader():
     """Mock data loader for MCP server testing."""
     mock_loader = Mock()
@@ -246,27 +248,7 @@ def pytest_configure(config):
     )
 
 
-def pytest_collection_modifyitems(config, items):
-    """Modify test collection to add markers based on test location."""
-    for item in items:
-        # Add markers based on test file location
-        test_path = str(item.fspath)
-        
-        if "/unit/" in test_path:
-            item.add_marker(pytest.mark.unit)
-            item.add_marker(pytest.mark.fast)
-        elif "/integration/" in test_path:
-            item.add_marker(pytest.mark.integration)
-        elif "/performance/" in test_path:
-            item.add_marker(pytest.mark.performance)
-            item.add_marker(pytest.mark.slow)
-        elif "/compatibility/" in test_path:
-            item.add_marker(pytest.mark.compatibility)
-        elif "/deployment/" in test_path:
-            item.add_marker(pytest.mark.deployment)
-        elif "/e2e/" in test_path:
-            item.add_marker(pytest.mark.e2e)
-            item.add_marker(pytest.mark.slow)
+
 
 
 def pytest_runtest_setup(item):
@@ -275,6 +257,14 @@ def pytest_runtest_setup(item):
     if item.config.getoption("--fast", default=False):
         if "slow" in [mark.name for mark in item.iter_markers()]:
             pytest.skip("Skipping slow test in fast mode")
+    
+    # Skip benchmark tests unless explicitly requested
+    if not item.config.getoption("--benchmark", default=False):
+        if "benchmark" in [mark.name for mark in item.iter_markers()]:
+            pytest.skip("Skipping benchmark test (use --benchmark to run)")
+    
+    # Record test start time for timing
+    item._test_start_time = time.time()
 
 
 def pytest_addoption(parser):
@@ -291,3 +281,196 @@ def pytest_addoption(parser):
         default=None,
         help="Run tests from specific category (unit, integration, performance, etc.)"
     )
+    parser.addoption(
+        "--parallel",
+        action="store",
+        default="auto",
+        help="Number of parallel workers (auto, or specific number)"
+    )
+    parser.addoption(
+        "--benchmark",
+        action="store_true",
+        default=False,
+        help="Run performance benchmarks"
+    )
+    parser.addoption(
+        "--timing-report",
+        action="store_true",
+        default=False,
+        help="Generate detailed timing report"
+    )
+
+
+# Global test timing storage
+_test_timings = {}
+_timing_lock = threading.Lock()
+
+
+def pytest_runtest_teardown(item, nextitem):
+    """Teardown hook for individual test runs."""
+    if hasattr(item, '_test_start_time'):
+        duration = time.time() - item._test_start_time
+        
+        # Store timing information
+        with _timing_lock:
+            # Handle both Path and LocalPath objects
+            try:
+                if hasattr(item.fspath, 'relative_to'):
+                    test_path = str(item.fspath.relative_to(item.config.rootdir))
+                else:
+                    # For older pytest versions with LocalPath
+                    test_path = str(item.fspath).replace(str(item.config.rootdir), "").lstrip("/")
+            except (AttributeError, TypeError):
+                test_path = str(item.fspath)
+            
+            test_name = f"{test_path}::{item.name}"
+            _test_timings[test_name] = {
+                'duration': duration,
+                'category': _get_test_category(item),
+                'markers': [mark.name for mark in item.iter_markers()]
+            }
+
+
+def pytest_sessionfinish(session, exitstatus):
+    """Session finish hook for generating timing reports."""
+    if session.config.getoption("--timing-report", default=False):
+        _generate_timing_report(session)
+
+
+def _get_test_category(item):
+    """Determine test category from markers or path."""
+    test_path = str(item.fspath)
+    
+    if "/unit/" in test_path:
+        return "unit"
+    elif "/integration/" in test_path:
+        return "integration"
+    elif "/performance/" in test_path:
+        return "performance"
+    elif "/compatibility/" in test_path:
+        return "compatibility"
+    elif "/deployment/" in test_path:
+        return "deployment"
+    elif "/e2e/" in test_path:
+        return "e2e"
+    else:
+        return "other"
+
+
+def _generate_timing_report(session):
+    """Generate detailed timing report."""
+    if not _test_timings:
+        return
+    
+    print("\n" + "="*80)
+    print("TEST EXECUTION TIMING REPORT")
+    print("="*80)
+    
+    # Sort tests by duration (slowest first)
+    sorted_tests = sorted(_test_timings.items(), key=lambda x: x[1]['duration'], reverse=True)
+    
+    # Category statistics
+    category_stats = {}
+    for test_name, timing in _test_timings.items():
+        category = timing['category']
+        if category not in category_stats:
+            category_stats[category] = {'count': 0, 'total_time': 0, 'avg_time': 0}
+        category_stats[category]['count'] += 1
+        category_stats[category]['total_time'] += timing['duration']
+    
+    # Calculate averages
+    for category in category_stats:
+        stats = category_stats[category]
+        stats['avg_time'] = stats['total_time'] / stats['count']
+    
+    # Print category summary
+    print("\nCATEGORY SUMMARY:")
+    print("-" * 60)
+    print(f"{'Category':<15} {'Count':<8} {'Total (s)':<12} {'Avg (s)':<10}")
+    print("-" * 60)
+    
+    for category, stats in sorted(category_stats.items()):
+        print(f"{category:<15} {stats['count']:<8} {stats['total_time']:<12.3f} {stats['avg_time']:<10.3f}")
+    
+    # Print slowest tests
+    print(f"\nSLOWEST TESTS (Top 20):")
+    print("-" * 80)
+    print(f"{'Duration (s)':<12} {'Category':<12} {'Test'}")
+    print("-" * 80)
+    
+    for test_name, timing in sorted_tests[:20]:
+        duration = timing['duration']
+        category = timing['category']
+        short_name = test_name.split("::")[-1][:50]
+        print(f"{duration:<12.3f} {category:<12} {short_name}")
+    
+    # Performance recommendations
+    print(f"\nPERFORMANCE RECOMMENDATIONS:")
+    print("-" * 40)
+    
+    slow_tests = [t for t in sorted_tests if t[1]['duration'] > 5.0]
+    if slow_tests:
+        print(f"• {len(slow_tests)} tests take >5 seconds - consider optimization")
+    
+    unit_slow = [t for t in sorted_tests if t[1]['category'] == 'unit' and t[1]['duration'] > 1.0]
+    if unit_slow:
+        print(f"• {len(unit_slow)} unit tests take >1 second - should be faster")
+    
+    total_time = sum(t[1]['duration'] for t in sorted_tests)
+    print(f"• Total execution time: {total_time:.3f} seconds")
+    
+    # Parallel execution estimate
+    if len(sorted_tests) > 1:
+        parallel_estimate = max(t[1]['duration'] for t in sorted_tests)
+        speedup = total_time / parallel_estimate
+        print(f"• Estimated parallel speedup: {speedup:.1f}x (with unlimited workers)")
+    
+    print("="*80)
+
+
+def pytest_collection_modifyitems(config, items):
+    """Modify test collection to add markers and optimize ordering."""
+    # Add markers based on test file location
+    for item in items:
+        test_path = str(item.fspath)
+        
+        if "/unit/" in test_path:
+            item.add_marker(pytest.mark.unit)
+            item.add_marker(pytest.mark.fast)
+        elif "/integration/" in test_path:
+            item.add_marker(pytest.mark.integration)
+        elif "/performance/" in test_path:
+            item.add_marker(pytest.mark.performance)
+            item.add_marker(pytest.mark.slow)
+            item.add_marker(pytest.mark.benchmark)
+        elif "/compatibility/" in test_path:
+            item.add_marker(pytest.mark.compatibility)
+        elif "/deployment/" in test_path:
+            item.add_marker(pytest.mark.deployment)
+        elif "/e2e/" in test_path:
+            item.add_marker(pytest.mark.e2e)
+            item.add_marker(pytest.mark.slow)
+    
+    # Optimize test ordering for better execution flow
+    # Fast tests first, then integration, then slow tests
+    def test_priority(item):
+        test_path = str(item.fspath)
+        
+        # Priority order: unit (0), integration (1), deployment (2), compatibility (3), performance (4), e2e (5)
+        if "/unit/" in test_path:
+            return (0, item.name)
+        elif "/integration/" in test_path:
+            return (1, item.name)
+        elif "/deployment/" in test_path:
+            return (2, item.name)
+        elif "/compatibility/" in test_path:
+            return (3, item.name)
+        elif "/performance/" in test_path:
+            return (4, item.name)
+        elif "/e2e/" in test_path:
+            return (5, item.name)
+        else:
+            return (6, item.name)
+    
+    # Sort items by priority
+    items.sort(key=test_priority)
