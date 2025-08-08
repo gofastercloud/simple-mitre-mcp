@@ -24,7 +24,7 @@ import argparse
 class CoverageRegressionMonitor:
     """Monitors coverage changes and detects regressions."""
     
-    def __init__(self, history_file: str = ".coverage_history.json"):
+    def __init__(self, history_file: str = "validation/data/coverage_history.json"):
         self.history_file = history_file
         self.history = self._load_history()
         self.regression_thresholds = {
@@ -61,7 +61,7 @@ class CoverageRegressionMonitor:
             "uv", "run", "pytest", 
             "tests/",
             "--cov=src",
-            "--cov-report=json:coverage_current.json",
+            "--cov-report=json:validation/temp/coverage_current.json",
             "--tb=short",
             "-q"
         ]
@@ -69,12 +69,13 @@ class CoverageRegressionMonitor:
         try:
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
             
-            if os.path.exists("coverage_current.json"):
-                with open("coverage_current.json", 'r') as f:
+            temp_file = "validation/temp/coverage_current.json"
+            if os.path.exists(temp_file):
+                with open(temp_file, 'r') as f:
                     coverage_data = json.load(f)
                 
                 # Clean up temp file
-                os.remove("coverage_current.json")
+                os.remove(temp_file)
                 
                 return {
                     "timestamp": time.time(),

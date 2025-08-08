@@ -24,7 +24,7 @@ import argparse
 class PerformanceBenchmark:
     """Benchmarks test execution performance."""
     
-    def __init__(self, baseline_file: str = ".performance_baseline.json"):
+    def __init__(self, baseline_file: str = "validation/data/performance_baseline.json"):
         self.baseline_file = baseline_file
         self.baseline_data = self._load_baseline()
         self.performance_targets = {

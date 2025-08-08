@@ -30,9 +30,9 @@ class ValidationSuiteRunner:
         self.output_dir.mkdir(exist_ok=True)
         
         self.validation_scripts = {
-            "coverage_performance": "scripts/validate_coverage_performance.py",
-            "coverage_regression": "scripts/coverage_regression_monitor.py", 
-            "performance_benchmark": "scripts/performance_benchmark.py"
+            "coverage_performance": "validation/validate_coverage_performance.py",
+            "coverage_regression": "validation/coverage_regression_monitor.py", 
+            "performance_benchmark": "validation/performance_benchmark.py"
         }
         
         self.results = {}
@@ -345,9 +345,9 @@ def main():
     
     # Ensure scripts exist
     required_scripts = [
-        "scripts/validate_coverage_performance.py",
-        "scripts/coverage_regression_monitor.py",
-        "scripts/performance_benchmark.py"
+        "validation/validate_coverage_performance.py",
+        "validation/coverage_regression_monitor.py",
+        "validation/performance_benchmark.py"
     ]
     
     missing_scripts = [script for script in required_scripts if not os.path.exists(script)]

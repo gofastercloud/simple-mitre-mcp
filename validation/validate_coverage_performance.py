@@ -134,9 +134,10 @@ class CoverageValidator:
         try:
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
             
-            overall_file = "coverage/data/coverage_overall.json"
-            if os.path.exists(overall_file):
-                withcoverage_data = json.load(f)
+            coverage_file = "coverage/data/coverage_overall.json"
+            if os.path.exists(coverage_file):
+                with open(coverage_file, 'r') as f:
+                    coverage_data = json.load(f)
                 
                 return {
                     "coverage_percent": coverage_data.get("totals", {}).get("percent_covered", 0),
@@ -432,7 +433,7 @@ class PerformanceValidator:
 class RegressionDetector:
     """Detects coverage and performance regressions."""
     
-    def __init__(self, history_file: str = ".validation_history.json"):
+    def __init__(self, history_file: str = "validation/data/validation_history.json"):
         self.history_file = history_file
         self.history = self._load_history()
     
