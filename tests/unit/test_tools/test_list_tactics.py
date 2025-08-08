@@ -1,5 +1,5 @@
 """
-Tests for list_tactics tool functionality.
+Unit tests for list_tactics tool functionality.
 
 This module contains unit tests for the list_tactics MCP tool,
 including tactics listing, formatting, and edge cases.
@@ -8,6 +8,7 @@ including tactics listing, formatting, and edge cases.
 import pytest
 from unittest.mock import Mock
 from src.data_loader import DataLoader
+from tests.base import BaseMCPTestCase
 
 
 def _get_all_tactics(data: dict) -> list:
@@ -58,12 +59,13 @@ def _format_tactics_response(tactics: list) -> str:
     return result_text
 
 
-class TestListTactics:
+class TestListTactics(BaseMCPTestCase):
     """Test cases for list_tactics tool functionality."""
 
-    def setup_method(self):
-        """Set up test data for each test method."""
-        self.sample_tactics_data = {
+    @pytest.fixture
+    def sample_tactics_data(self):
+        """Create sample tactics data for testing."""
+        return {
             "tactics": [
                 {
                     "id": "TA0001",
@@ -86,16 +88,19 @@ class TestListTactics:
             "mitigations": [],
         }
 
-        self.empty_data = {
+    @pytest.fixture
+    def empty_data(self):
+        """Create empty data for testing."""
+        return {
             "tactics": [],
             "techniques": [],
             "groups": [],
             "mitigations": [],
         }
 
-    def test_get_all_tactics_success(self):
+    def test_get_all_tactics_success(self, sample_tactics_data):
         """Test successful tactics retrieval."""
-        tactics = _get_all_tactics(self.sample_tactics_data)
+        tactics = _get_all_tactics(sample_tactics_data)
 
         assert len(tactics) == 3
         assert tactics[0]["id"] == "TA0001"
@@ -105,9 +110,9 @@ class TestListTactics:
         assert tactics[2]["id"] == "TA0003"
         assert tactics[2]["name"] == "Persistence"
 
-    def test_get_all_tactics_empty_data(self):
+    def test_get_all_tactics_empty_data(self, empty_data):
         """Test tactics retrieval with no tactics in data."""
-        tactics = _get_all_tactics(self.empty_data)
+        tactics = _get_all_tactics(empty_data)
 
         assert len(tactics) == 0
         assert tactics == []
@@ -189,9 +194,9 @@ class TestListTactics:
         for tactic in tactics:
             assert isinstance(tactic, dict)
 
-    def test_format_tactics_response_success(self):
+    def test_format_tactics_response_success(self, sample_tactics_data):
         """Test successful tactics response formatting."""
-        tactics = self.sample_tactics_data["tactics"]
+        tactics = sample_tactics_data["tactics"]
         response = _format_tactics_response(tactics)
 
         # Check header format
@@ -252,10 +257,10 @@ class TestListTactics:
             "No description available" in response
         )  # Should show default for missing description
 
-    def test_integration_list_tactics_logic(self):
+    def test_integration_list_tactics_logic(self, sample_tactics_data):
         """Test the complete list_tactics logic integration."""
         # Test successful retrieval and formatting
-        tactics = _get_all_tactics(self.sample_tactics_data)
+        tactics = _get_all_tactics(sample_tactics_data)
         assert len(tactics) == 3
 
         response = _format_tactics_response(tactics)
@@ -270,9 +275,9 @@ class TestListTactics:
         assert "TA0003" in response
         assert "Persistence" in response
 
-    def test_integration_list_tactics_empty_data(self):
+    def test_integration_list_tactics_empty_data(self, empty_data):
         """Test the complete list_tactics logic for empty data case."""
-        tactics = _get_all_tactics(self.empty_data)
+        tactics = _get_all_tactics(empty_data)
         assert len(tactics) == 0
 
         response = _format_tactics_response(tactics)

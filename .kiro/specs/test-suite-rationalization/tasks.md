@@ -7,14 +7,14 @@
   - Identify redundant, obsolete, and overlapping tests
   - _Requirements: 1.1, 2.1, 2.2, 2.3_
 
-- [-] 2. Create new test directory structure and configuration
+- [x] 2. Create new test directory structure and configuration
   - Create new directory structure with category subdirectories
   - Implement pytest configuration with markers and test categories
   - Create base test classes and shared utilities
   - Set up test data factories for consistent test data generation
   - _Requirements: 1.2, 1.4, 5.1_
 
-- [ ] 3. Consolidate and migrate unit tests
+- [-] 3. Consolidate and migrate unit tests
   - Migrate MCP server core functionality tests to tests/unit/
   - Consolidate tool-specific tests into tests/unit/test_tools/
   - Merge data loader and parser tests with shared fixtures

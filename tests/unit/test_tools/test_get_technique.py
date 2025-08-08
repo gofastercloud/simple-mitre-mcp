@@ -1,16 +1,16 @@
 """
-Tests for get_technique MCP tool functionality.
+Unit tests for get_technique MCP tool functionality.
 
 This module contains unit tests for the get_technique tool implementation,
 including technique retrieval, error handling, and data validation.
 """
 
 import pytest
-import asyncio
 from unittest.mock import Mock, patch
 from mcp.types import TextContent
 from src.mcp_server import create_mcp_server
 from src.data_loader import DataLoader
+from tests.base import BaseMCPTestCase
 
 
 def _get_technique_by_id(technique_id: str, data: dict) -> dict:
@@ -113,13 +113,13 @@ def _format_technique_response(technique: dict, data: dict) -> str:
     return result_text
 
 
-class TestGetTechnique:
+class TestGetTechnique(BaseMCPTestCase):
     """Test cases for get_technique MCP tool."""
 
-    def setup_method(self):
-        """Set up test fixtures before each test method."""
-        # Sample test data
-        self.sample_data = {
+    @pytest.fixture
+    def sample_data(self):
+        """Create sample test data."""
+        return {
             "techniques": [
                 {
                     "id": "T1055",
@@ -195,9 +195,9 @@ class TestGetTechnique:
             "groups": [],
         }
 
-    def test_get_technique_by_id_success(self):
+    def test_get_technique_by_id_success(self, sample_data):
         """Test successful technique retrieval by ID."""
-        technique = _get_technique_by_id("T1055", self.sample_data)
+        technique = _get_technique_by_id("T1055", sample_data)
 
         assert technique is not None
         assert technique["id"] == "T1055"
@@ -207,43 +207,43 @@ class TestGetTechnique:
         assert technique["platforms"] == ["Windows", "Linux", "macOS"]
         assert technique["mitigations"] == ["M1040", "M1026"]
 
-    def test_get_technique_by_id_case_insensitive(self):
+    def test_get_technique_by_id_case_insensitive(self, sample_data):
         """Test that technique ID lookup is case insensitive."""
         # Test lowercase
-        technique_lower = _get_technique_by_id("t1055", self.sample_data)
+        technique_lower = _get_technique_by_id("t1055", sample_data)
         assert technique_lower is not None
         assert technique_lower["id"] == "T1055"
 
         # Test mixed case
-        technique_mixed = _get_technique_by_id("T1055", self.sample_data)
+        technique_mixed = _get_technique_by_id("T1055", sample_data)
         assert technique_mixed is not None
         assert technique_mixed["id"] == "T1055"
 
         # Both should return the same technique
         assert technique_lower == technique_mixed
 
-    def test_get_technique_by_id_with_whitespace(self):
+    def test_get_technique_by_id_with_whitespace(self, sample_data):
         """Test technique ID with leading/trailing whitespace."""
-        technique = _get_technique_by_id("  T1055  ", self.sample_data)
+        technique = _get_technique_by_id("  T1055  ", sample_data)
 
         assert technique is not None
         assert technique["id"] == "T1055"
         assert technique["name"] == "Process Injection"
 
-    def test_get_technique_by_id_not_found(self):
+    def test_get_technique_by_id_not_found(self, sample_data):
         """Test handling of invalid technique ID."""
-        technique = _get_technique_by_id("T9999", self.sample_data)
+        technique = _get_technique_by_id("T9999", sample_data)
         assert technique is None
 
-    def test_get_technique_by_id_empty_id(self):
+    def test_get_technique_by_id_empty_id(self, sample_data):
         """Test handling of empty technique ID."""
-        technique = _get_technique_by_id("", self.sample_data)
+        technique = _get_technique_by_id("", sample_data)
         assert technique is None
 
-    def test_format_technique_response_full_details(self):
+    def test_format_technique_response_full_details(self, sample_data):
         """Test formatting technique response with full details."""
-        technique = self.sample_data["techniques"][0]  # T1055
-        response = _format_technique_response(technique, self.sample_data)
+        technique = sample_data["techniques"][0]  # T1055
+        response = _format_technique_response(technique, sample_data)
 
         # Check basic structure
         assert "TECHNIQUE DETAILS" in response
@@ -266,20 +266,20 @@ class TestGetTechnique:
         assert "Process monitoring, API monitoring" in response
         assert "Monitor for suspicious process behavior" in response
 
-    def test_format_technique_response_minimal_details(self):
+    def test_format_technique_response_minimal_details(self, sample_data):
         """Test formatting technique response with minimal details."""
-        technique = self.sample_data["techniques"][2]  # T1003 with no mitigations
-        response = _format_technique_response(technique, self.sample_data)
+        technique = sample_data["techniques"][2]  # T1003 with no mitigations
+        response = _format_technique_response(technique, sample_data)
 
         assert "T1003" in response
         assert "OS Credential Dumping" in response
         assert "TA0006: Credential Access" in response
         assert "Mitigations: None available" in response
 
-    def test_format_technique_response_missing_tactic_names(self):
+    def test_format_technique_response_missing_tactic_names(self, sample_data):
         """Test formatting when tactic names are not found in data."""
         # Create data with missing tactic
-        data_missing_tactic = self.sample_data.copy()
+        data_missing_tactic = sample_data.copy()
         data_missing_tactic["tactics"] = [
             {
                 "id": "TA0004",
@@ -289,16 +289,16 @@ class TestGetTechnique:
             # TA0005 is missing
         ]
 
-        technique = self.sample_data["techniques"][0]  # T1055
+        technique = sample_data["techniques"][0]  # T1055
         response = _format_technique_response(technique, data_missing_tactic)
 
         assert "TA0004: Privilege Escalation" in response
         assert "TA0005: (Name not found)" in response
 
-    def test_format_technique_response_missing_mitigation_names(self):
+    def test_format_technique_response_missing_mitigation_names(self, sample_data):
         """Test formatting when mitigation names are not found in data."""
         # Create data with missing mitigation
-        data_missing_mitigation = self.sample_data.copy()
+        data_missing_mitigation = sample_data.copy()
         data_missing_mitigation["mitigations"] = [
             {
                 "id": "M1040",
@@ -308,13 +308,13 @@ class TestGetTechnique:
             # M1026 is missing
         ]
 
-        technique = self.sample_data["techniques"][0]  # T1055
+        technique = sample_data["techniques"][0]  # T1055
         response = _format_technique_response(technique, data_missing_mitigation)
 
         assert "M1040: Behavior Prevention on Endpoint" in response
         assert "M1026: (Name not found)" in response
 
-    def test_format_technique_response_no_tactics(self):
+    def test_format_technique_response_no_tactics(self, sample_data):
         """Test formatting technique with no tactics."""
         technique = {
             "id": "T9999",
@@ -325,14 +325,14 @@ class TestGetTechnique:
             "mitigations": [],
         }
 
-        response = _format_technique_response(technique, self.sample_data)
+        response = _format_technique_response(technique, sample_data)
 
         assert "T9999" in response
         assert "Test Technique" in response
         assert "Associated Tactics: None" in response
         assert "Mitigations: None available" in response
 
-    def test_format_technique_response_no_platforms(self):
+    def test_format_technique_response_no_platforms(self, sample_data):
         """Test formatting technique with no platforms."""
         technique = {
             "id": "T9999",
@@ -343,18 +343,18 @@ class TestGetTechnique:
             "mitigations": [],
         }
 
-        response = _format_technique_response(technique, self.sample_data)
+        response = _format_technique_response(technique, sample_data)
 
         assert "T9999" in response
         assert "Platforms: Not specified" in response
 
-    def test_integration_get_technique_logic(self):
+    def test_integration_get_technique_logic(self, sample_data):
         """Test the complete get_technique logic integration."""
         # Test successful retrieval
-        technique = _get_technique_by_id("T1055", self.sample_data)
+        technique = _get_technique_by_id("T1055", sample_data)
         assert technique is not None
 
-        response = _format_technique_response(technique, self.sample_data)
+        response = _format_technique_response(technique, sample_data)
 
         # Verify all expected content is present
         assert "T1055" in response
@@ -368,9 +368,9 @@ class TestGetTechnique:
         assert "Process monitoring, API monitoring" in response
         assert "Monitor for suspicious process behavior" in response
 
-    def test_integration_get_technique_not_found(self):
+    def test_integration_get_technique_not_found(self, sample_data):
         """Test the complete get_technique logic for not found case."""
-        technique = _get_technique_by_id("T9999", self.sample_data)
+        technique = _get_technique_by_id("T9999", sample_data)
         assert technique is None
 
         # This would result in a "not found" response in the actual MCP tool

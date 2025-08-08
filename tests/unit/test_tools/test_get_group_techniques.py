@@ -1,5 +1,5 @@
 """
-Tests for get_group_techniques tool functionality.
+Unit tests for get_group_techniques tool functionality.
 
 This module contains unit tests for the get_group_techniques MCP tool,
 including group validation, technique retrieval, and edge cases.
@@ -8,6 +8,7 @@ including group validation, technique retrieval, and edge cases.
 import pytest
 from unittest.mock import Mock
 from src.data_loader import DataLoader
+from tests.base import BaseMCPTestCase
 
 
 def _find_group_by_id(group_id: str, data: dict) -> dict:
@@ -152,12 +153,13 @@ def _format_group_techniques_response(
     return result_text
 
 
-class TestGetGroupTechniques:
+class TestGetGroupTechniques(BaseMCPTestCase):
     """Test cases for get_group_techniques tool functionality."""
 
-    def setup_method(self):
-        """Set up test data for each test method."""
-        self.sample_data = {
+    @pytest.fixture
+    def sample_data(self):
+        """Create sample data for testing."""
+        return {
             "groups": [
                 {
                     "id": "G0016",
@@ -236,9 +238,9 @@ class TestGetGroupTechniques:
             "mitigations": [],
         }
 
-    def test_find_group_by_id_valid_group(self):
+    def test_find_group_by_id_valid_group(self, sample_data):
         """Test finding a valid group by ID."""
-        group = _find_group_by_id("G0016", self.sample_data)
+        group = _find_group_by_id("G0016", sample_data)
 
         assert group is not None
         assert group["id"] == "G0016"
@@ -246,11 +248,11 @@ class TestGetGroupTechniques:
         assert "Cozy Bear" in group["aliases"]
         assert len(group["techniques"]) == 3
 
-    def test_find_group_by_id_case_insensitive(self):
+    def test_find_group_by_id_case_insensitive(self, sample_data):
         """Test that group ID lookup is case insensitive."""
-        group_lower = _find_group_by_id("g0016", self.sample_data)
-        group_upper = _find_group_by_id("G0016", self.sample_data)
-        group_mixed = _find_group_by_id("g0016", self.sample_data)
+        group_lower = _find_group_by_id("g0016", sample_data)
+        group_upper = _find_group_by_id("G0016", sample_data)
+        group_mixed = _find_group_by_id("g0016", sample_data)
 
         assert group_lower is not None
         assert group_upper is not None
@@ -260,24 +262,24 @@ class TestGetGroupTechniques:
         assert group_lower["id"] == group_upper["id"] == group_mixed["id"]
         assert group_lower["name"] == "APT29"
 
-    def test_find_group_by_id_invalid_group(self):
+    def test_find_group_by_id_invalid_group(self, sample_data):
         """Test finding an invalid group ID."""
-        group = _find_group_by_id("G9999", self.sample_data)
+        group = _find_group_by_id("G9999", sample_data)
 
         assert group is None
 
-    def test_find_group_by_id_whitespace_handling(self):
+    def test_find_group_by_id_whitespace_handling(self, sample_data):
         """Test that group ID whitespace is handled correctly."""
-        group = _find_group_by_id("  G0016  ", self.sample_data)
+        group = _find_group_by_id("  G0016  ", sample_data)
 
         assert group is not None
         assert group["id"] == "G0016"
         assert group["name"] == "APT29"
 
-    def test_get_technique_details_valid_techniques(self):
+    def test_get_technique_details_valid_techniques(self, sample_data):
         """Test getting technique details for valid technique IDs."""
         technique_ids = ["T1055", "T1059"]
-        details = _get_technique_details(technique_ids, self.sample_data)
+        details = _get_technique_details(technique_ids, sample_data)
 
         assert len(details) == 2
 
@@ -292,10 +294,10 @@ class TestGetGroupTechniques:
         assert details[1]["name"] == "Command and Scripting Interpreter"
         assert "TA0002" in details[1]["tactics"]
 
-    def test_get_technique_details_missing_techniques(self):
+    def test_get_technique_details_missing_techniques(self, sample_data):
         """Test getting technique details for missing technique IDs."""
         technique_ids = ["T1055", "T9999"]  # T9999 doesn't exist
-        details = _get_technique_details(technique_ids, self.sample_data)
+        details = _get_technique_details(technique_ids, sample_data)
 
         assert len(details) == 2
 
@@ -310,10 +312,10 @@ class TestGetGroupTechniques:
         assert details[1]["tactics"] == []
         assert details[1]["platforms"] == []
 
-    def test_get_technique_details_sorting(self):
+    def test_get_technique_details_sorting(self, sample_data):
         """Test that technique details are sorted by ID."""
         technique_ids = ["T1071", "T1055", "T1059"]  # Unsorted input
-        details = _get_technique_details(technique_ids, self.sample_data)
+        details = _get_technique_details(technique_ids, sample_data)
 
         assert len(details) == 3
 
@@ -322,21 +324,21 @@ class TestGetGroupTechniques:
         assert details[1]["id"] == "T1059"
         assert details[2]["id"] == "T1071"
 
-    def test_get_technique_details_empty_list(self):
+    def test_get_technique_details_empty_list(self, sample_data):
         """Test getting technique details for empty technique list."""
-        details = _get_technique_details([], self.sample_data)
+        details = _get_technique_details([], sample_data)
 
         assert len(details) == 0
         assert details == []
 
-    def test_format_group_techniques_response_success(self):
+    def test_format_group_techniques_response_success(self, sample_data):
         """Test successful group techniques response formatting."""
-        group = self.sample_data["groups"][0]  # APT29
+        group = sample_data["groups"][0]  # APT29
         technique_details = _get_technique_details(
-            group["techniques"], self.sample_data
+            group["techniques"], sample_data
         )
         response = _format_group_techniques_response(
-            group, technique_details, self.sample_data
+            group, technique_details, sample_data
         )
 
         # Check header format
@@ -366,19 +368,19 @@ class TestGetGroupTechniques:
         assert "Windows" in response
         assert "Linux" in response
 
-    def test_format_group_techniques_response_no_techniques(self):
+    def test_format_group_techniques_response_no_techniques(self, sample_data):
         """Test formatting response for group with no techniques."""
-        group = self.sample_data["groups"][2]  # Axiom with no techniques
+        group = sample_data["groups"][2]  # Axiom with no techniques
         technique_details = _get_technique_details(
-            group["techniques"], self.sample_data
+            group["techniques"], sample_data
         )
         response = _format_group_techniques_response(
-            group, technique_details, self.sample_data
+            group, technique_details, sample_data
         )
 
         assert "No techniques found for group 'G0001' (Axiom)" in response
 
-    def test_format_group_techniques_response_missing_technique_details(self):
+    def test_format_group_techniques_response_missing_technique_details(self, sample_data):
         """Test formatting response with missing technique details."""
         group = {
             "id": "G0016",
@@ -389,10 +391,10 @@ class TestGetGroupTechniques:
         }
 
         technique_details = _get_technique_details(
-            group["techniques"], self.sample_data
+            group["techniques"], sample_data
         )
         response = _format_group_techniques_response(
-            group, technique_details, self.sample_data
+            group, technique_details, sample_data
         )
 
         # Should handle missing technique gracefully
@@ -400,10 +402,10 @@ class TestGetGroupTechniques:
         assert "T9999: (Name not found)" in response
         assert "Technique details not available" in response
 
-    def test_format_group_techniques_response_missing_tactic_names(self):
+    def test_format_group_techniques_response_missing_tactic_names(self, sample_data):
         """Test formatting response when tactic names are missing."""
         # Create data with technique that references non-existent tactic
-        modified_data = self.sample_data.copy()
+        modified_data = sample_data.copy()
         modified_data["techniques"] = [
             {
                 "id": "T1055",
@@ -430,19 +432,19 @@ class TestGetGroupTechniques:
         # Should handle missing tactic name gracefully
         assert "TA9999 (Name not found)" in response
 
-    def test_integration_get_group_techniques_logic(self):
+    def test_integration_get_group_techniques_logic(self, sample_data):
         """Test the complete get_group_techniques logic integration."""
         # Test successful retrieval and formatting
-        group = _find_group_by_id("G0016", self.sample_data)
+        group = _find_group_by_id("G0016", sample_data)
         assert group is not None
 
         technique_details = _get_technique_details(
-            group["techniques"], self.sample_data
+            group["techniques"], sample_data
         )
         assert len(technique_details) == 3
 
         response = _format_group_techniques_response(
-            group, technique_details, self.sample_data
+            group, technique_details, sample_data
         )
 
         # Verify all expected content is present
@@ -453,18 +455,18 @@ class TestGetGroupTechniques:
         assert "Process Injection" in response
         assert "TA0004 (Privilege Escalation)" in response
 
-    def test_integration_get_group_techniques_no_techniques(self):
+    def test_integration_get_group_techniques_no_techniques(self, sample_data):
         """Test the complete logic for group with no techniques."""
-        group = _find_group_by_id("G0001", self.sample_data)
+        group = _find_group_by_id("G0001", sample_data)
         assert group is not None
 
         technique_details = _get_technique_details(
-            group["techniques"], self.sample_data
+            group["techniques"], sample_data
         )
         assert len(technique_details) == 0
 
         response = _format_group_techniques_response(
-            group, technique_details, self.sample_data
+            group, technique_details, sample_data
         )
         assert "No techniques found for group 'G0001' (Axiom)" in response
 

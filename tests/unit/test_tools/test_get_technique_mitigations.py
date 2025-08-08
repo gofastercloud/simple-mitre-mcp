@@ -1,16 +1,16 @@
 """
-Tests for get_technique_mitigations MCP tool functionality.
+Unit tests for get_technique_mitigations MCP tool functionality.
 
 This module contains unit tests for the get_technique_mitigations tool implementation,
 including mitigation retrieval, error handling, and data validation.
 """
 
 import pytest
-import asyncio
 from unittest.mock import Mock, patch
 from mcp.types import TextContent
 from src.mcp_server import create_mcp_server
 from src.data_loader import DataLoader
+from tests.base import BaseMCPTestCase
 
 
 def _get_technique_by_id(technique_id: str, data: dict) -> dict:
@@ -121,13 +121,13 @@ def _format_technique_mitigations_response(
     return result_text
 
 
-class TestGetTechniqueMitigations:
+class TestGetTechniqueMitigations(BaseMCPTestCase):
     """Test cases for get_technique_mitigations MCP tool."""
 
-    def setup_method(self):
-        """Set up test fixtures before each test method."""
-        # Sample test data
-        self.sample_data = {
+    @pytest.fixture
+    def sample_data(self):
+        """Create sample test data."""
+        return {
             "techniques": [
                 {
                     "id": "T1055",
@@ -219,9 +219,9 @@ class TestGetTechniqueMitigations:
             "groups": [],
         }
 
-    def test_get_technique_mitigations_success(self):
+    def test_get_technique_mitigations_success(self, sample_data):
         """Test successful technique mitigation retrieval."""
-        technique = _get_technique_by_id("T1055", self.sample_data)
+        technique = _get_technique_by_id("T1055", sample_data)
         assert technique is not None
 
         mitigation_ids = technique.get("mitigations", [])
@@ -230,7 +230,7 @@ class TestGetTechniqueMitigations:
         assert "M1026" in mitigation_ids
         assert "M1038" in mitigation_ids
 
-        mitigation_details = _get_mitigation_details(mitigation_ids, self.sample_data)
+        mitigation_details = _get_mitigation_details(mitigation_ids, sample_data)
         assert len(mitigation_details) == 3
 
         # Check that mitigations are sorted by ID
@@ -238,59 +238,59 @@ class TestGetTechniqueMitigations:
         assert mitigation_details[1]["id"] == "M1038"
         assert mitigation_details[2]["id"] == "M1040"
 
-    def test_get_technique_mitigations_case_insensitive(self):
+    def test_get_technique_mitigations_case_insensitive(self, sample_data):
         """Test that technique ID lookup is case insensitive."""
         # Test lowercase
-        technique_lower = _get_technique_by_id("t1055", self.sample_data)
+        technique_lower = _get_technique_by_id("t1055", sample_data)
         assert technique_lower is not None
         assert technique_lower["id"] == "T1055"
 
         # Test mixed case
-        technique_mixed = _get_technique_by_id("T1055", self.sample_data)
+        technique_mixed = _get_technique_by_id("T1055", sample_data)
         assert technique_mixed is not None
         assert technique_mixed["id"] == "T1055"
 
         # Both should return the same technique
         assert technique_lower == technique_mixed
 
-    def test_get_technique_mitigations_with_whitespace(self):
+    def test_get_technique_mitigations_with_whitespace(self, sample_data):
         """Test technique ID with leading/trailing whitespace."""
-        technique = _get_technique_by_id("  T1055  ", self.sample_data)
+        technique = _get_technique_by_id("  T1055  ", sample_data)
 
         assert technique is not None
         assert technique["id"] == "T1055"
         assert len(technique.get("mitigations", [])) == 3
 
-    def test_get_technique_mitigations_not_found(self):
+    def test_get_technique_mitigations_not_found(self, sample_data):
         """Test handling of invalid technique ID."""
-        technique = _get_technique_by_id("T9999", self.sample_data)
+        technique = _get_technique_by_id("T9999", sample_data)
         assert technique is None
 
-    def test_get_technique_mitigations_empty_id(self):
+    def test_get_technique_mitigations_empty_id(self, sample_data):
         """Test handling of empty technique ID."""
-        technique = _get_technique_by_id("", self.sample_data)
+        technique = _get_technique_by_id("", sample_data)
         assert technique is None
 
-    def test_get_technique_mitigations_no_mitigations(self):
+    def test_get_technique_mitigations_no_mitigations(self, sample_data):
         """Test technique with no mitigations."""
-        technique = _get_technique_by_id("T1003", self.sample_data)
+        technique = _get_technique_by_id("T1003", sample_data)
         assert technique is not None
 
         mitigation_ids = technique.get("mitigations", [])
         assert len(mitigation_ids) == 0
 
-        mitigation_details = _get_mitigation_details(mitigation_ids, self.sample_data)
+        mitigation_details = _get_mitigation_details(mitigation_ids, sample_data)
         assert len(mitigation_details) == 0
 
-    def test_get_technique_mitigations_many_mitigations(self):
+    def test_get_technique_mitigations_many_mitigations(self, sample_data):
         """Test technique with many mitigations."""
-        technique = _get_technique_by_id("T1078", self.sample_data)
+        technique = _get_technique_by_id("T1078", sample_data)
         assert technique is not None
 
         mitigation_ids = technique.get("mitigations", [])
         assert len(mitigation_ids) == 5
 
-        mitigation_details = _get_mitigation_details(mitigation_ids, self.sample_data)
+        mitigation_details = _get_mitigation_details(mitigation_ids, sample_data)
         assert len(mitigation_details) == 5
 
         # Check that mitigations are sorted by ID
@@ -298,10 +298,10 @@ class TestGetTechniqueMitigations:
         actual_order = [m["id"] for m in mitigation_details]
         assert actual_order == expected_order
 
-    def test_get_mitigation_details_success(self):
+    def test_get_mitigation_details_success(self, sample_data):
         """Test successful mitigation details retrieval."""
         mitigation_ids = ["M1040", "M1026"]
-        mitigation_details = _get_mitigation_details(mitigation_ids, self.sample_data)
+        mitigation_details = _get_mitigation_details(mitigation_ids, sample_data)
 
         assert len(mitigation_details) == 2
 
@@ -321,10 +321,10 @@ class TestGetTechniqueMitigations:
             in mitigation_details[1]["description"]
         )
 
-    def test_get_mitigation_details_missing_mitigation(self):
+    def test_get_mitigation_details_missing_mitigation(self, sample_data):
         """Test handling of missing mitigation in data."""
         # Create data with missing mitigation
-        data_missing_mitigation = self.sample_data.copy()
+        data_missing_mitigation = sample_data.copy()
         data_missing_mitigation["mitigations"] = [
             {
                 "id": "M1040",
@@ -350,16 +350,16 @@ class TestGetTechniqueMitigations:
         assert missing_mitigation["name"] == "(Name not found)"
         assert missing_mitigation["description"] == "Mitigation details not available"
 
-    def test_get_mitigation_details_empty_list(self):
+    def test_get_mitigation_details_empty_list(self, sample_data):
         """Test handling of empty mitigation list."""
-        mitigation_details = _get_mitigation_details([], self.sample_data)
+        mitigation_details = _get_mitigation_details([], sample_data)
         assert len(mitigation_details) == 0
 
-    def test_format_technique_mitigations_response_full_details(self):
+    def test_format_technique_mitigations_response_full_details(self, sample_data):
         """Test formatting technique mitigations response with full details."""
-        technique = self.sample_data["techniques"][0]  # T1055
+        technique = sample_data["techniques"][0]  # T1055
         mitigation_ids = technique.get("mitigations", [])
-        mitigation_details = _get_mitigation_details(mitigation_ids, self.sample_data)
+        mitigation_details = _get_mitigation_details(mitigation_ids, sample_data)
 
         response = _format_technique_mitigations_response(technique, mitigation_details)
 
@@ -382,9 +382,9 @@ class TestGetTechniqueMitigations:
         assert "Block execution of code on a system" in response
         assert "Use capabilities to prevent suspicious behavior" in response
 
-    def test_format_technique_mitigations_response_no_mitigations(self):
+    def test_format_technique_mitigations_response_no_mitigations(self, sample_data):
         """Test formatting technique mitigations response with no mitigations."""
-        technique = self.sample_data["techniques"][2]  # T1003 with no mitigations
+        technique = sample_data["techniques"][2]  # T1003 with no mitigations
         mitigation_details = []
 
         response = _format_technique_mitigations_response(technique, mitigation_details)
@@ -393,7 +393,7 @@ class TestGetTechniqueMitigations:
         assert "OS Credential Dumping" in response
         assert "Mitigations (0)" in response
 
-    def test_format_technique_mitigations_response_long_description(self):
+    def test_format_technique_mitigations_response_long_description(self, sample_data):
         """Test formatting with long technique description (should be truncated)."""
         technique = {
             "id": "T9999",
@@ -402,17 +402,17 @@ class TestGetTechniqueMitigations:
             "mitigations": ["M1040"],
         }
 
-        mitigation_details = _get_mitigation_details(["M1040"], self.sample_data)
+        mitigation_details = _get_mitigation_details(["M1040"], sample_data)
         response = _format_technique_mitigations_response(technique, mitigation_details)
 
         # Check that description is truncated
         assert "A" * 200 + "..." in response
         assert "A" * 250 not in response
 
-    def test_format_technique_mitigations_response_long_mitigation_description(self):
+    def test_format_technique_mitigations_response_long_mitigation_description(self, sample_data):
         """Test formatting with long mitigation description (should be truncated)."""
         # Create data with long mitigation description
-        data_long_desc = self.sample_data.copy()
+        data_long_desc = sample_data.copy()
         data_long_desc["mitigations"] = [
             {
                 "id": "M1040",
@@ -421,7 +421,7 @@ class TestGetTechniqueMitigations:
             }
         ]
 
-        technique = self.sample_data["techniques"][0]  # T1055
+        technique = sample_data["techniques"][0]  # T1055
         mitigation_details = _get_mitigation_details(["M1040"], data_long_desc)
         response = _format_technique_mitigations_response(technique, mitigation_details)
 
@@ -429,9 +429,9 @@ class TestGetTechniqueMitigations:
         assert "B" * 300 + "..." in response
         assert "B" * 350 not in response
 
-    def test_format_technique_mitigations_response_missing_mitigation_names(self):
+    def test_format_technique_mitigations_response_missing_mitigation_names(self, sample_data):
         """Test formatting when mitigation names are not found in data."""
-        technique = self.sample_data["techniques"][0]  # T1055
+        technique = sample_data["techniques"][0]  # T1055
 
         # Create mitigation details with missing names
         mitigation_details = [
@@ -453,14 +453,14 @@ class TestGetTechniqueMitigations:
         assert "M9999: (Name not found)" in response
         assert "Mitigation details not available" in response
 
-    def test_integration_get_technique_mitigations_logic(self):
+    def test_integration_get_technique_mitigations_logic(self, sample_data):
         """Test the complete get_technique_mitigations logic integration."""
         # Test successful retrieval
-        technique = _get_technique_by_id("T1055", self.sample_data)
+        technique = _get_technique_by_id("T1055", sample_data)
         assert technique is not None
 
         mitigation_ids = technique.get("mitigations", [])
-        mitigation_details = _get_mitigation_details(mitigation_ids, self.sample_data)
+        mitigation_details = _get_mitigation_details(mitigation_ids, sample_data)
         response = _format_technique_mitigations_response(technique, mitigation_details)
 
         # Verify all expected content is present
@@ -472,16 +472,16 @@ class TestGetTechniqueMitigations:
         assert "M1038: Execution Prevention" in response
         assert "M1040: Behavior Prevention on Endpoint" in response
 
-    def test_integration_get_technique_mitigations_not_found(self):
+    def test_integration_get_technique_mitigations_not_found(self, sample_data):
         """Test the complete get_technique_mitigations logic for not found case."""
-        technique = _get_technique_by_id("T9999", self.sample_data)
+        technique = _get_technique_by_id("T9999", sample_data)
         assert technique is None
 
         # This would result in a "not found" response in the actual MCP tool
 
-    def test_integration_get_technique_mitigations_no_mitigations(self):
+    def test_integration_get_technique_mitigations_no_mitigations(self, sample_data):
         """Test the complete get_technique_mitigations logic for technique with no mitigations."""
-        technique = _get_technique_by_id("T1003", self.sample_data)
+        technique = _get_technique_by_id("T1003", sample_data)
         assert technique is not None
 
         mitigation_ids = technique.get("mitigations", [])
@@ -533,14 +533,14 @@ class TestGetTechniqueMitigations:
         mitigation_ids = technique.get("mitigations", [])
         assert len(mitigation_ids) == 0
 
-    def test_mitigation_sorting_consistency(self):
+    def test_mitigation_sorting_consistency(self, sample_data):
         """Test that mitigation sorting is consistent across multiple calls."""
         mitigation_ids = ["M1040", "M1026", "M1038", "M1015", "M1042"]
 
         # Call multiple times and ensure consistent ordering
-        details1 = _get_mitigation_details(mitigation_ids, self.sample_data)
-        details2 = _get_mitigation_details(mitigation_ids, self.sample_data)
-        details3 = _get_mitigation_details(mitigation_ids, self.sample_data)
+        details1 = _get_mitigation_details(mitigation_ids, sample_data)
+        details2 = _get_mitigation_details(mitigation_ids, sample_data)
+        details3 = _get_mitigation_details(mitigation_ids, sample_data)
 
         # Extract IDs from each call
         ids1 = [m["id"] for m in details1]

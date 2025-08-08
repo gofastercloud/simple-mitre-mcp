@@ -1,17 +1,3 @@
-import unittest
-from unittest.mock import patch, MagicMock
-import sys
-import os
-import uuid
-from datetime import datetime, timezone
-import stix2
-from stix2 import Relationship
-from stix2.exceptions import STIXError, InvalidValueError, MissingPropertiesError
-
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
-from src.data_loader import DataLoader
-from src.config_loader import load_config
-
 """
 Unit tests for the data loading functionality.
 
@@ -19,25 +5,35 @@ Tests the DataLoader class and related components to ensure proper
 functionality for downloading, parsing, and processing MITRE ATT&CK data.
 """
 
+import pytest
+import uuid
+from unittest.mock import patch, MagicMock
+from datetime import datetime, timezone
+import stix2
+from stix2 import Relationship
+from stix2.exceptions import STIXError, InvalidValueError, MissingPropertiesError
 
-# Add src directory to path
+from src.data_loader import DataLoader
+from src.config_loader import load_config
+from tests.base import BaseMCPTestCase
 
 
-class TestDataLoader(unittest.TestCase):
+class TestDataLoader(BaseMCPTestCase):
     """Test cases for the DataLoader class."""
 
-    def setUp(self):
-        """Set up test fixtures."""
-        self.loader = DataLoader()
+    @pytest.fixture
+    def data_loader(self):
+        """Create a DataLoader instance for testing."""
+        return DataLoader()
 
-    def test_init(self):
+    def test_init(self, data_loader):
         """Test DataLoader initialization."""
-        self.assertIsNotNone(self.loader.config)
-        self.assertIsInstance(self.loader.data_cache, dict)
-        self.assertIsNotNone(self.loader.stix_parser)
+        assert data_loader.config is not None
+        assert isinstance(data_loader.data_cache, dict)
+        assert data_loader.stix_parser is not None
 
     @patch("requests.get")
-    def test_download_data_success(self, mock_get):
+    def test_download_data_success(self, mock_get, data_loader):
         """Test successful data download."""
         # Mock successful response
         mock_response = MagicMock()
@@ -45,21 +41,21 @@ class TestDataLoader(unittest.TestCase):
         mock_response.raise_for_status.return_value = None
         mock_get.return_value = mock_response
 
-        result = self.loader.download_data("http://example.com/data.json")
+        result = data_loader.download_data("http://example.com/data.json")
 
-        self.assertEqual(result, {"test": "data"})
+        assert result == {"test": "data"}
         mock_get.assert_called_once_with("http://example.com/data.json", timeout=30)
 
     @patch("requests.get")
-    def test_download_data_failure(self, mock_get):
+    def test_download_data_failure(self, mock_get, data_loader):
         """Test data download failure."""
         # Mock failed response
         mock_get.side_effect = Exception("Network error")
 
-        with self.assertRaises(Exception):
-            self.loader.download_data("http://example.com/data.json")
+        with pytest.raises(Exception):
+            data_loader.download_data("http://example.com/data.json")
 
-    def test_extract_mitre_id_from_stix(self):
+    def test_extract_mitre_id_from_stix(self, data_loader):
         """Test MITRE ID extraction from STIX object."""
         stix_obj = {
             "external_references": [
@@ -68,30 +64,30 @@ class TestDataLoader(unittest.TestCase):
             ]
         }
 
-        result = self.loader._extract_mitre_id_from_stix(stix_obj)
-        self.assertEqual(result, "T1055")
+        result = data_loader._extract_mitre_id_from_stix(stix_obj)
+        assert result == "T1055"
 
-    def test_extract_mitre_id_from_stix_missing(self):
+    def test_extract_mitre_id_from_stix_missing(self, data_loader):
         """Test MITRE ID extraction when not present."""
         stix_obj = {
             "external_references": [{"source_name": "other", "external_id": "OTHER123"}]
         }
 
-        result = self.loader._extract_mitre_id_from_stix(stix_obj)
-        self.assertEqual(result, "")
+        result = data_loader._extract_mitre_id_from_stix(stix_obj)
+        assert result == ""
 
-    def test_handle_uses_relationship(self):
+    def test_handle_uses_relationship(self, data_loader):
         """Test handling of 'uses' relationships."""
         parsed_data = {
             "groups": [{"id": "G0001", "name": "Test Group", "techniques": []}],
             "techniques": [{"id": "T1055", "name": "Test Technique"}],
         }
 
-        self.loader._handle_uses_relationship("G0001", "T1055", parsed_data)
+        data_loader._handle_uses_relationship("G0001", "T1055", parsed_data)
 
-        self.assertIn("T1055", parsed_data["groups"][0]["techniques"])
+        assert "T1055" in parsed_data["groups"][0]["techniques"]
 
-    def test_handle_mitigates_relationship(self):
+    def test_handle_mitigates_relationship(self, data_loader):
         """Test handling of 'mitigates' relationships."""
         parsed_data = {
             "techniques": [
@@ -102,40 +98,40 @@ class TestDataLoader(unittest.TestCase):
             ],
         }
 
-        self.loader._handle_mitigates_relationship("M1001", "T1055", parsed_data)
+        data_loader._handle_mitigates_relationship("M1001", "T1055", parsed_data)
 
-        self.assertIn("M1001", parsed_data["techniques"][0]["mitigations"])
-        self.assertIn("T1055", parsed_data["mitigations"][0]["techniques"])
+        assert "M1001" in parsed_data["techniques"][0]["mitigations"]
+        assert "T1055" in parsed_data["mitigations"][0]["techniques"]
 
-    def test_get_cached_data(self):
+    def test_get_cached_data(self, data_loader):
         """Test cached data retrieval."""
         # Set up cache
         test_data = {"tactics": [], "techniques": []}
-        self.loader.data_cache["test_source"] = test_data
+        data_loader.data_cache["test_source"] = test_data
 
-        result = self.loader.get_cached_data("test_source")
-        self.assertEqual(result, test_data)
+        result = data_loader.get_cached_data("test_source")
+        assert result == test_data
 
         # Test missing cache
-        result = self.loader.get_cached_data("missing_source")
-        self.assertIsNone(result)
+        result = data_loader.get_cached_data("missing_source")
+        assert result is None
 
-    def test_clear_cache(self):
+    def test_clear_cache(self, data_loader):
         """Test cache clearing."""
         # Set up cache
-        self.loader.data_cache["source1"] = {"data": "test1"}
-        self.loader.data_cache["source2"] = {"data": "test2"}
+        data_loader.data_cache["source1"] = {"data": "test1"}
+        data_loader.data_cache["source2"] = {"data": "test2"}
 
         # Clear specific source
-        self.loader.clear_cache("source1")
-        self.assertNotIn("source1", self.loader.data_cache)
-        self.assertIn("source2", self.loader.data_cache)
+        data_loader.clear_cache("source1")
+        assert "source1" not in data_loader.data_cache
+        assert "source2" in data_loader.data_cache
 
         # Clear all
-        self.loader.clear_cache()
-        self.assertEqual(len(self.loader.data_cache), 0)
+        data_loader.clear_cache()
+        assert len(data_loader.data_cache) == 0
 
-    def test_parse_stix_relationship_success(self):
+    def test_parse_stix_relationship_success(self, data_loader):
         """Test successful STIX relationship parsing using STIX2 library."""
         # Create a valid STIX relationship dictionary
         rel_dict = {
@@ -148,15 +144,15 @@ class TestDataLoader(unittest.TestCase):
             "target_ref": f"attack-pattern--{uuid.uuid4()}",
         }
 
-        result = self.loader._parse_stix_relationship(rel_dict)
+        result = data_loader._parse_stix_relationship(rel_dict)
 
-        self.assertIsNotNone(result)
-        self.assertEqual(result.type, "relationship")
-        self.assertEqual(result.relationship_type, "uses")
-        self.assertEqual(result.source_ref, rel_dict["source_ref"])
-        self.assertEqual(result.target_ref, rel_dict["target_ref"])
+        assert result is not None
+        assert result.type == "relationship"
+        assert result.relationship_type == "uses"
+        assert result.source_ref == rel_dict["source_ref"]
+        assert result.target_ref == rel_dict["target_ref"]
 
-    def test_parse_stix_relationship_invalid_data(self):
+    def test_parse_stix_relationship_invalid_data(self, data_loader):
         """Test STIX relationship parsing with invalid data."""
         # Create an invalid STIX relationship dictionary
         rel_dict = {
@@ -166,10 +162,10 @@ class TestDataLoader(unittest.TestCase):
             "target_ref": f"attack-pattern--{uuid.uuid4()}",
         }
 
-        with self.assertRaises((STIXError, InvalidValueError, MissingPropertiesError)):
-            self.loader._parse_stix_relationship(rel_dict)
+        with pytest.raises((STIXError, InvalidValueError, MissingPropertiesError)):
+            data_loader._parse_stix_relationship(rel_dict)
 
-    def test_parse_stix_relationship_not_relationship(self):
+    def test_parse_stix_relationship_not_relationship(self, data_loader):
         """Test STIX relationship parsing with non-relationship object."""
         # Create a non-relationship STIX object
         obj_dict = {
@@ -180,10 +176,10 @@ class TestDataLoader(unittest.TestCase):
             "name": "Test Technique",
         }
 
-        result = self.loader._parse_stix_relationship(obj_dict)
-        self.assertIsNone(result)
+        result = data_loader._parse_stix_relationship(obj_dict)
+        assert result is None
 
-    def test_process_single_relationship_with_stix2(self):
+    def test_process_single_relationship_with_stix2(self, data_loader):
         """Test processing a single relationship using STIX2 library object."""
         # Create a STIX2 Relationship object
         source_id = f"intrusion-set--{uuid.uuid4()}"
@@ -202,31 +198,31 @@ class TestDataLoader(unittest.TestCase):
         stix_id_to_mitre_id = {source_id: "G0001", target_id: "T1055"}
 
         # Process the relationship
-        self.loader._process_single_relationship_with_stix2(
+        data_loader._process_single_relationship_with_stix2(
             stix_relationship, parsed_data, stix_id_to_mitre_id
         )
 
         # Verify the relationship was processed
-        self.assertIn("T1055", parsed_data["groups"][0]["techniques"])
-        self.assertIn("relationships", parsed_data)
-        self.assertEqual(len(parsed_data["relationships"]), 1)
+        assert "T1055" in parsed_data["groups"][0]["techniques"]
+        assert "relationships" in parsed_data
+        assert len(parsed_data["relationships"]) == 1
 
         relationship_record = parsed_data["relationships"][0]
-        self.assertEqual(relationship_record["type"], "uses")
-        self.assertEqual(relationship_record["source_id"], "G0001")
-        self.assertEqual(relationship_record["target_id"], "T1055")
-        self.assertIsNotNone(relationship_record["created"])
-        self.assertIsNotNone(relationship_record["id"])
+        assert relationship_record["type"] == "uses"
+        assert relationship_record["source_id"] == "G0001"
+        assert relationship_record["target_id"] == "T1055"
+        assert relationship_record["created"] is not None
+        assert relationship_record["id"] is not None
 
         # Verify relationship metadata was added
-        self.assertIn("technique_relationships", parsed_data["groups"][0])
-        self.assertIn("T1055", parsed_data["groups"][0]["technique_relationships"])
+        assert "technique_relationships" in parsed_data["groups"][0]
+        assert "T1055" in parsed_data["groups"][0]["technique_relationships"]
 
         rel_metadata = parsed_data["groups"][0]["technique_relationships"]["T1055"]
-        self.assertEqual(rel_metadata["relationship_type"], "uses")
-        self.assertIsNotNone(rel_metadata["created"])
+        assert rel_metadata["relationship_type"] == "uses"
+        assert rel_metadata["created"] is not None
 
-    def test_handle_uses_relationship_with_stix2(self):
+    def test_handle_uses_relationship_with_stix2(self, data_loader):
         """Test handling 'uses' relationships with STIX2 library metadata."""
         # Create a STIX2 Relationship object
         stix_relationship = Relationship(
@@ -239,20 +235,20 @@ class TestDataLoader(unittest.TestCase):
             "groups": [{"id": "G0001", "name": "Test Group", "techniques": []}]
         }
 
-        self.loader._handle_uses_relationship_with_stix2(
+        data_loader._handle_uses_relationship_with_stix2(
             "G0001", "T1055", parsed_data, stix_relationship
         )
 
         # Verify the relationship was handled
-        self.assertIn("T1055", parsed_data["groups"][0]["techniques"])
-        self.assertIn("technique_relationships", parsed_data["groups"][0])
-        self.assertIn("T1055", parsed_data["groups"][0]["technique_relationships"])
+        assert "T1055" in parsed_data["groups"][0]["techniques"]
+        assert "technique_relationships" in parsed_data["groups"][0]
+        assert "T1055" in parsed_data["groups"][0]["technique_relationships"]
 
         rel_metadata = parsed_data["groups"][0]["technique_relationships"]["T1055"]
-        self.assertEqual(rel_metadata["relationship_type"], "uses")
-        self.assertIsNotNone(rel_metadata["created"])
+        assert rel_metadata["relationship_type"] == "uses"
+        assert rel_metadata["created"] is not None
 
-    def test_handle_mitigates_relationship_with_stix2(self):
+    def test_handle_mitigates_relationship_with_stix2(self, data_loader):
         """Test handling 'mitigates' relationships with STIX2 library metadata."""
         # Create a STIX2 Relationship object
         stix_relationship = Relationship(
@@ -270,33 +266,33 @@ class TestDataLoader(unittest.TestCase):
             ],
         }
 
-        self.loader._handle_mitigates_relationship_with_stix2(
+        data_loader._handle_mitigates_relationship_with_stix2(
             "M1001", "T1055", parsed_data, stix_relationship
         )
 
         # Verify the relationship was handled for technique
-        self.assertIn("M1001", parsed_data["techniques"][0]["mitigations"])
-        self.assertIn("mitigation_relationships", parsed_data["techniques"][0])
-        self.assertIn("M1001", parsed_data["techniques"][0]["mitigation_relationships"])
+        assert "M1001" in parsed_data["techniques"][0]["mitigations"]
+        assert "mitigation_relationships" in parsed_data["techniques"][0]
+        assert "M1001" in parsed_data["techniques"][0]["mitigation_relationships"]
 
         technique_rel_metadata = parsed_data["techniques"][0][
             "mitigation_relationships"
         ]["M1001"]
-        self.assertEqual(technique_rel_metadata["relationship_type"], "mitigates")
-        self.assertIsNotNone(technique_rel_metadata["created"])
+        assert technique_rel_metadata["relationship_type"] == "mitigates"
+        assert technique_rel_metadata["created"] is not None
 
         # Verify the relationship was handled for mitigation
-        self.assertIn("T1055", parsed_data["mitigations"][0]["techniques"])
-        self.assertIn("technique_relationships", parsed_data["mitigations"][0])
-        self.assertIn("T1055", parsed_data["mitigations"][0]["technique_relationships"])
+        assert "T1055" in parsed_data["mitigations"][0]["techniques"]
+        assert "technique_relationships" in parsed_data["mitigations"][0]
+        assert "T1055" in parsed_data["mitigations"][0]["technique_relationships"]
 
         mitigation_rel_metadata = parsed_data["mitigations"][0][
             "technique_relationships"
         ]["T1055"]
-        self.assertEqual(mitigation_rel_metadata["relationship_type"], "mitigates")
-        self.assertIsNotNone(mitigation_rel_metadata["created"])
+        assert mitigation_rel_metadata["relationship_type"] == "mitigates"
+        assert mitigation_rel_metadata["created"] is not None
 
-    def test_process_relationships_with_stix2_library(self):
+    def test_process_relationships_with_stix2_library(self, data_loader):
         """Test complete relationship processing using STIX2 library."""
         # Create test STIX data with relationships
         source_id = f"intrusion-set--{uuid.uuid4()}"
@@ -360,23 +356,23 @@ class TestDataLoader(unittest.TestCase):
             ],
         }
 
-        result = self.loader._process_relationships(raw_data, parsed_data)
+        result = data_loader._process_relationships(raw_data, parsed_data)
 
         # Verify relationships were processed
-        self.assertIn("relationships", result)
-        self.assertEqual(len(result["relationships"]), 2)
+        assert "relationships" in result
+        assert len(result["relationships"]) == 2
 
         # Verify uses relationship
-        self.assertIn("T1055", result["groups"][0]["techniques"])
-        self.assertIn("technique_relationships", result["groups"][0])
+        assert "T1055" in result["groups"][0]["techniques"]
+        assert "technique_relationships" in result["groups"][0]
 
         # Verify mitigates relationship
-        self.assertIn("M1001", result["techniques"][0]["mitigations"])
-        self.assertIn("T1055", result["mitigations"][0]["techniques"])
-        self.assertIn("mitigation_relationships", result["techniques"][0])
-        self.assertIn("technique_relationships", result["mitigations"][0])
+        assert "M1001" in result["techniques"][0]["mitigations"]
+        assert "T1055" in result["mitigations"][0]["techniques"]
+        assert "mitigation_relationships" in result["techniques"][0]
+        assert "technique_relationships" in result["mitigations"][0]
 
-    def test_process_relationships_error_handling(self):
+    def test_process_relationships_error_handling(self, data_loader):
         """Test relationship processing handles malformed relationships gracefully."""
         # Create test data with malformed STIX relationship
         raw_data = {
@@ -417,16 +413,16 @@ class TestDataLoader(unittest.TestCase):
         }
 
         # This should process successfully and handle invalid relationships gracefully
-        result = self.loader._process_relationships(raw_data, parsed_data)
+        result = data_loader._process_relationships(raw_data, parsed_data)
 
         # Verify basic structure is maintained even with invalid relationships
-        self.assertIn("groups", result)
-        self.assertIn("techniques", result)
-        self.assertEqual(result["groups"][0]["id"], "G0001")
-        self.assertEqual(result["techniques"][0]["id"], "T1055")
+        assert "groups" in result
+        assert "techniques" in result
+        assert result["groups"][0]["id"] == "G0001"
+        assert result["techniques"][0]["id"] == "T1055"
 
 
-class TestConfigLoader(unittest.TestCase):
+class TestConfigLoader(BaseMCPTestCase):
     """Test cases for configuration loading."""
 
     def test_load_config(self):
@@ -434,21 +430,21 @@ class TestConfigLoader(unittest.TestCase):
         config = load_config()
 
         # Check required sections
-        self.assertIn("data_sources", config)
-        self.assertIn("entity_schemas", config)
+        assert "data_sources" in config
+        assert "entity_schemas" in config
 
         # Check MITRE ATT&CK data source
-        self.assertIn("mitre_attack", config["data_sources"])
+        assert "mitre_attack" in config["data_sources"]
         mitre_config = config["data_sources"]["mitre_attack"]
-        self.assertIn("url", mitre_config)
-        self.assertIn("format", mitre_config)
-        self.assertIn("entity_types", mitre_config)
+        assert "url" in mitre_config
+        assert "format" in mitre_config
+        assert "entity_types" in mitre_config
 
         # Check entity schemas
         expected_schemas = ["tactic", "technique", "group", "mitigation"]
         for schema in expected_schemas:
-            self.assertIn(schema, config["entity_schemas"])
+            assert schema in config["entity_schemas"]
 
 
 if __name__ == "__main__":
-    unittest.main()
+    pytest.main([__file__])
