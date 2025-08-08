@@ -4,7 +4,7 @@
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![Tests](https://img.shields.io/badge/tests-348%20passing-brightgreen.svg)](https://github.com/gofastercloud/simple-mitre-mcp/actions)
+[![Tests](https://img.shields.io/badge/tests-493%20passing-brightgreen.svg)](https://github.com/gofastercloud/simple-mitre-mcp/actions)
 [![MCP Tools](https://img.shields.io/badge/MCP%20Tools-8-blue.svg)](https://github.com/gofastercloud/simple-mitre-mcp)
 
 A comprehensive Model Context Protocol (MCP) server that provides structured access to the MITRE ATT&CK framework for Large Language Models and interactive web-based analysis. This server enables security analysts, threat intelligence researchers, and cybersecurity professionals to perform both basic queries and advanced threat modeling through multiple access methods.
@@ -528,10 +528,26 @@ The architecture supports any STIX-compatible security framework through configu
 
 ## 📚 Documentation
 
-- **Requirements**: See `.kiro/specs/mitre-attack-mcp-server/requirements.md`
-- **Design**: See `.kiro/specs/mitre-attack-mcp-server/design.md`
-- **API Reference**: Tool parameters and responses documented in code
-- **Configuration**: All options documented in config files
+### User Documentation
+- **[Quick Start Guide](docs/user/QUICKSTART.md)** - Get up and running in 5 minutes
+- **[Installation Guide](docs/user/INSTALLATION.md)** - Detailed setup instructions  
+- **[User Guide](docs/user/USER_GUIDE.md)** - Complete usage documentation
+
+### Developer Documentation
+- **[API Reference](docs/developer/API.md)** - Complete API documentation
+- **[Developer Guide](docs/developer/DEVELOPER_GUIDE.md)** - Architecture and development
+- **[Testing Guide](docs/developer/TESTING.md)** - Running and writing tests
+- **[Contributing Guide](docs/developer/CONTRIBUTING.md)** - How to contribute
+
+### Deployment Documentation
+- **[Deployment Guide](docs/deployment/DEPLOYMENT.md)** - Production deployment
+- **[Configuration Reference](docs/deployment/CONFIGURATION.md)** - Environment variables
+- **[Troubleshooting Guide](docs/deployment/TROUBLESHOOTING.md)** - Common issues
+- **[Performance Monitoring](docs/deployment/MONITORING.md)** - Monitoring and tuning
+
+### Additional Resources
+- **[Examples](examples/)** - Configuration examples and sample code
+- **[Project Specifications](.kiro/specs/)** - Detailed requirements and design documents
 
 ## 🤝 Contributing
 

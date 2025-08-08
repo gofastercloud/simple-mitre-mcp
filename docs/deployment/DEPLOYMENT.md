@@ -140,6 +140,24 @@ volumes:
   mitre_cache:
 ```
 
+### Finch (Apple Silicon)
+For Apple Silicon Macs, use Finch for native container support:
+
+```bash
+# Install Finch
+brew install --cask finch
+
+# Initialize VM
+finch vm init
+
+# Build and run
+finch compose up -d
+
+# Or manually
+finch build -t mitre-mcp .
+finch run -d --name mitre-mcp -p 8000:8000 mitre-mcp
+```
+
 ## Cloud Deployment
 
 ### AWS EC2
@@ -176,7 +194,7 @@ az container create \
 ### Deployment Validation
 ```bash
 # Run validation script
-./deployment/validate_web_explorer.sh
+./scripts/validate_deployment.sh
 
 # Manual health checks
 curl -f http://localhost:8000/system_info
