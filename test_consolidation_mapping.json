@@ -1,0 +1,449 @@
+{
+  "consolidation_mapping": {
+    "unit_tests": {
+      "core_components": {
+        "source_files": [
+          "test_mcp_server.py",
+          "test_data_loader.py",
+          "test_stix_error_handling.py",
+          "test_mitre_id_extraction_enhancement.py"
+        ],
+        "target_files": [
+          "tests/unit/test_mcp_server.py",
+          "tests/unit/test_data_loader.py", 
+          "tests/unit/test_parsers.py"
+        ],
+        "consolidation_strategy": "merge_related_functionality",
+        "shared_fixtures": [
+          "mock_data_loader",
+          "sample_stix_data",
+          "mock_mcp_server"
+        ],
+        "estimated_test_reduction": 15,
+        "estimated_time_savings": "20%"
+      },
+      "tool_tests": {
+        "source_files": [
+          "test_search_attack.py",
+          "test_get_technique.py", 
+          "test_list_tactics.py",
+          "test_get_group_techniques.py",
+          "test_get_technique_mitigations.py",
+          "test_build_attack_path.py",
+          "test_analyze_coverage_gaps.py",
+          "test_detect_technique_relationships.py"
+        ],
+        "target_structure": "tests/unit/test_tools/",
+        "consolidation_strategy": "separate_files_shared_base",
+        "shared_fixtures": [
+          "comprehensive_mock_data",
+          "tool_test_base_class",
+          "parameter_validation_helpers"
+        ],
+        "redundant_patterns": [
+          "duplicate_mock_data_setup",
+          "identical_parameter_validation",
+          "repeated_error_handling_tests"
+        ],
+        "estimated_test_reduction": 25,
+        "estimated_time_savings": "35%"
+      }
+    },
+    "integration_tests": {
+      "mcp_integration": {
+        "source_files": [
+          "test_comprehensive_mcp_integration.py",
+          "test_end_to_end_integration.py",
+          "test_task_14_integration.py"
+        ],
+        "target_files": [
+          "tests/integration/test_mcp_integration.py"
+        ],
+        "consolidation_strategy": "merge_overlapping_scenarios",
+        "overlapping_tests": [
+          "tool_registration_validation",
+          "end_to_end_tool_execution",
+          "error_handling_integration"
+        ],
+        "estimated_test_reduction": 20,
+        "estimated_time_savings": "40%"
+      },
+      "web_interface_integration": {
+        "source_files": [
+          "test_http_interface.py",
+          "test_web_interface.py", 
+          "test_api_communication_layer.py",
+          "test_web_explorer_startup.py",
+          "test_smart_form_controls.py",
+          "test_system_dashboard_component.py",
+          "test_system_info_endpoint.py",
+          "test_data_population_endpoints.py",
+          "test_start_explorer_enhanced.py"
+        ],
+        "target_files": [
+          "tests/integration/test_http_interface.py",
+          "tests/integration/test_web_interface.py"
+        ],
+        "consolidation_strategy": "merge_by_component",
+        "component_groupings": {
+          "http_api": [
+            "test_http_interface.py",
+            "test_api_communication_layer.py",
+            "test_system_info_endpoint.py",
+            "test_data_population_endpoints.py"
+          ],
+          "web_ui": [
+            "test_web_interface.py",
+            "test_web_explorer_startup.py", 
+            "test_smart_form_controls.py",
+            "test_system_dashboard_component.py",
+            "test_start_explorer_enhanced.py"
+          ]
+        },
+        "estimated_test_reduction": 45,
+        "estimated_time_savings": "50%"
+      },
+      "stix_integration": {
+        "source_files": [
+          "test_stix2_integration.py"
+        ],
+        "target_files": [
+          "tests/integration/test_stix2_integration.py"
+        ],
+        "consolidation_strategy": "optimize_existing",
+        "optimization_areas": [
+          "reduce_data_loading_overhead",
+          "optimize_parsing_tests"
+        ],
+        "estimated_time_savings": "25%"
+      }
+    },
+    "performance_tests": {
+      "benchmarks": {
+        "source_files": [
+          "test_performance_benchmarks.py"
+        ],
+        "target_files": [
+          "tests/performance/test_performance_benchmarks.py"
+        ],
+        "consolidation_strategy": "optimize_slow_tests",
+        "slow_tests_identified": [
+          "test_large_dataset_performance",
+          "test_real_mitre_attack_performance"
+        ],
+        "optimization_strategies": [
+          "use_smaller_test_datasets",
+          "implement_test_data_caching",
+          "parallelize_independent_tests"
+        ],
+        "estimated_time_savings": "60%"
+      },
+      "load_testing": {
+        "source_files": [],
+        "target_files": [
+          "tests/performance/test_load_testing.py"
+        ],
+        "consolidation_strategy": "create_new_focused_suite",
+        "test_scenarios": [
+          "concurrent_tool_execution",
+          "memory_usage_under_load",
+          "response_time_degradation"
+        ]
+      }
+    },
+    "compatibility_tests": {
+      "backward_compatibility": {
+        "source_files": [
+          "test_backward_compatibility.py"
+        ],
+        "target_files": [
+          "tests/compatibility/test_backward_compatibility.py"
+        ],
+        "consolidation_strategy": "streamline_compatibility_checks",
+        "slow_tests_to_optimize": [
+          "test_real_mitre_attack_data_integration"
+        ],
+        "estimated_time_savings": "45%"
+      },
+      "api_compatibility": {
+        "source_files": [
+          "test_group_techniques_fix.py"
+        ],
+        "target_files": [
+          "tests/compatibility/test_api_compatibility.py"
+        ],
+        "consolidation_strategy": "expand_api_compatibility_testing",
+        "additional_coverage": [
+          "tool_parameter_compatibility",
+          "response_format_consistency"
+        ]
+      }
+    },
+    "deployment_tests": {
+      "deployment_validation": {
+        "source_files": [
+          "test_deployment_validation.py"
+        ],
+        "target_files": [
+          "tests/deployment/test_deployment_validation.py"
+        ],
+        "consolidation_strategy": "optimize_deployment_checks",
+        "estimated_time_savings": "30%"
+      },
+      "environment_config": {
+        "source_files": [
+          "test_environment_config.py",
+          "test_http_proxy_config.py"
+        ],
+        "target_files": [
+          "tests/deployment/test_environment_config.py"
+        ],
+        "consolidation_strategy": "merge_configuration_tests",
+        "shared_patterns": [
+          "environment_variable_validation",
+          "default_value_testing",
+          "configuration_override_testing"
+        ],
+        "estimated_test_reduction": 8,
+        "estimated_time_savings": "25%"
+      },
+      "ci_cd_compatibility": {
+        "source_files": [
+          "test_ci_cd_compatibility.py"
+        ],
+        "target_files": [
+          "tests/deployment/test_ci_cd_compatibility.py"
+        ],
+        "consolidation_strategy": "enhance_ci_cd_testing",
+        "additional_coverage": [
+          "test_isolation_validation",
+          "resource_cleanup_verification"
+        ]
+      }
+    },
+    "e2e_tests": {
+      "complete_workflows": {
+        "source_files": [],
+        "target_files": [
+          "tests/e2e/test_complete_workflows.py"
+        ],
+        "consolidation_strategy": "create_comprehensive_e2e_suite",
+        "workflow_scenarios": [
+          "threat_analysis_workflow",
+          "attack_path_construction_workflow", 
+          "coverage_gap_analysis_workflow"
+        ]
+      }
+    }
+  },
+  "shared_infrastructure": {
+    "base_classes": {
+      "BaseTestCase": {
+        "location": "tests/base.py",
+        "features": [
+          "common_setup_teardown",
+          "logging_configuration",
+          "assertion_helpers"
+        ]
+      },
+      "BaseMCPTestCase": {
+        "location": "tests/base.py", 
+        "features": [
+          "mcp_server_setup",
+          "tool_testing_utilities",
+          "mock_data_management"
+        ]
+      },
+      "BaseIntegrationTestCase": {
+        "location": "tests/base.py",
+        "features": [
+          "server_startup_teardown",
+          "integration_test_helpers",
+          "resource_cleanup"
+        ]
+      }
+    },
+    "fixtures": {
+      "conftest.py": {
+        "location": "tests/conftest.py",
+        "fixtures": [
+          "comprehensive_test_data",
+          "mock_mcp_server",
+          "mock_data_loader",
+          "sample_stix_data",
+          "test_configuration"
+        ]
+      },
+      "category_fixtures": {
+        "tests/unit/conftest.py": [
+          "unit_test_data",
+          "fast_mock_server"
+        ],
+        "tests/integration/conftest.py": [
+          "integration_test_server",
+          "web_interface_client"
+        ],
+        "tests/performance/conftest.py": [
+          "performance_test_data",
+          "benchmark_utilities"
+        ]
+      }
+    },
+    "factories": {
+      "TestDataFactory": {
+        "location": "tests/factories.py",
+        "methods": [
+          "create_sample_technique",
+          "create_sample_group",
+          "create_sample_tactic",
+          "create_sample_mitigation",
+          "create_comprehensive_dataset"
+        ]
+      }
+    },
+    "utilities": {
+      "TestUtilities": {
+        "location": "tests/utils.py",
+        "functions": [
+          "assert_valid_tool_response",
+          "validate_mcp_tool_schema",
+          "measure_test_performance",
+          "cleanup_test_resources"
+        ]
+      }
+    }
+  },
+  "redundancy_elimination": {
+    "duplicate_setup_code": {
+      "pattern": "mock_data_loader_creation",
+      "occurrences": 15,
+      "solution": "shared_fixture_in_conftest"
+    },
+    "repeated_test_data": {
+      "pattern": "sample_mitre_attack_data",
+      "occurrences": 12,
+      "solution": "test_data_factory"
+    },
+    "identical_assertions": {
+      "pattern": "tool_response_validation",
+      "occurrences": 8,
+      "solution": "assertion_helper_methods"
+    },
+    "overlapping_test_scenarios": {
+      "pattern": "tool_error_handling",
+      "occurrences": 10,
+      "solution": "parameterized_test_suite"
+    }
+  },
+  "performance_optimizations": {
+    "slow_test_improvements": {
+      "test_real_mitre_attack_data_integration": {
+        "current_time": "6.21s",
+        "target_time": "2.0s",
+        "optimization": "use_cached_test_data"
+      },
+      "test_large_dataset_performance": {
+        "current_time": "4.36s", 
+        "target_time": "1.5s",
+        "optimization": "smaller_representative_dataset"
+      },
+      "test_http_proxy_server_startup": {
+        "current_time": "4.28s",
+        "target_time": "1.0s", 
+        "optimization": "mock_server_implementation"
+      }
+    },
+    "parallel_execution": {
+      "unit_tests": "fully_parallelizable",
+      "integration_tests": "limited_parallelization",
+      "performance_tests": "sequential_execution_required"
+    },
+    "fixture_optimization": {
+      "session_scope": [
+        "comprehensive_test_data",
+        "test_configuration"
+      ],
+      "module_scope": [
+        "mock_mcp_server",
+        "mock_data_loader"
+      ],
+      "function_scope": [
+        "test_specific_mocks"
+      ]
+    }
+  },
+  "coverage_improvements": {
+    "target_coverage": {
+      "overall": "90%",
+      "unit_tests": "95%",
+      "integration_tests": "85%",
+      "performance_tests": "70%"
+    },
+    "critical_modules": {
+      "src/mcp_server.py": {
+        "current": "89%",
+        "target": "95%"
+      },
+      "src/data_loader.py": {
+        "current": "84%",
+        "target": "95%"
+      },
+      "src/parsers/stix_parser.py": {
+        "current": "61%",
+        "target": "90%"
+      }
+    },
+    "missing_coverage_areas": [
+      "error_handling_edge_cases",
+      "configuration_validation",
+      "resource_cleanup_scenarios"
+    ]
+  },
+  "implementation_phases": {
+    "phase_1": {
+      "name": "Foundation Setup",
+      "tasks": [
+        "create_new_directory_structure",
+        "implement_shared_fixtures",
+        "create_base_test_classes"
+      ],
+      "estimated_duration": "2 days"
+    },
+    "phase_2": {
+      "name": "Unit Test Consolidation", 
+      "tasks": [
+        "consolidate_tool_tests",
+        "merge_core_component_tests",
+        "implement_shared_utilities"
+      ],
+      "estimated_duration": "3 days"
+    },
+    "phase_3": {
+      "name": "Integration Test Optimization",
+      "tasks": [
+        "merge_integration_test_suites",
+        "optimize_web_interface_tests",
+        "streamline_mcp_integration_tests"
+      ],
+      "estimated_duration": "3 days"
+    },
+    "phase_4": {
+      "name": "Performance and Deployment",
+      "tasks": [
+        "optimize_performance_tests",
+        "consolidate_deployment_tests",
+        "implement_e2e_test_suite"
+      ],
+      "estimated_duration": "2 days"
+    },
+    "phase_5": {
+      "name": "Validation and Documentation",
+      "tasks": [
+        "validate_coverage_improvements",
+        "measure_performance_gains",
+        "update_documentation"
+      ],
+      "estimated_duration": "1 day"
+    }
+  }
+}
