@@ -108,8 +108,8 @@ class TestCICDCompatibility:
     def test_http_proxy_can_be_imported_in_ci(self):
         """Test that HTTP proxy module can be imported in CI environments."""
         try:
-            import http_proxy
-            from http_proxy import HTTPProxy, create_http_proxy_server
+            import src.http_proxy as http_proxy
+            from src.http_proxy import HTTPProxy, create_http_proxy_server
 
             assert (
                 http_proxy is not None
@@ -186,7 +186,7 @@ class TestCICDCompatibility:
 
             # Should be able to import modules
             try:
-                import http_proxy
+                import src.http_proxy as http_proxy
 
                 assert http_proxy is not None, "Should import in GitHub Actions"
             except ImportError as e:

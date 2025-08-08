@@ -59,10 +59,13 @@ Access the interactive web interface at `http://localhost:8000`
 
 #### Option 2: MCP Server (For AI Assistant Integration)
 ```bash
-# Start the MCP server
+# Start the MCP server (HTTP transport for testing)
 uv run main.py
+
+# Start the MCP server (STDIO transport for MCP clients)
+uv run main_stdio.py
 ```
-The MCP server will start on `stdio` transport for AI assistant integration.
+The MCP server supports both STDIO transport for direct MCP client integration and HTTP transport for testing.
 
 #### Option 3: HTTP API Server
 ```bash
@@ -134,6 +137,152 @@ The server uses YAML configuration files in the `config/` directory:
 - `entity_schemas.yaml` - Configure entity type schemas
 - `tools.yaml` - Define MCP tool configurations
 
+## 🤖 MCP Client Integration
+
+### Adding to Claude Desktop
+
+To integrate this server with Claude Desktop, add the following configuration to your Claude Desktop settings:
+
+1. **Locate Claude Desktop Configuration File:**
+   - **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+   - **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+
+2. **Add Server Configuration:**
+```json
+{
+  "mcpServers": {
+    "mitre-attack": {
+      "command": "uv",
+      "args": [
+        "run", 
+        "main_stdio.py"
+      ],
+      "cwd": "/path/to/simple-mitre-mcp",
+      "env": {
+        "PYTHONUNBUFFERED": "1"
+      }
+    }
+  }
+}
+```
+
+3. **Replace `/path/to/simple-mitre-mcp`** with the actual path to your cloned repository.
+
+4. **Restart Claude Desktop** - The server will appear in the MCP section.
+
+### Adding to Other MCP Clients
+
+For other MCP-compatible clients, use this general configuration:
+
+```json
+{
+  "mcpServers": {
+    "mitre-attack": {
+      "command": "python",
+      "args": [
+        "main_stdio.py"
+      ],
+      "cwd": "/path/to/simple-mitre-mcp",
+      "env": {
+        "PYTHONUNBUFFERED": "1"
+      }
+    }
+  }
+}
+```
+
+### Alternative Installation Methods
+
+#### Using Python Directly (if UV is not available)
+```json
+{
+  "mcpServers": {
+    "mitre-attack": {
+      "command": "python3",
+      "args": [
+        "-m", "src.main_stdio"
+      ],
+      "cwd": "/path/to/simple-mitre-mcp",
+      "env": {
+        "PYTHONPATH": ".",
+        "PYTHONUNBUFFERED": "1"
+      }
+    }
+  }
+}
+```
+
+#### Using Virtual Environment
+```json
+{
+  "mcpServers": {
+    "mitre-attack": {
+      "command": "/path/to/simple-mitre-mcp/.venv/bin/python",
+      "args": [
+        "main_stdio.py"
+      ],
+      "cwd": "/path/to/simple-mitre-mcp",
+      "env": {
+        "PYTHONUNBUFFERED": "1"
+      }
+    }
+  }
+}
+```
+
+### Configuration Examples
+
+Example configuration files are provided in the repository:
+- `examples/claude_desktop_config.json` - Configuration for Claude Desktop
+- `examples/mcp_client_config.json` - General MCP client configuration
+
+### MCP Server Capabilities
+
+Once connected, the MCP client will have access to all 8 MITRE ATT&CK tools:
+
+**Basic Analysis Tools:**
+- `search_attack` - Global search across ATT&CK framework
+- `get_technique` - Detailed technique information
+- `list_tactics` - All MITRE ATT&CK tactics
+- `get_group_techniques` - Techniques used by threat groups
+- `get_technique_mitigations` - Mitigations for techniques
+
+**Advanced Threat Modeling Tools:**
+- `build_attack_path` - Multi-stage attack path construction
+- `analyze_coverage_gaps` - Defensive coverage gap analysis  
+- `detect_technique_relationships` - Complex relationship discovery
+
+### Troubleshooting MCP Integration
+
+**Server Not Appearing in Client:**
+1. Verify the `cwd` path is correct and points to the repository root
+2. Ensure UV or Python is installed and accessible
+3. Check Claude Desktop logs for errors
+4. Verify the JSON configuration syntax is valid
+
+**Permission Errors:**
+```bash
+# Ensure the main_stdio.py file is executable
+chmod +x main_stdio.py
+
+# Verify dependencies are installed
+uv sync
+```
+
+**Connection Timeout:**
+- The first connection may take 30-60 seconds while MITRE data loads
+- Check `mcp_server.log` for detailed error messages
+- Ensure port 8000 is not already in use by other applications
+
+**Testing the Server:**
+```bash
+# Test STDIO transport directly
+echo '{"jsonrpc":"2.0","method":"tools/list","id":1}' | uv run main_stdio.py
+
+# Test data loading
+uv run python -c "from src.data_loader import DataLoader; DataLoader().load_data_source('mitre_attack')"
+```
+
 ### Local Configuration
 
 ```bash
@@ -169,7 +318,7 @@ uv sync
 # Start HTTP proxy server
 uv run http_proxy.py
 
-# Open web_explorer.html in your browser
+# Open web_interface/index.html in your browser
 ```
 
 ### 🛠️ Available Tools
@@ -202,7 +351,7 @@ Web Browser → HTTP Proxy Server → MCP Tools (8 Tools) → MITRE ATT&CK Data
 ```
 
 **Components:**
-- **Web Explorer** (`web_explorer.html`): Frontend interface with basic and advanced tool sections
+- **Web Explorer** (`web_interface/index.html`): Frontend interface with basic and advanced tool sections
 - **HTTP Proxy** (`http_proxy.py`): Translates HTTP requests to MCP tool calls
 - **MCP Server** (`main.py`): FastMCP protocol server with comprehensive data processing
 

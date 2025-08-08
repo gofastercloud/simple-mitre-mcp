@@ -351,9 +351,7 @@ class PerformanceBenchmark:
             }
 
         # Calculate main parser statistics
-        main_successful = [
-            r for r in results["main_parser_results"] if r["success"]
-        ]
+        main_successful = [r for r in results["main_parser_results"] if r["success"]]
         if main_successful:
             execution_times = [r["execution_time"] for r in main_successful]
             memory_deltas = [r["memory_delta_mb"] for r in main_successful]
@@ -383,10 +381,7 @@ class PerformanceBenchmark:
             }
 
         # Calculate performance comparison
-        if (
-            "stix2_library_performance" in stats
-            and "main_parser_performance" in stats
-        ):
+        if "stix2_library_performance" in stats and "main_parser_performance" in stats:
             stix2_perf = stats["stix2_library_performance"]
             main_perf = stats["main_parser_performance"]
 

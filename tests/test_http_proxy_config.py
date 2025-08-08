@@ -19,7 +19,7 @@ class TestHTTPProxyConfiguration:
         """Test that HTTP proxy can be imported without making connections."""
         # This should not cause any connection attempts
         try:
-            from http_proxy import HTTPProxy
+            from src.http_proxy import HTTPProxy
 
             assert HTTPProxy is not None, "HTTPProxy class should be importable"
         except ImportError as e:
@@ -46,7 +46,7 @@ class TestHTTPProxyConfiguration:
             assert host == "localhost", "Should use default host"
             assert port == 8000, "Should use default port"
 
-    @patch("http_proxy.create_http_proxy_server")
+    @patch("src.http_proxy.create_http_proxy_server")
     def test_http_proxy_server_creation_mock(self, mock_create_server):
         """Test HTTP proxy server creation without actual connections."""
         # Mock the server creation to avoid actual connections
@@ -55,7 +55,7 @@ class TestHTTPProxyConfiguration:
         mock_create_server.return_value = (mock_runner, mock_server)
 
         # This should not cause connection issues
-        from http_proxy import create_http_proxy_server
+        from src.http_proxy import create_http_proxy_server
 
         assert create_http_proxy_server is not None, "Function should be importable"
 
@@ -72,7 +72,7 @@ class TestHTTPProxyConfiguration:
 
     def test_http_proxy_class_initialization_mock(self):
         """Test HTTP proxy class initialization with mocked MCP server."""
-        from http_proxy import HTTPProxy
+        from src.http_proxy import HTTPProxy
 
         # Create a mock MCP server
         mock_mcp_server = Mock()
@@ -89,7 +89,7 @@ class TestHTTPProxyConfiguration:
 
     def test_http_proxy_routes_setup(self):
         """Test that HTTP proxy routes are set up correctly."""
-        from http_proxy import HTTPProxy
+        from src.http_proxy import HTTPProxy
 
         mock_mcp_server = Mock()
         proxy = HTTPProxy(mock_mcp_server)
@@ -100,7 +100,7 @@ class TestHTTPProxyConfiguration:
 
     def test_http_proxy_cors_setup(self):
         """Test that CORS is set up correctly."""
-        from http_proxy import HTTPProxy
+        from src.http_proxy import HTTPProxy
 
         mock_mcp_server = Mock()
         proxy = HTTPProxy(mock_mcp_server)
@@ -170,8 +170,8 @@ class TestHTTPProxyConfiguration:
 
         try:
             # These imports should not cause network connections
-            import http_proxy
-            from http_proxy import HTTPProxy, create_http_proxy_server
+            import src.http_proxy as http_proxy
+            from src.http_proxy import HTTPProxy, create_http_proxy_server
 
             # These should all be available without connections
             assert http_proxy is not None
@@ -184,8 +184,8 @@ class TestHTTPProxyConfiguration:
     def test_mock_server_creation_async(self):
         """Test async server creation with mocks to avoid connection issues."""
 
-        @patch("http_proxy.DataLoader")
-        @patch("http_proxy.create_mcp_server")
+        @patch("src.http_proxy.DataLoader")
+        @patch("src.http_proxy.create_mcp_server")
         @patch("aiohttp.web.AppRunner")
         @patch("aiohttp.web.TCPSite")
         async def mock_test(mock_site, mock_runner, mock_create_mcp, mock_data_loader):
@@ -206,7 +206,7 @@ class TestHTTPProxyConfiguration:
             mock_site_instance.start = AsyncMock()
 
             # This should work without actual connections
-            from http_proxy import create_http_proxy_server
+            from src.http_proxy import create_http_proxy_server
 
             # The function should be callable (even if mocked)
             assert callable(create_http_proxy_server), "Function should be callable"

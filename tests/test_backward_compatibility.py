@@ -125,41 +125,55 @@ class TestBackwardCompatibility:
 
         return json.loads(bundle.serialize())
 
-    def _get_expected_legacy_format(self, entity_types: List[str]) -> Dict[str, List[Dict[str, Any]]]:
+    def _get_expected_legacy_format(
+        self, entity_types: List[str]
+    ) -> Dict[str, List[Dict[str, Any]]]:
         """Get expected output format that matches legacy behavior."""
         result = {entity_type: [] for entity_type in entity_types}
-        
+
         if "techniques" in entity_types:
-            result["techniques"].append({
-                "id": "T1055",
-                "name": "Process Injection", 
-                "description": "Adversaries may inject code into processes in order to evade process-based defenses.",
-                "platforms": ["Windows", "macOS", "Linux"],
-                "tactics": ["TA0005", "TA0004"],
-                "mitigations": [],
-            })
+            result["techniques"].append(
+                {
+                    "id": "T1055",
+                    "name": "Process Injection",
+                    "description": "Adversaries may inject code into processes in order to evade process-based defenses.",
+                    "platforms": ["Windows", "macOS", "Linux"],
+                    "tactics": ["TA0005", "TA0004"],
+                    "mitigations": [],
+                }
+            )
         if "groups" in entity_types:
-            result["groups"].append({
-                "id": "G0016",
-                "name": "APT29",
-                "description": "APT29 is a threat group that has been attributed to Russia's Foreign Intelligence Service.",
-                "aliases": ["Cozy Bear", "The Dukes", "YTTRIUM"],  # Primary name filtered out
-                "techniques": [],
-            })
+            result["groups"].append(
+                {
+                    "id": "G0016",
+                    "name": "APT29",
+                    "description": "APT29 is a threat group that has been attributed to Russia's Foreign Intelligence Service.",
+                    "aliases": [
+                        "Cozy Bear",
+                        "The Dukes",
+                        "YTTRIUM",
+                    ],  # Primary name filtered out
+                    "techniques": [],
+                }
+            )
         if "tactics" in entity_types:
-            result["tactics"].append({
-                "id": "TA0005",
-                "name": "Defense Evasion",
-                "description": "The adversary is trying to avoid being detected.",
-            })
+            result["tactics"].append(
+                {
+                    "id": "TA0005",
+                    "name": "Defense Evasion",
+                    "description": "The adversary is trying to avoid being detected.",
+                }
+            )
         if "mitigations" in entity_types:
-            result["mitigations"].append({
-                "id": "M1048",
-                "name": "Application Isolation and Sandboxing",
-                "description": "Restrict execution of code to a virtual environment on or in transit to an endpoint system.",
-                "techniques": [],
-            })
-        
+            result["mitigations"].append(
+                {
+                    "id": "M1048",
+                    "name": "Application Isolation and Sandboxing",
+                    "description": "Restrict execution of code to a virtual environment on or in transit to an endpoint system.",
+                    "techniques": [],
+                }
+            )
+
         return result
 
     def test_technique_extraction_output_format(self):
@@ -280,8 +294,11 @@ class TestBackwardCompatibility:
                     "x_mitre_platforms": ["Windows", "Linux"],
                     "kill_chain_phases": [
                         {"kill_chain_name": "mitre-attack", "phase_name": "execution"},
-                        {"kill_chain_name": "mitre-attack", "phase_name": "defense-evasion"}
-                    ]
+                        {
+                            "kill_chain_name": "mitre-attack",
+                            "phase_name": "defense-evasion",
+                        },
+                    ],
                 },
                 # Valid group
                 {
@@ -292,7 +309,7 @@ class TestBackwardCompatibility:
                     "aliases": ["TestGroup", "TG-Test"],
                     "external_references": [
                         {"source_name": "mitre-attack", "external_id": "G9999"}
-                    ]
+                    ],
                 },
                 # Valid mitigation
                 {
@@ -302,13 +319,15 @@ class TestBackwardCompatibility:
                     "description": "Test mitigation strategy",
                     "external_references": [
                         {"source_name": "mitre-attack", "external_id": "M9999"}
-                    ]
-                }
+                    ],
+                },
             ],
         }
 
         # Parse with STIX2 library
-        result = self.parser.parse(test_stix_data, ["techniques", "groups", "mitigations"])
+        result = self.parser.parse(
+            test_stix_data, ["techniques", "groups", "mitigations"]
+        )
 
         # Verify output format is maintained and all objects are parsed
         assert "techniques" in result
@@ -317,7 +336,7 @@ class TestBackwardCompatibility:
         assert isinstance(result["techniques"], list)
         assert isinstance(result["groups"], list)
         assert isinstance(result["mitigations"], list)
-        
+
         # Verify technique parsing
         assert len(result["techniques"]) == 1
         technique = result["techniques"][0]
@@ -327,14 +346,14 @@ class TestBackwardCompatibility:
         assert "Linux" in technique.get("platforms", [])
         assert "TA0002" in technique.get("tactics", [])  # execution
         assert "TA0005" in technique.get("tactics", [])  # defense-evasion
-        
+
         # Verify group parsing
         assert len(result["groups"]) == 1
         group = result["groups"][0]
         assert group["id"] == "G9999"
         assert group["name"] == "Test Group"
         assert "TestGroup" in group.get("aliases", [])
-        
+
         # Verify mitigation parsing
         assert len(result["mitigations"]) == 1
         mitigation = result["mitigations"][0]

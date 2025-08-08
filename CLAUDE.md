@@ -48,7 +48,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
    - Task completion confirmation"
    ```
 4. **Push to remote immediately**: `git push origin [current-feature-branch]`
-5. **Do NOT proceed to next task** until current work is committed and pushed
+5. **Update task status** to completed using TodoWrite tool
+6. **VERIFY commit succeeded**: `git log --oneline -1` (confirm latest commit exists)
+7. **VERIFY push succeeded**: `git status` (should show "up to date with origin")
+8. **Do NOT proceed to next task** until current work is committed, pushed, and verified
+
+**⚠️ MANDATORY VERIFICATION COMMANDS:**
+```bash
+# After each task completion, run these commands in sequence:
+git add .
+git -c core.pager=cat commit -m "feat: [description]"
+git push origin $(git branch --show-current)
+git log --oneline -1  # Verify commit exists
+git status            # Verify push succeeded
+```
 
 **⚠️ Use `git -c core.pager=cat commit` to avoid terminal pager issues!**
 
@@ -70,6 +83,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **No hardcoded framework logic** - use config files for entity types, schemas, tools
 - **Extensible design** - supports any structured security framework, not just MITRE ATT&CK
 - **Environment variable overrides** for deployment flexibility
+
+### Extensibility & Reusability Principles
+- **Framework-agnostic architecture** - designed to support any structured security framework
+- **Multi-framework support** - while built for MITRE ATT&CK, supports other threat intelligence formats
+- **Standards-compliant** - uses official MCP protocol and STIX parsing libraries
+- **Pluggable data sources** - configuration-driven data source definitions
+- **Modular tool system** - easy addition of new MCP tools without core changes
 
 ## Architecture Overview
 
@@ -105,15 +125,21 @@ This is a MITRE ATT&CK MCP (Model Context Protocol) server that provides structu
 - **YAML Config Files**: `config/data_sources.yaml`, `config/entity_schemas.yaml`, `config/tools.yaml`
 - Uses UV package manager for dependency management
 
-## Current Project Status
+## Project Specifications and Tasks
 
-### STIX2 Library Refactor (In Progress)
-**Uncompleted tasks from specs:**
-- Task 11: Update type hints and improve code quality
-- Task 12: Remove deprecated custom parsing logic
-- Task 13: Add future extensibility examples and documentation
-- Task 14: Integration testing with all MCP tools
-- Task 15: Final test cleanup and deprecated test removal
+### Source of Truth for Project Management
+**IMPORTANT: All project specifications, requirements, designs, and task lists are maintained in the `.kiro/` directory.**
+- **Task Lists**: Check `.kiro/specs/[project-name]/tasks.md` for current task status
+- **Requirements**: Check `.kiro/specs/[project-name]/requirements.md` for detailed requirements
+- **Design Documents**: Check `.kiro/specs/[project-name]/design.md` for technical specifications
+- **DO NOT maintain duplicate task information in this CLAUDE.md file**
+- **Always reference .kiro as the authoritative source for project specifications**
+
+### Current Project Status
+This MITRE ATT&CK MCP Server project is feature-complete with all major specifications implemented:
+- ✅ **Web Explorer Improvements**: Modern web interface with dynamic forms and results display
+- ✅ **STIX2 Library Refactor**: Complete integration with official STIX2 library for secure data parsing
+- All 437+ tests passing with comprehensive coverage across Python 3.12-3.13
 
 ### Key Implementation Details
 - Uses official `stix2` library for secure STIX data parsing

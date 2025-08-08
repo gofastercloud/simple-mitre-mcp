@@ -387,29 +387,32 @@ class DataLoader:
         # Find the source entity (likely a group) and add relationship metadata
         for group in parsed_data.get("groups", []):
             if group["id"] == source_id:
-                if "techniques" not in group:
-                    group["techniques"] = []
-                if target_id not in group["techniques"]:
-                    group["techniques"].append(target_id)
+                # Only add T-prefixed IDs (techniques) to the techniques list
+                # S-prefixed IDs are software/malware, not techniques
+                if target_id.startswith("T"):
+                    if "techniques" not in group:
+                        group["techniques"] = []
+                    if target_id not in group["techniques"]:
+                        group["techniques"].append(target_id)
 
-                # Add relationship metadata using STIX2 library properties
-                if "technique_relationships" not in group:
-                    group["technique_relationships"] = {}
+                    # Add relationship metadata using STIX2 library properties
+                    if "technique_relationships" not in group:
+                        group["technique_relationships"] = {}
 
-                group["technique_relationships"][target_id] = {
-                    "relationship_type": stix_relationship.relationship_type,
-                    "created": (
-                        stix_relationship.created.isoformat()
-                        if hasattr(stix_relationship, "created")
-                        else None
-                    ),
-                    "modified": (
-                        stix_relationship.modified.isoformat()
-                        if hasattr(stix_relationship, "modified")
-                        else None
-                    ),
-                    "confidence": getattr(stix_relationship, "confidence", None),
-                }
+                    group["technique_relationships"][target_id] = {
+                        "relationship_type": stix_relationship.relationship_type,
+                        "created": (
+                            stix_relationship.created.isoformat()
+                            if hasattr(stix_relationship, "created")
+                            else None
+                        ),
+                        "modified": (
+                            stix_relationship.modified.isoformat()
+                            if hasattr(stix_relationship, "modified")
+                            else None
+                        ),
+                        "confidence": getattr(stix_relationship, "confidence", None),
+                    }
                 break
 
     def _handle_mitigates_relationship_with_stix2(
@@ -495,10 +498,13 @@ class DataLoader:
         # Find the source entity (likely a group)
         for group in parsed_data.get("groups", []):
             if group["id"] == source_id:
-                if "techniques" not in group:
-                    group["techniques"] = []
-                if target_id not in group["techniques"]:
-                    group["techniques"].append(target_id)
+                # Only add T-prefixed IDs (techniques) to the techniques list
+                # S-prefixed IDs are software/malware, not techniques
+                if target_id.startswith("T"):
+                    if "techniques" not in group:
+                        group["techniques"] = []
+                    if target_id not in group["techniques"]:
+                        group["techniques"].append(target_id)
                 break
 
     def _handle_mitigates_relationship(

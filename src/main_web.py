@@ -8,8 +8,8 @@ and explore the MITRE ATT&CK knowledge base through natural language interaction
 """
 
 import logging
-from src.mcp_server import MCPServer
-from src.data_loader import DataLoader
+from .mcp_server import MCPServer
+from .data_loader import DataLoader
 
 # Configure logging
 logging.basicConfig(

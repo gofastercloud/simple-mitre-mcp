@@ -390,7 +390,7 @@ class TestDataLoader(unittest.TestCase):
                     ],
                 },
                 {
-                    "type": "attack-pattern", 
+                    "type": "attack-pattern",
                     "id": f"attack-pattern--{uuid.uuid4()}",
                     "name": "Test Technique",
                     "external_references": [

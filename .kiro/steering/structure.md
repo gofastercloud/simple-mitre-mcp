@@ -4,19 +4,21 @@
 
 ```
 .
-├── main.py                 # Main MCP server entry point
-├── http_proxy.py          # HTTP proxy server for web interface access
 ├── start_explorer.py      # Web interface launcher script
 ├── web_explorer.html      # Interactive web interface for all MCP tools
 ├── pyproject.toml         # UV project configuration and dependencies
 ├── README.md              # Project documentation and setup instructions
-├── .env.example           # Environment variable configuration template
+├── claude_desktop_config.json # Claude Desktop MCP configuration example
+├── mcp_client_config.json # General MCP client configuration example
 ├── config/                # Configuration files
 │   ├── data_sources.yaml  # Data source definitions
 │   ├── entity_schemas.yaml # Entity type schemas
 │   └── tools.yaml         # MCP tool configurations
 ├── src/                   # Source code directory
 │   ├── __init__.py
+│   ├── main_web.py        # Main MCP server entry point (HTTP transport)
+│   ├── main_stdio.py      # Main MCP server entry point (STDIO transport for MCP clients)
+│   ├── http_proxy.py      # HTTP proxy server for web interface access
 │   ├── mcp_server.py      # FastMCP server implementation with 8 MCP tools
 │   ├── config_loader.py   # Configuration file loading
 │   ├── data_loader.py     # Generic data loading and parsing with relationship analysis
@@ -82,7 +84,7 @@
 
 ### Web Interface Architecture
 
-#### HTTP Proxy Server (`http_proxy.py`)
+#### HTTP Proxy Server (`src/http_proxy.py`)
 - **Purpose**: Provides HTTP/JSON API bridge to MCP tools for web access
 - **Configuration**: Environment variable `MCP_HTTP_PORT` for port configuration
 - **Endpoints**: Tool listing, tool execution, and web interface serving
@@ -189,13 +191,14 @@ MITRE_ATTACK_URL=https://raw.githubusercontent.com/mitre/cti/master/enterprise-a
 ## Key Files
 
 ### Core Server Files
-- **main.py**: Entry point that starts the FastMCP server with all 8 tools
+- **src/main_web.py**: Entry point that starts the FastMCP server with all 8 tools (HTTP transport)
+- **src/main_stdio.py**: Entry point for STDIO transport (MCP client integration)
 - **src/mcp_server.py**: Core MCP protocol handling with basic and advanced tools
 - **src/data_loader.py**: Enhanced data loading with relationship analysis
 - **src/parsers/stix_parser.py**: STIX parsing with relationship extraction
 
 ### Web Interface Files
-- **http_proxy.py**: HTTP proxy server providing JSON API access to MCP tools
+- **src/http_proxy.py**: HTTP proxy server providing JSON API access to MCP tools
 - **web_explorer.html**: Interactive web interface with basic and advanced tool sections
 - **start_explorer.py**: Convenient launcher script with environment configuration
 
@@ -225,7 +228,7 @@ MITRE_ATTACK_URL=https://raw.githubusercontent.com/mitre/cti/master/enterprise-a
 2. Implement tool logic in `src/mcp_server.py` using @app.tool() decorator
 3. Add comprehensive unit tests in `tests/test_<tool_name>.py`
 4. Update web interface forms in `web_explorer.html` if needed
-5. Update HTTP proxy tool list in `http_proxy.py`
+5. Update HTTP proxy tool list in `src/http_proxy.py`
 
 ### Adding Advanced Analysis Features
 1. Implement analysis logic as separate functions in appropriate modules
@@ -236,6 +239,6 @@ MITRE_ATTACK_URL=https://raw.githubusercontent.com/mitre/cti/master/enterprise-a
 
 ### Web Interface Customization
 1. Update `web_explorer.html` for new tool forms and result display
-2. Modify `http_proxy.py` to support new tool parameters and validation
+2. Modify `src/http_proxy.py` to support new tool parameters and validation
 3. Test across different browsers and devices for compatibility
 4. Ensure responsive design principles are maintained
