@@ -10,15 +10,23 @@ like Claude Desktop, ChatGPT, and other MCP-compatible clients.
 """
 
 import logging
+import os
+from pathlib import Path
 from .mcp_server import MCPServer
 from .data_loader import DataLoader
 
 # Configure logging for stdio transport (reduced verbosity)
+# Ensure log file goes to logs directory
+project_root = Path(__file__).parent.parent
+logs_dir = project_root / "logs"
+logs_dir.mkdir(exist_ok=True)  # Create logs directory if it doesn't exist
+log_file_path = logs_dir / "mcp_server.log"
+
 logging.basicConfig(
     level=logging.WARNING,  # Reduced to WARNING to avoid interference with STDIO
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     handlers=[
-        logging.FileHandler("mcp_server.log"),  # Log to file instead of stderr
+        logging.FileHandler(log_file_path),  # Log to logs directory instead of root
     ],
 )
 
