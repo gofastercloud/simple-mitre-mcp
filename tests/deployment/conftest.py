@@ -103,6 +103,58 @@ def config_validator():
             
             # Simple permission check (could be more sophisticated)
             return 'r' in required_perms and 'r' in file_perms
+        
+        def validate_yaml_config(self, file_path: str) -> Dict[str, Any]:
+            """Validate YAML configuration file."""
+            import yaml
+            try:
+                with open(file_path, 'r') as f:
+                    config = yaml.safe_load(f)
+                return {'valid': True, 'config': config, 'error': None}
+            except (yaml.YAMLError, FileNotFoundError, IOError) as e:
+                return {'valid': False, 'config': None, 'error': str(e)}
+        
+        def validate_json_config(self, file_path: str) -> Dict[str, Any]:
+            """Validate JSON configuration file."""
+            try:
+                with open(file_path, 'r') as f:
+                    config = json.load(f)
+                return {'valid': True, 'config': config, 'error': None}
+            except (json.JSONDecodeError, FileNotFoundError, IOError) as e:
+                return {'valid': False, 'config': None, 'error': str(e)}
+        
+        def validate_deployment_readiness(self) -> Dict[str, Any]:
+            """Fast deployment readiness check."""
+            checks = {
+                'environment_vars': self.validate_environment_vars(['MCP_HTTP_HOST', 'MCP_HTTP_PORT']),
+                'port_available': self.validate_port_availability('localhost', 8000),
+                'python_version': self._check_python_version(),
+                'dependencies': self._check_critical_dependencies()
+            }
+            
+            all_passed = all([
+                all(checks['environment_vars'].values()) or len(checks['environment_vars']) == 0,
+                checks['port_available'],
+                checks['python_version'],
+                checks['dependencies']
+            ])
+            
+            return {'ready': all_passed, 'checks': checks}
+        
+        def _check_python_version(self) -> bool:
+            """Check if Python version is compatible."""
+            import sys
+            return sys.version_info >= (3, 8)
+        
+        def _check_critical_dependencies(self) -> bool:
+            """Check if critical dependencies are available."""
+            critical_deps = ['json', 'os', 'pathlib', 'tempfile']
+            try:
+                for dep in critical_deps:
+                    __import__(dep)
+                return True
+            except ImportError:
+                return False
     
     return ConfigValidator()
 
@@ -223,3 +275,96 @@ def deployment_test_timeout():
     
     # Clear the alarm
     signal.alarm(0)
+
+
+@pytest.fixture
+def fast_deployment_check():
+    """Fast deployment validation for quick feedback."""
+    class FastDeploymentChecker:
+        def __init__(self):
+            self.checks_cache = {}
+        
+        def quick_environment_check(self) -> bool:
+            """Quick environment validation without external calls."""
+            if 'environment' in self.checks_cache:
+                return self.checks_cache['environment']
+            
+            try:
+                # Basic environment variable checks
+                host = os.getenv('MCP_HTTP_HOST', 'localhost')
+                port = os.getenv('MCP_HTTP_PORT', '8000')
+                
+                # Validate types and ranges
+                port_int = int(port)
+                result = (
+                    isinstance(host, str) and len(host) > 0 and
+                    1 <= port_int <= 65535
+                )
+                
+                self.checks_cache['environment'] = result
+                return result
+            except (ValueError, TypeError):
+                self.checks_cache['environment'] = False
+                return False
+        
+        def quick_import_check(self) -> bool:
+            """Quick import validation for critical modules."""
+            if 'imports' in self.checks_cache:
+                return self.checks_cache['imports']
+            
+            try:
+                # Test critical standard library imports
+                import os, json, pathlib, tempfile
+                
+                # Test that we can import our basic modules (without instantiation)
+                import sys
+                from pathlib import Path
+                
+                project_root = Path(__file__).parent.parent.parent
+                sys.path.insert(0, str(project_root))
+                
+                try:
+                    # Quick import test without instantiation
+                    import src.config_loader
+                    import src.data_loader
+                    result = True
+                except ImportError:
+                    result = False
+                finally:
+                    sys.path.remove(str(project_root))
+                
+                self.checks_cache['imports'] = result
+                return result
+            except Exception:
+                self.checks_cache['imports'] = False
+                return False
+        
+        def quick_file_structure_check(self) -> bool:
+            """Quick file structure validation."""
+            if 'files' in self.checks_cache:
+                return self.checks_cache['files']
+            
+            try:
+                project_root = Path(__file__).parent.parent.parent
+                essential_files = [
+                    'src/mcp_server.py',
+                    'src/http_proxy.py',
+                    'pyproject.toml'
+                ]
+                
+                result = all((project_root / file_path).exists() for file_path in essential_files)
+                self.checks_cache['files'] = result
+                return result
+            except Exception:
+                self.checks_cache['files'] = False
+                return False
+        
+        def run_all_quick_checks(self) -> Dict[str, bool]:
+            """Run all quick checks and return results."""
+            return {
+                'environment': self.quick_environment_check(),
+                'imports': self.quick_import_check(),
+                'files': self.quick_file_structure_check()
+            }
+    
+    return FastDeploymentChecker()
