@@ -1,0 +1,7 @@
+# Validation generated files and reports
+data/
+temp/
+reports/
+*.json
+*.txt
+*.html
