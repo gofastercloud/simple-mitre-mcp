@@ -271,7 +271,7 @@ uv sync
 
 **Connection Timeout:**
 - The first connection may take 30-60 seconds while MITRE data loads
-- Check `mcp_server.log` for detailed error messages
+- Check `logs/mcp_server.log` for detailed error messages
 - Ensure port 8000 is not already in use by other applications
 
 **Testing the Server:**
